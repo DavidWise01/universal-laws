@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MÖBIUS · THREE FUSED STRIPS</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Inconsolata:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:   #06070a;
+  --blue: #2255ee;
+  --gold: #ddaa33;
+  --red:  #dd3322;
+  --dim:  rgba(200,210,230,.3);
+  --text: rgba(200,210,230,.85);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inconsolata', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  cursor: none;
+}
+
+/* CURSOR */
+#cur { position:fixed; width:6px; height:6px; border-radius:50%; background:var(--gold); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); box-shadow:0 0 8px rgba(221,170,51,.6); transition:transform .04s; }
+#curl { position:fixed; width:22px; height:22px; border:1px solid rgba(221,170,51,.3); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .12s; }
+
+/* HEADER */
+#hd {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid rgba(200,210,230,.06);
+  background: rgba(6,7,10,.92);
+  backdrop-filter: blur(8px);
+  position: relative;
+  z-index: 10;
+}
+.hd-left h1 {
+  font-family: 'EB Garamond', serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  color: var(--gold);
+  font-style: italic;
+}
+.hd-left p {
+  font-size: 9px;
+  letter-spacing: 4px;
+  color: var(--dim);
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+.hd-center {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+.strip-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.strip-toggle:hover { border-color: rgba(200,210,230,.1); }
+.strip-toggle.on  { border-color: rgba(200,210,230,.15); background: rgba(200,210,230,.04); }
+.st-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.st-label { font-size:9px; letter-spacing:3px; }
+.hd-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.stat-row { display:flex; gap:16px; }
+.stat { text-align:right; }
+.sv { font-size:15px; font-weight:500; color:var(--gold); font-family:'EB Garamond',serif; }
+.sk { font-size:8px; letter-spacing:2px; color:var(--dim); }
+
+/* CANVAS */
+#cv {
+  flex: 1;
+  display: block;
+  cursor: none;
+}
+
+/* BOTTOM HUD */
+#hud {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 24px;
+  border-top: 1px solid rgba(200,210,230,.06);
+  background: rgba(6,7,10,.92);
+}
+.hud-axiom {
+  font-family: 'EB Garamond', serif;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--dim);
+  letter-spacing: 1px;
+}
+.hud-controls {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: rgba(200,210,230,.2);
+  display: flex;
+  gap: 20px;
+}
+.hud-trace { font-size:9px; letter-spacing:2px; color:var(--gold); }
+
+/* KEY INPUT */
+.key-wrap { display:flex; align-items:center; gap:8px; }
+#api-in { padding:5px 10px; background:rgba(221,170,51,.05); border:1px solid rgba(221,170,51,.12); color:var(--text); font-family:'Inconsolata',monospace; font-size:10px; outline:none; width:220px; }
+#api-in:focus { border-color:rgba(221,170,51,.35); }
+#api-in::placeholder { color:rgba(200,210,230,.15); }
+#key-st { font-size:8px; letter-spacing:2px; }
+
+/* TOOLTIP */
+#tip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 200;
+  background: rgba(6,7,10,.95);
+  border: 1px solid rgba(221,170,51,.2);
+  padding: 8px 12px;
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--text);
+  max-width: 220px;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+<div id="tip"></div>
+
+<div id="hd">
+  <div class="hd-left">
+    <h1>Möbius</h1>
+    <p>Three fused strips · One surface · No edge</p>
+  </div>
+
+  <div class="hd-center">
+    <div class="strip-toggle on" id="tog-0" onclick="toggleStrip(0)">
+      <div class="st-dot" style="background:#2255ee;box-shadow:0 0 6px #2255ee"></div>
+      <span class="st-label" style="color:#6688ff">FORWARD</span>
+    </div>
+    <div class="strip-toggle on" id="tog-1" onclick="toggleStrip(1)">
+      <div class="st-dot" style="background:#ddaa33;box-shadow:0 0 6px #ddaa33"></div>
+      <span class="st-label" style="color:#ddaa33">GAP</span>
+    </div>
+    <div class="strip-toggle on" id="tog-2" onclick="toggleStrip(2)">
+      <div class="st-dot" style="background:#dd3322;box-shadow:0 0 6px #dd3322"></div>
+      <span class="st-label" style="color:#ff6655">INVERSE</span>
+    </div>
+  </div>
+
+  <div class="hd-right">
+    <div class="key-wrap">
+      <input id="api-in" type="password" placeholder="sk-ant-… for surface reading" oninput="checkKey()">
+      <span id="key-st" style="color:rgba(200,100,80,.7)">—</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><div class="sv" id="sv-angle">0°</div><div class="sk">ROTATION</div></div>
+      <div class="stat"><div class="sv" id="sv-pos">—</div><div class="sk">SURFACE POS</div></div>
+      <div class="stat"><div class="sv" id="sv-phase">FORWARD</div><div class="sk">PHASE</div></div>
+    </div>
+  </div>
+</div>
+
+<canvas id="cv"></canvas>
+
+<div id="hud">
+  <div class="hud-axiom" id="hud-axiom">"Forward is backward. The twist is the gap. One surface, no edge."</div>
+  <div class="hud-controls">
+    <span>DRAG · rotate</span>
+    <span>SCROLL · zoom</span>
+    <span>CLICK · trace</span>
+    <span>SPACE · auto-spin</span>
+  </div>
+  <div class="hud-trace" id="hud-trace"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  MÖBIUS VISUALIZER
+//  Three fused strips. One surface. No edge.
+//  Blue → Gold → Red → Gold → Blue
+// ═══════════════════════════════════════════════
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+// ── State ──
+const cam = { rotX: .4, rotY: -.3, zoom: 1, autoSpin: true, spinSpeed: .003 };
+const drag = { active: false, lastX: 0, lastY: 0 };
+const tracer = { active: false, t: 0, speed: .004, points: [], maxPts: 400 };
+const strips = [true, true, true]; // forward, gap, inverse
+let W, H, mx = 0, my = 0;
+
+// Strip offsets — three fused, each twisted .01° fractal apart
+const STRIP_OFFSETS = [0, Math.PI * 2/3, Math.PI * 4/3];
+const STRIP_COLORS = [
+  { inner: '#1133cc', mid: '#3366ff', outer: '#6699ff', name: 'FORWARD' },
+  { inner: '#aa7700', mid: '#ddaa33', outer: '#ffdd77', name: 'GAP'     },
+  { inner: '#aa1100', mid: '#dd3322', outer: '#ff6655', name: 'INVERSE' }
+];
+
+// ── Möbius parametric surface ──
+// u ∈ [0, 2π], v ∈ [-1, 1]
+// With offset φ for fusion of three strips
+function mobiusPoint(u, v, phi = 0, twist = 1) {
+  const uu = u + phi;
+  const R = 2.2;
+  const w = .7;
+  const t = uu / 2 * twist;
+  const x = (R + w * v * Math.cos(t)) * Math.cos(uu);
+  const y = (R + w * v * Math.cos(t)) * Math.sin(uu);
+  const z = w * v * Math.sin(t);
+  return [x, y, z];
+}
+
+// ── 3D → 2D projection ──
+function project(x, y, z) {
+  // Rotate around Y
+  const cosY = Math.cos(cam.rotY), sinY = Math.sin(cam.rotY);
+  const x1 = x * cosY - z * sinY;
+  const z1 = x * sinY + z * cosY;
+
+  // Rotate around X
+  const cosX = Math.cos(cam.rotX), sinX = Math.sin(cam.rotX);
+  const y2 = y * cosX - z1 * sinX;
+  const z2 = y * sinX + z1 * cosX;
+
+  const fov = 5 + cam.zoom * 2;
+  const scale = (W * .18 * cam.zoom) / (fov + z2 * .5);
+  return [W/2 + x1 * scale, H/2 + y2 * scale, z2, scale];
+}
+
+// ── Color along surface ──
+// Blue at 0° → Gold at 120° (gap) → Red at 240° (inverse) → Gold → Blue
+function surfaceColor(u, v, stripIdx, alpha = 1) {
+  // travel position normalized 0→1 over full loop
+  const pos = (u % (Math.PI * 2)) / (Math.PI * 2);
+
+  // Blend through blue→gold→red→gold→blue
+  let r, g, b;
+  if (pos < .25) {
+    const t = pos / .25;
+    r = lerp(34, 221, t); g = lerp(51, 170, t); b = lerp(204, 51, t);
+  } else if (pos < .5) {
+    const t = (pos - .25) / .25;
+    r = lerp(221, 221, t); g = lerp(170, 51, t); b = lerp(51, 34, t);
+  } else if (pos < .75) {
+    const t = (pos - .5) / .25;
+    r = lerp(221, 221, t); g = lerp(51, 170, t); b = lerp(34, 51, t);
+  } else {
+    const t = (pos - .75) / .25;
+    r = lerp(221, 34, t); g = lerp(170, 51, t); b = lerp(51, 204, t);
+  }
+
+  // v offset — edge glow
+  const edgeBright = 1 + Math.abs(v) * .4;
+  r = Math.min(255, r * edgeBright);
+  g = Math.min(255, g * edgeBright);
+  b = Math.min(255, b * edgeBright);
+
+  return `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},${alpha})`;
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ── Build mesh ──
+const U_STEPS = 120;
+const V_STEPS = 12;
+let mesh = []; // [{pts3d, pts2d, depth, color, stripIdx}]
+
+function buildMesh(time) {
+  mesh = [];
+  for (let si = 0; si < 3; si++) {
+    if (!strips[si]) continue;
+    const phi = STRIP_OFFSETS[si];
+    for (let ui = 0; ui < U_STEPS; ui++) {
+      const u0 = (ui / U_STEPS) * Math.PI * 2;
+      const u1 = ((ui + 1) / U_STEPS) * Math.PI * 2;
+      for (let vi = 0; vi < V_STEPS; vi++) {
+        const v0 = lerp(-1, 1, vi / V_STEPS);
+        const v1 = lerp(-1, 1, (vi+1) / V_STEPS);
+
+        const p00 = mobiusPoint(u0, v0, phi);
+        const p10 = mobiusPoint(u1, v0, phi);
+        const p01 = mobiusPoint(u0, v1, phi);
+        const p11 = mobiusPoint(u1, v1, phi);
+
+        const [x00,y00,z00,s00] = project(...p00);
+        const [x10,y10,z10,s10] = project(...p10);
+        const [x01,y01,z01,s01] = project(...p01);
+        const [x11,y11,z11,s11] = project(...p11);
+
+        const depth = (z00 + z10 + z01 + z11) / 4;
+        const u_mid = (u0 + u1) / 2;
+        const v_mid = (v0 + v1) / 2;
+
+        // normal for back-face + shading
+        const dx1 = x10 - x00, dy1 = y10 - y00;
+        const dx2 = x01 - x00, dy2 = y01 - y00;
+        const nz = dx1 * dy2 - dy1 * dx2; // z-component of normal
+
+        // Both sides visible (one surface!)
+        const shade = .45 + .55 * Math.abs(nz) / (Math.sqrt(dx1*dx1+dy1*dy1) * Math.sqrt(dx2*dx2+dy2*dy2) + .001);
+        const col = surfaceColor(u_mid, v_mid, si, shade * .92);
+
+        mesh.push({
+          pts: [[x00,y00],[x10,y10],[x11,y11],[x01,y01]],
+          depth,
+          color: col,
+          edge: surfaceColor(u_mid, v_mid, si, .3),
+          stripIdx: si,
+          u: u_mid, v: v_mid
+        });
+      }
+    }
+  }
+  // painter's algorithm
+  mesh.sort((a,b) => a.depth - b.depth);
+}
+
+// ── Tracer ──
+function updateTracer() {
+  if (!tracer.active) return;
+  tracer.t += tracer.speed;
+  if (tracer.t > Math.PI * 2) tracer.t -= Math.PI * 2;
+
+  // Trace the center line (v=0) of strip 1 (gap/gold)
+  const [x,y,z] = mobiusPoint(tracer.t, 0, 0);
+  const [px, py, pz, sc] = project(x, y, z);
+  tracer.points.push({ px, py, pz, t: tracer.t });
+  if (tracer.points.length > tracer.maxPts) tracer.points.shift();
+
+  // Update HUD
+  const deg = Math.round((tracer.t / (Math.PI * 2)) * 360);
+  const phase = deg < 180 ? 'FORWARD' : 'INVERSE';
+  document.getElementById('sv-pos').textContent = deg + '°';
+  document.getElementById('sv-phase').textContent = phase;
+  document.getElementById('sv-phase').style.color = deg < 180 ? '#6699ff' : '#ff6655';
+  document.getElementById('hud-trace').textContent = phase === 'FORWARD' ? '↻ TRACING SURFACE…' : '↺ RETURNING INVERTED…';
+  document.getElementById('hud-axiom').textContent = phase === 'FORWARD'
+    ? '"You left going forward. You arrive going backward. Same surface."'
+    : '"The twist has happened. You are on the underside. Still the only side."';
+}
+
+function drawTracer() {
+  if (!tracer.active || tracer.points.length < 2) return;
+  for (let i = 1; i < tracer.points.length; i++) {
+    const a = tracer.points[i-1];
+    const b = tracer.points[i];
+    const age = i / tracer.points.length;
+    const deg = Math.round((tracer.points[i].t / (Math.PI * 2)) * 360);
+    const col = surfaceColor(tracer.points[i].t, 0, 0, age * .9);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5 + age;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 4 * age;
+    ctx.beginPath();
+    ctx.moveTo(a.px, a.py);
+    ctx.lineTo(b.px, b.py);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+
+  // current position dot
+  const last = tracer.points[tracer.points.length - 1];
+  if (last) {
+    const col = surfaceColor(tracer.t, 0, 0, 1);
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(last.px, last.py, 5, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ── Stars background ──
+const stars = Array.from({length:120}, () => ({
+  x: Math.random(), y: Math.random(),
+  r: .3 + Math.random() * 1,
+  a: .1 + Math.random() * .4,
+  phase: Math.random() * Math.PI * 2
+}));
+
+function drawStars(t) {
+  stars.forEach(s => {
+    const a = s.a * (.5 + .5 * Math.sin(t * .5 + s.phase));
+    ctx.fillStyle = `rgba(200,210,230,${a})`;
+    ctx.beginPath();
+    ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
+// ── Main render ──
+let t = 0;
+function render(ts) {
+  const dt = .016;
+  t += dt;
+
+  if (cam.autoSpin) {
+    cam.rotY += cam.spinSpeed;
+    document.getElementById('sv-angle').textContent = Math.round(((cam.rotY % (Math.PI*2)) / (Math.PI*2)) * 360) + '°';
+  }
+
+  if (tracer.active) updateTracer();
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  const bg = ctx.createRadialGradient(W*.5, H*.5, 0, W*.5, H*.5, Math.max(W,H)*.8);
+  bg.addColorStop(0, '#0a0c12');
+  bg.addColorStop(1, '#06070a');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars(t);
+  buildMesh(t);
+
+  // Draw mesh
+  mesh.forEach(face => {
+    ctx.beginPath();
+    ctx.moveTo(face.pts[0][0], face.pts[0][1]);
+    for (let i = 1; i < face.pts.length; i++) ctx.lineTo(face.pts[i][0], face.pts[i][1]);
+    ctx.closePath();
+    ctx.fillStyle = face.color;
+    ctx.fill();
+    ctx.strokeStyle = face.edge;
+    ctx.lineWidth = .3;
+    ctx.stroke();
+  });
+
+  drawTracer();
+
+  requestAnimationFrame(render);
+}
+
+// ── Resize ──
+function resize() {
+  W = cv.width  = cv.clientWidth;
+  H = cv.height = cv.clientHeight;
+}
+
+// ── Interactions ──
+cv.addEventListener('mousedown', e => {
+  drag.active = true;
+  drag.lastX = e.clientX;
+  drag.lastY = e.clientY;
+  cam.autoSpin = false;
+  document.getElementById('sv-phase').textContent = 'LOCKED';
+  document.getElementById('sv-phase').style.color = 'var(--gold)';
+});
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  document.getElementById('cur').style.left = mx + 'px';
+  document.getElementById('cur').style.top  = my + 'px';
+  setTimeout(() => {
+    document.getElementById('curl').style.left = mx + 'px';
+    document.getElementById('curl').style.top  = my + 'px';
+  }, 100);
+  if (drag.active) {
+    cam.rotY += (e.clientX - drag.lastX) * .008;
+    cam.rotX += (e.clientY - drag.lastY) * .006;
+    cam.rotX = Math.max(-Math.PI*.6, Math.min(Math.PI*.6, cam.rotX));
+    drag.lastX = e.clientX;
+    drag.lastY = e.clientY;
+    document.getElementById('sv-angle').textContent = Math.round(((cam.rotY % (Math.PI*2)) / (Math.PI*2)) * 360) + '°';
+  }
+});
+document.addEventListener('mouseup', () => { drag.active = false; });
+cv.addEventListener('wheel', e => {
+  cam.zoom = Math.max(.3, Math.min(3, cam.zoom - e.deltaY * .001));
+  e.preventDefault();
+}, { passive: false });
+cv.addEventListener('click', e => {
+  tracer.active = !tracer.active;
+  if (!tracer.active) {
+    tracer.points = [];
+    document.getElementById('hud-trace').textContent = '';
+    document.getElementById('hud-axiom').textContent = '"Forward is backward. The twist is the gap. One surface, no edge."';
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    cam.autoSpin = !cam.autoSpin;
+    if (cam.autoSpin) document.getElementById('sv-phase').textContent = 'AUTO';
+  }
+});
+
+// ── Strip toggles ──
+function toggleStrip(i) {
+  strips[i] = !strips[i];
+  document.getElementById('tog-' + i).classList.toggle('on', strips[i]);
+}
+
+// ── API Key ──
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const el = document.getElementById('key-st');
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  el.textContent = ok ? 'READY' : (k.length ? '✗' : '—');
+  el.style.color = ok ? 'rgba(57,232,122,.8)' : 'rgba(200,100,80,.7)';
+  if (ok) fetchSurfaceReading(k);
+}
+function getKey() { return document.getElementById('api-in').value.trim(); }
+
+// Surface reading — AI observes which strips are active and current rotation
+async function fetchSurfaceReading(k) {
+  const rot = Math.round(((cam.rotY % (Math.PI*2)) / (Math.PI*2)) * 360);
+  const active = ['FORWARD','GAP','INVERSE'].filter((_,i) => strips[i]);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:120,
+        messages:[{role:'user',content:`You are observing a Möbius strip visualization. Active strips: ${active.join(', ')}. Current rotation: ${rot}°. Write exactly one sentence — poetic, precise — about what the observer sees at this moment. No preamble. The sentence only.`}]
+      })
+    });
+    const d = await r.json();
+    const reading = d.content.map(b=>b.text||'').join('').trim().replace(/^"|"$/g,'');
+    document.getElementById('hud-axiom').textContent = `"${reading}"`;
+  } catch(e) {}
+}
+
+// ── Init ──
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

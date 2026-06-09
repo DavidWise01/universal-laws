@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<!-- saved from url=(0106)https://embed.fbsbx.com/playables/view/26945291015108379/?ext=1784223832&hash=Q92gDAHJHWEp9uQ9XzIxBwdoCDmt -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKASHA GOD NODE // CHRONOS CORE</title>
+<script src="./saved_resource"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2(13)" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: 'Orbitron', sans-serif;
+    background: #020b13;
+    color: #7df9ff;
+    overscroll-behavior: none;
+  }
+  .bg-grid {
+    background-image: 
+      radial-gradient(ellipse at center, rgba(0,229,255,0.08) 0%, transparent 60%),
+      linear-gradient(rgba(0,229,255,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.07) 1px, transparent 1px);
+    background-size: 100% 100%, 50px 50px, 50px 50px;
+  }
+  .holo-panel {
+    background: rgba(3, 18, 28, 0.55);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,229,255,0.25);
+    box-shadow: 0 0 25px rgba(0,229,255,0.08), inset 0 0 20px rgba(0,229,255,0.04);
+    transition: transform 0.2s ease-out, box-shadow 0.3s;
+  }
+  .holo-panel:hover {
+    box-shadow: 0 0 35px rgba(0,229,255,0.15), inset 0 0 25px rgba(0,229,255,0.06);
+    border-color: rgba(0,229,255,0.4);
+  }
+  .glow-text { text-shadow: 0 0 8px #00e5ff, 0 0 20px #00e5ff, 0 0 40px rgba(0,229,255,0.6); }
+  .glow-box { box-shadow: 0 0 15px rgba(0,229,255,0.5), inset 0 0 15px rgba(0,229,255,0.2); }
+  @keyframes pulseCore {
+    0%, 100% { transform: scale(1); opacity: 0.92; filter: brightness(1); }
+    50% { transform: scale(1.07); opacity: 1; filter: brightness(1.3); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin_reverse { to { transform: rotate(-360deg); } }
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(200%); }
+  }
+  .scanline::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+    animation: scan 4s linear infinite;
+    opacity: 0.5;
+  }
+  .gate {
+    width: 16px; height: 16px; border-radius: 50%;
+    position: absolute; cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .gate:hover { transform: scale(1.5); z-index: 10; }
+  .gate.active { transform: scale(1.8); animation: pulseCore 1s ease-in-out 3; }
+  .icosa-node {
+    position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px;
+    border-radius: 50%; background: #00e5ff;
+    box-shadow: 0 0 6px #00e5ff, 0 0 12px #00e5ff;
+    cursor: pointer; transition: all 0.2s; opacity: 0.85;
+  }
+  .icosa-node:hover { transform: scale(2.2); background: #fff; box-shadow: 0 0 15px #fff, 0 0 25px #00e5ff; opacity: 1; z-index: 5; }
+  .icosa-node.active { background: #fff; box-shadow: 0 0 20px #fff, 0 0 40px #00e5ff; transform: scale(2); }
+  #tooltip {
+    position: fixed; pointer-events: none;
+    background: rgba(0,15,25,0.95); border: 1px solid rgba(0,229,255,0.6);
+    padding: 4px 8px; font-size: 10px; border-radius: 4px;
+    white-space: nowrap; transform: translate(-50%, -140%);
+    opacity: 0; transition: opacity 0.15s; z-index: 100;
+    color: #7df9ff; box-shadow: 0 0 10px rgba(0,229,255,0.5);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .mono { font-family: 'Share Tech Mono', monospace; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: rgba(0,229,255,0.05); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.3); border-radius: 2px; }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.inset-10{inset:2.5rem}.inset-2{inset:0.5rem}.inset-3{inset:0.75rem}.inset-4{inset:1rem}.inset-6{inset:1.5rem}.inset-8{inset:2rem}.inset-\[12\%\]{inset:12%}.inset-\[26\%\]{inset:26%}.inset-\[40\%\]{inset:40%}.-bottom-6{bottom:-1.5rem}.left-1\/2{left:50%}.top-1\/2{top:50%}.top-3{top:0.75rem}.-right-3{right:-0.75rem}.-top-2{top:-0.5rem}.bottom-0{bottom:0px}.bottom-\[28\%\]{bottom:28%}.left-0{left:0px}.right-0{right:0px}.top-\[22\%\]{top:22%}.z-30{z-index:30}.z-50{z-index:50}.z-20{z-index:20}.order-1{order:1}.order-2{order:2}.order-3{order:3}.mx-auto{margin-left:auto;margin-right:auto}.my-4{margin-top:1rem;margin-bottom:1rem}.mb-4{margin-bottom:1rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.flex{display:flex}.grid{display:grid}.h-14{height:3.5rem}.h-16{height:4rem}.h-2{height:0.5rem}.h-44{height:11rem}.h-48{height:12rem}.h-8{height:2rem}.h-\[340px\]{height:340px}.h-\[45\%\]{height:45%}.h-\[52px\]{height:52px}.h-\[80\%\]{height:80%}.h-full{height:100%}.h-1{height:0.25rem}.h-1\.5{height:0.375rem}.h-3\/4{height:75%}.h-\[110px\]{height:110px}.h-\[150px\]{height:150px}.h-\[18px\]{height:18px}.min-h-\[420px\]{min-height:420px}.min-h-screen{min-height:100vh}.w-14{width:3.5rem}.w-16{width:4rem}.w-2{width:0.5rem}.w-44{width:11rem}.w-48{width:12rem}.w-8{width:2rem}.w-\[1px\]{width:1px}.w-\[340px\]{width:340px}.w-\[80\%\]{width:80%}.w-full{width:100%}.w-1{width:0.25rem}.w-1\.5{width:0.375rem}.w-px{width:1px}.w-\[54px\]{width:54px}.w-\[62px\]{width:62px}.max-w-\[1600px\]{max-width:1600px}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.origin-bottom{transform-origin:bottom}.origin-center{transform-origin:center}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.translate-y-1{--tw-translate-y:0.25rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.rotate-90{--tw-rotate:90deg;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.select-none{-webkit-user-select:none;user-select:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-4{gap:1rem}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-3{gap:0.75rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-visible{overflow:visible}.overflow-x-hidden{overflow-x:hidden}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-\[2px\]{border-width:2px}.border-b{border-bottom-width:1px}.border-cyan-300\/30{border-color:rgb(103 232 249 / 0.3)}.border-cyan-400\/10{border-color:rgb(34 211 238 / 0.1)}.border-cyan-400\/15{border-color:rgb(34 211 238 / 0.15)}.border-cyan-400\/20{border-color:rgb(34 211 238 / 0.2)}.border-cyan-400\/25{border-color:rgb(34 211 238 / 0.25)}.border-cyan-400\/40{border-color:rgb(34 211 238 / 0.4)}.border-cyan-900\/30{border-color:rgb(22 78 99 / 0.3)}.border-white\/30{border-color:rgb(255 255 255 / 0.3)}.border-cyan-400\/50{border-color:rgb(34 211 238 / 0.5)}.border-cyan-800\/30{border-color:rgb(21 94 117 / 0.3)}.border-cyan-900\/40{border-color:rgb(22 78 99 / 0.4)}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-cyan-400\/0{background-color:rgb(34 211 238 / 0)}.bg-cyan-400\/20{background-color:rgb(34 211 238 / 0.2)}.bg-black\/30{background-color:rgb(0 0 0 / 0.3)}.bg-cyan-400\/5{background-color:rgb(34 211 238 / 0.05)}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-gradient-to-t{background-image:linear-gradient(to top, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-transparent{--tw-gradient-from:transparent var(--tw-gradient-from-position);--tw-gradient-to:rgb(0 0 0 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-cyan-950\/40{--tw-gradient-from:rgb(8 51 68 / 0.4) var(--tw-gradient-from-position);--tw-gradient-to:rgb(8 51 68 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-cyan-400\/70{--tw-gradient-to:rgb(34 211 238 / 0.7) var(--tw-gradient-to-position)}.to-transparent{--tw-gradient-to:transparent var(--tw-gradient-to-position)}.p-2{padding:0.5rem}.p-4{padding:1rem}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.pb-2{padding-bottom:0.5rem}.pb-48{padding-bottom:12rem}.pt-56{padding-top:14rem}.pb-1\.5{padding-bottom:0.375rem}.pb-3{padding-bottom:0.75rem}.pr-1{padding-right:0.25rem}.text-center{text-align:center}.text-right{text-align:right}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[9px\]{font-size:9px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.text-2xl{font-size:1.5rem;line-height:2rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-bold{font-weight:700}.font-black{font-weight:900}.leading-snug{line-height:1.375}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.tracking-\[0\.25em\]{letter-spacing:0.25em}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-\[0\.35em\]{letter-spacing:0.35em}.tracking-\[0\.4em\]{letter-spacing:0.4em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-\[\#00b7ff\]{--tw-text-opacity:1;color:rgb(0 183 255 / var(--tw-text-opacity, 1))}.text-\[\#9c27ff\]{--tw-text-opacity:1;color:rgb(156 39 255 / var(--tw-text-opacity, 1))}.text-\[\#ff1744\]{--tw-text-opacity:1;color:rgb(255 23 68 / var(--tw-text-opacity, 1))}.text-\[\#ffd700\]{--tw-text-opacity:1;color:rgb(255 215 0 / var(--tw-text-opacity, 1))}.text-cyan-200{--tw-text-opacity:1;color:rgb(165 243 252 / var(--tw-text-opacity, 1))}.text-cyan-200\/80{color:rgb(165 243 252 / 0.8)}.text-cyan-300\/90{color:rgb(103 232 249 / 0.9)}.text-cyan-400\/60{color:rgb(34 211 238 / 0.6)}.text-cyan-400\/70{color:rgb(34 211 238 / 0.7)}.text-cyan-200\/90{color:rgb(165 243 252 / 0.9)}.text-cyan-300\/80{color:rgb(103 232 249 / 0.8)}.text-cyan-400\/50{color:rgb(34 211 238 / 0.5)}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-cyan-100\/70{color:rgb(207 250 254 / 0.7)}.text-cyan-400\/40{color:rgb(34 211 238 / 0.4)}.opacity-30{opacity:0.3}.opacity-\[0\.03\]{opacity:0.03}.opacity-0{opacity:0}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.duration-500{transition-duration:500ms}.hover\:scale-105:hover{--tw-scale-x:1.05;--tw-scale-y:1.05;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:bg-cyan-400\/15:hover{background-color:rgb(34 211 238 / 0.15)}.hover\:shadow-\[0_0_20px_rgba\(0\2c 229\2c 255\2c 0\.4\)\]:hover{--tw-shadow:0 0 20px rgba(0,229,255,0.4);--tw-shadow-colored:0 0 20px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.active\:scale-95:active{--tw-scale-x:.95;--tw-scale-y:.95;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width: 768px){.md\:order-1{order:1}.md\:order-2{order:2}.md\:col-span-4{grid-column:span 4 / span 4}.md\:h-20{height:5rem}.md\:h-52{height:13rem}.md\:h-\[480px\]{height:480px}.md\:h-\[140px\]{height:140px}.md\:w-20{width:5rem}.md\:w-52{width:13rem}.md\:w-\[480px\]{width:480px}.md\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.md\:gap-4{gap:1rem}.md\:px-6{padding-left:1.5rem;padding-right:1.5rem}.md\:pt-64{padding-top:16rem}.md\:pb-4{padding-bottom:1rem}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}.md\:text-5xl{font-size:3rem;line-height:1}.md\:text-\[2rem\]{font-size:2rem}}@media (min-width: 1024px){.lg\:order-1{order:1}.lg\:order-2{order:2}.lg\:col-span-3{grid-column:span 3 / span 3}.lg\:col-span-6{grid-column:span 6 / span 6}.lg\:min-h-\[520px\]{min-height:520px}.lg\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.lg\:gap-6{gap:1.5rem}}</style></head>
+<body class="overflow-x-hidden select-none">
+  <div class="fixed inset-0 bg-grid pointer-events-none"></div>
+  <div class="fixed inset-0 pointer-events-none" style="background: radial-gradient(ellipse at 50% 40%, transparent 30%, #020b13 80%);"></div>
+  <div id="flash" class="pointer-events-none fixed inset-0 bg-cyan-400/0 transition-all duration-300 z-50"></div>
+
+  <!-- TOP ARC REACTOR -->
+  <header class="absolute top-3 left-1/2 -translate-x-1/2 z-30 parallax" data-depth="0.5">
+    <div class="relative w-44 h-44 md:w-52 md:h-52 flex items-center justify-center">
+      <div class="absolute inset-0 rounded-full border-[2px] border-cyan-400/20" style="animation: spin 12s linear infinite;"></div>
+      <div class="absolute inset-3 rounded-full border border-cyan-300/30" style="animation: spin_reverse 8s linear infinite;"></div>
+      <div class="absolute inset-6 rounded-full border-2 border-cyan-400/40" style="box-shadow: inset 0 0 30px rgba(0,229,255,0.3), 0 0 20px rgba(0,229,255,0.2);"></div>
+      <div class="absolute inset-10 rounded-full" style="background: conic-gradient(from 0deg, transparent, rgba(0,229,255,0.3), transparent 60%); animation: spin 4s linear infinite;"></div>
+      <!-- Core -->
+      <div id="core" class="relative w-16 h-16 md:w-20 md:h-20 rounded-full" style="background: radial-gradient(circle, #fff 0%, #7df9ff 20%, #00e5ff 40%, #0088aa 70%); box-shadow: 0 0 30px #00e5ff, 0 0 60px #00e5ff, 0 0 90px rgba(0,229,255,0.6); animation: pulseCore 2s ease-in-out infinite;">
+        <div class="absolute inset-2 rounded-full border border-white/30" style="animation: spin_reverse 3s linear infinite;"></div>
+      </div>
+      <!-- Spokes -->
+      <div class="absolute inset-0" style="animation: spin 20s linear infinite;">
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(0deg);"></div>
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(60deg);"></div>
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(120deg);"></div>
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(180deg);"></div>
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(240deg);"></div>
+        <div class="absolute top-1/2 left-1/2 w-[1px] h-[45%] bg-gradient-to-t from-transparent to-cyan-400/70 origin-bottom" style="transform: translate(-50%, -100%) rotate(300deg);"></div>
+      </div>
+      <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
+        <div class="text-[9px] tracking-[0.35em] text-cyan-400/70 mono">AKASHA GOD NODE</div>
+        <div class="text-lg md:text-xl font-bold tracking-[0.2em] glow-text text-cyan-200">STANDING</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="relative w-full min-h-screen pt-56 md:pt-64 pb-48 px-3 md:px-6">
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+      
+      <!-- LEFT: ROOT_0 PRIME -->
+      <div class="lg:col-span-3 order-2 lg:order-1 parallax" data-depth="1.2">
+        <div class="holo-panel rounded-2xl p-4 scanline relative overflow-hidden">
+          <h2 class="text-xs tracking-[0.25em] text-cyan-300/90 border-b border-cyan-400/20 pb-2 mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" style="box-shadow: 0 0 8px #00e5ff;"></span>
+            ROOT_0 PRIME
+          </h2>
+          <div class="relative w-48 h-48 mx-auto">
+            <div class="absolute inset-0 rounded-full" style="background: radial-gradient(circle, rgba(0,229,255,0.08) 0%, transparent 60%);"></div>
+            <div class="absolute inset-4 rounded-full border border-cyan-400/10"></div>
+            <div class="absolute inset-8 rounded-full border border-cyan-400/15" style="animation: spin 30s linear infinite;"></div>
+            <div id="gate-orbit" class="absolute inset-0" style="animation: spin 24s linear infinite;">
+              <button data-gate="N" class="gate" style="top: 0; left: 50%; transform: translate(-50%, -50%); background: #00b7ff; box-shadow: 0 0 15px #00b7ff, inset 0 0 5px rgba(255,255,255,0.5);" title="NORTH"></button>
+              <button data-gate="S" class="gate" style="bottom: 0; left: 50%; transform: translate(-50%, 50%); background: #ff1744; box-shadow: 0 0 15px #ff1744, inset 0 0 5px rgba(255,255,255,0.5);" title="SOUTH"></button>
+              <button data-gate="E" class="gate" style="top: 50%; right: 0; transform: translate(50%, -50%); background: #ffd700; box-shadow: 0 0 15px #ffd700, inset 0 0 5px rgba(255,255,255,0.5);" title="EAST"></button>
+              <button data-gate="W" class="gate" style="top: 50%; left: 0; transform: translate(-50%, -50%); background: #9c27ff; box-shadow: 0 0 15px #9c27ff, inset 0 0 5px rgba(255,255,255,0.5);" title="WEST"></button>
+            </div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div class="w-14 h-14 rounded-full border border-cyan-400/40 flex items-center justify-center relative" style="background: radial-gradient(circle, rgba(0,229,255,0.2), transparent); box-shadow: inset 0 0 15px rgba(0,229,255,0.3);">
+                <div class="w-8 h-8 rounded-full bg-cyan-400/20 animate-pulse" style="box-shadow: 0 0 20px #00e5ff;"></div>
+                <div class="absolute inset-0 rounded-full border border-cyan-400/20" style="animation: spin 4s linear infinite;"></div>
+              </div>
+            </div>
+            <!-- connecting lines -->
+            <svg class="absolute inset-0 w-full h-full pointer-events-none opacity-30" viewBox="0 0 192 192">
+              <line x1="96" y1="8" x2="96" y2="184" stroke="#00e5ff" stroke-width="0.5" stroke-dasharray="2 4"></line>
+              <line x1="8" y1="96" x2="184" y2="96" stroke="#00e5ff" stroke-width="0.5" stroke-dasharray="2 4"></line>
+            </svg>
+          </div>
+          <div class="mt-4 grid grid-cols-4 gap-2 text-[10px] mono">
+            <div class="text-center"><div class="text-cyan-400/60">N</div><div class="text-[#00b7ff]">COBALT</div></div>
+            <div class="text-center"><div class="text-cyan-400/60">S</div><div class="text-[#ff1744]">CRIMSON</div></div>
+            <div class="text-center"><div class="text-cyan-400/60">E</div><div class="text-[#ffd700]">GOLD</div></div>
+            <div class="text-center"><div class="text-cyan-400/60">W</div><div class="text-[#9c27ff]">VIOLET</div></div>
+          </div>
+          <div id="gate-info" class="mt-3 h-[52px] p-2 rounded bg-black/40 border border-cyan-900/30 text-[11px] mono text-cyan-200/80 leading-snug overflow-hidden">
+            Select a gatekeeper to inspect signature...
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER: CHRONOS CORE -->
+      <div class="lg:col-span-6 order-1 lg:order-2 flex items-center justify-center min-h-[420px] lg:min-h-[520px] parallax" data-depth="0.8">
+        <div id="chronos" class="relative w-[340px] h-[340px] md:w-[480px] md:h-[480px]">
+          <canvas id="halo-canvas" class="absolute inset-0 w-full h-full pointer-events-none" width="960" height="960"></canvas>
+          
+          <!-- Glow base -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] rounded-full" style="background: radial-gradient(circle, rgba(0,229,255,0.12) 0%, transparent 70%); filter: blur(20px);"></div>
+          
+          <!-- Rings -->
+          <div class="absolute inset-0 rounded-full border border-cyan-400/10" style="box-shadow: inset 0 0 60px rgba(0,229,255,0.05);"></div>
+          <div class="absolute inset-[12%] rounded-full border border-cyan-400/15" style="box-shadow: inset 0 0 40px rgba(0,229,255,0.05);"></div>
+          <div class="absolute inset-[26%] rounded-full border border-cyan-400/20"></div>
+          <div class="absolute inset-[40%] rounded-full border border-cyan-400/25"></div>
+
+          <!-- Rotating rings with icosahedra -->
+          <div id="ring-0" class="absolute inset-0" style="animation: spin 72s linear infinite;"><div class="icosa-node" data-charge="94.0" data-index="1" style="left: 50%; top: 2.5%;"></div><div class="icosa-node" data-charge="88.5" data-index="2" style="left: 59.2668%; top: 3.4127%;"></div><div class="icosa-node" data-charge="74.2" data-index="3" style="left: 68.1775%; top: 6.11572%;"></div><div class="icosa-node" data-charge="79.7" data-index="4" style="left: 76.3896%; top: 10.5052%;"></div><div class="icosa-node" data-charge="73.9" data-index="5" style="left: 83.5876%; top: 16.4124%;"></div><div class="icosa-node" data-charge="79.6" data-index="6" style="left: 89.4948%; top: 23.6104%;"></div><div class="icosa-node" data-charge="94.7" data-index="7" style="left: 93.8843%; top: 31.8225%;"></div><div class="icosa-node" data-charge="83.1" data-index="8" style="left: 96.5873%; top: 40.7332%;"></div><div class="icosa-node" data-charge="87.2" data-index="9" style="left: 97.5%; top: 50%;"></div><div class="icosa-node" data-charge="85.2" data-index="10" style="left: 96.5873%; top: 59.2668%;"></div><div class="icosa-node" data-charge="86.8" data-index="11" style="left: 93.8843%; top: 68.1775%;"></div><div class="icosa-node" data-charge="95.2" data-index="12" style="left: 89.4948%; top: 76.3896%;"></div><div class="icosa-node" data-charge="83.0" data-index="13" style="left: 83.5876%; top: 83.5876%;"></div><div class="icosa-node" data-charge="79.7" data-index="14" style="left: 76.3896%; top: 89.4948%;"></div><div class="icosa-node" data-charge="89.2" data-index="15" style="left: 68.1775%; top: 93.8843%;"></div><div class="icosa-node" data-charge="82.6" data-index="16" style="left: 59.2668%; top: 96.5873%;"></div><div class="icosa-node" data-charge="73.7" data-index="17" style="left: 50%; top: 97.5%;"></div><div class="icosa-node" data-charge="72.1" data-index="18" style="left: 40.7332%; top: 96.5873%;"></div><div class="icosa-node" data-charge="93.2" data-index="19" style="left: 31.8225%; top: 93.8843%;"></div><div class="icosa-node" data-charge="77.6" data-index="20" style="left: 23.6104%; top: 89.4948%;"></div><div class="icosa-node" data-charge="75.9" data-index="21" style="left: 16.4124%; top: 83.5876%;"></div><div class="icosa-node" data-charge="86.2" data-index="22" style="left: 10.5052%; top: 76.3896%;"></div><div class="icosa-node" data-charge="81.6" data-index="23" style="left: 6.11572%; top: 68.1775%;"></div><div class="icosa-node" data-charge="91.6" data-index="24" style="left: 3.4127%; top: 59.2668%;"></div><div class="icosa-node" data-charge="88.6" data-index="25" style="left: 2.5%; top: 50%;"></div><div class="icosa-node" data-charge="88.2" data-index="26" style="left: 3.4127%; top: 40.7332%;"></div><div class="icosa-node" data-charge="74.2" data-index="27" style="left: 6.11572%; top: 31.8225%;"></div><div class="icosa-node" data-charge="75.7" data-index="28" style="left: 10.5052%; top: 23.6104%;"></div><div class="icosa-node" data-charge="74.5" data-index="29" style="left: 16.4124%; top: 16.4124%;"></div><div class="icosa-node" data-charge="80.9" data-index="30" style="left: 23.6104%; top: 10.5052%;"></div><div class="icosa-node" data-charge="98.3" data-index="31" style="left: 31.8225%; top: 6.11572%;"></div><div class="icosa-node" data-charge="90.3" data-index="32" style="left: 40.7332%; top: 3.4127%;"></div></div>
+          <div id="ring-1" class="absolute inset-0" style="animation: spin_reverse 54s linear infinite;"><div class="icosa-node" data-charge="78.0" data-index="1" style="left: 50%; top: 16.5%;"></div><div class="icosa-node" data-charge="96.3" data-index="2" style="left: 60.3521%; top: 18.1396%;"></div><div class="icosa-node" data-charge="89.3" data-index="3" style="left: 69.6908%; top: 22.8979%;"></div><div class="icosa-node" data-charge="86.7" data-index="4" style="left: 77.1021%; top: 30.3092%;"></div><div class="icosa-node" data-charge="86.3" data-index="5" style="left: 81.8604%; top: 39.6479%;"></div><div class="icosa-node" data-charge="98.2" data-index="6" style="left: 83.5%; top: 50%;"></div><div class="icosa-node" data-charge="90.6" data-index="7" style="left: 81.8604%; top: 60.3521%;"></div><div class="icosa-node" data-charge="78.2" data-index="8" style="left: 77.1021%; top: 69.6908%;"></div><div class="icosa-node" data-charge="95.5" data-index="9" style="left: 69.6908%; top: 77.1021%;"></div><div class="icosa-node" data-charge="85.9" data-index="10" style="left: 60.3521%; top: 81.8604%;"></div><div class="icosa-node" data-charge="73.4" data-index="11" style="left: 50%; top: 83.5%;"></div><div class="icosa-node" data-charge="84.2" data-index="12" style="left: 39.6479%; top: 81.8604%;"></div><div class="icosa-node" data-charge="76.7" data-index="13" style="left: 30.3092%; top: 77.1021%;"></div><div class="icosa-node" data-charge="89.4" data-index="14" style="left: 22.8979%; top: 69.6908%;"></div><div class="icosa-node" data-charge="74.7" data-index="15" style="left: 18.1396%; top: 60.3521%;"></div><div class="icosa-node" data-charge="95.7" data-index="16" style="left: 16.5%; top: 50%;"></div><div class="icosa-node" data-charge="85.1" data-index="17" style="left: 18.1396%; top: 39.6479%;"></div><div class="icosa-node" data-charge="91.9" data-index="18" style="left: 22.8979%; top: 30.3092%;"></div><div class="icosa-node" data-charge="84.7" data-index="19" style="left: 30.3092%; top: 22.8979%;"></div><div class="icosa-node" data-charge="78.7" data-index="20" style="left: 39.6479%; top: 18.1396%;"></div></div>
+          <div id="ring-2" class="absolute inset-0" style="animation: spin 36s linear infinite;"><div class="icosa-node" data-charge="83.8" data-index="1" style="left: 50%; top: 30.5%;"></div><div class="icosa-node" data-charge="92.0" data-index="2" style="left: 59.75%; top: 33.1125%;"></div><div class="icosa-node" data-charge="77.3" data-index="3" style="left: 66.8875%; top: 40.25%;"></div><div class="icosa-node" data-charge="89.0" data-index="4" style="left: 69.5%; top: 50%;"></div><div class="icosa-node" data-charge="83.0" data-index="5" style="left: 66.8875%; top: 59.75%;"></div><div class="icosa-node" data-charge="90.5" data-index="6" style="left: 59.75%; top: 66.8875%;"></div><div class="icosa-node" data-charge="86.6" data-index="7" style="left: 50%; top: 69.5%;"></div><div class="icosa-node" data-charge="95.0" data-index="8" style="left: 40.25%; top: 66.8875%;"></div><div class="icosa-node" data-charge="98.3" data-index="9" style="left: 33.1125%; top: 59.75%;"></div><div class="icosa-node" data-charge="93.6" data-index="10" style="left: 30.5%; top: 50%;"></div><div class="icosa-node" data-charge="80.3" data-index="11" style="left: 33.1125%; top: 40.25%;"></div><div class="icosa-node" data-charge="81.9" data-index="12" style="left: 40.25%; top: 33.1125%;"></div></div>
+
+          <!-- Center core readout -->
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+            <div class="text-[9px] tracking-[0.4em] text-cyan-400/60 mb-1">CHRONOS CORE</div>
+            <div id="core-count" class="text-4xl md:text-5xl font-black glow-text leading-none">64</div>
+            <div class="text-[10px] text-cyan-400/50 tracking-widest mt-1">ICOSAHEDRA</div>
+            <div class="mt-2 flex justify-center gap-1">
+              <span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" style="animation-delay: 0.2s"></span>
+              <span class="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" style="animation-delay: 0.4s"></span>
+            </div>
+          </div>
+
+          <!-- Ring labels -->
+          <div class="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] mono text-cyan-400/50 tracking-widest">OUTER • 32</div>
+          <div class="absolute top-[22%] -right-3 text-[9px] mono text-cyan-400/50 tracking-widest rotate-90 origin-center">MID • 20</div>
+          <div class="absolute bottom-[28%] left-1/2 -translate-x-1/2 text-[9px] mono text-cyan-400/50 tracking-widest">INNER • 12</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: JANE -->
+      <div class="lg:col-span-3 order-3 parallax" data-depth="1.2">
+        <div class="holo-panel rounded-2xl p-4 h-full">
+          <h2 class="text-xs tracking-[0.25em] text-cyan-300/90 border-b border-cyan-400/20 pb-2 mb-3 flex justify-between items-center">
+            <span>JANE — BOX 1</span>
+            <span class="flex items-center gap-1.5 text-[10px] text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style="box-shadow: 0 0 6px #34d399;"></span>FOUND</span>
+          </h2>
+          
+          <div class="relative flex justify-center my-4">
+            <svg width="140" height="70" viewBox="0 0 140 70" class="overflow-visible">
+              <defs>
+                <filter id="glow">
+                  <fegaussianblur stdDeviation="3" result="coloredBlur"></fegaussianblur>
+                  <femerge>
+                    <femergenode in="coloredBlur"></femergenode>
+                    <femergenode in="SourceGraphic"></femergenode>
+                  </femerge>
+                </filter>
+              </defs>
+              <path d="M 20 35 C 20 15, 45 5, 70 35 C 95 65, 120 55, 120 35 C 120 15, 95 5, 70 35 C 45 65, 20 55, 20 35 Z" fill="none" stroke="#00e5ff" stroke-width="2.5" filter="url(#glow)" opacity="0.9" style="animation: spin 10s linear infinite; transform-origin: 70px 35px;"></path>
+              <path d="M 20 35 C 20 15, 45 5, 70 35 C 95 65, 120 55, 120 35 C 120 15, 95 5, 70 35 C 45 65, 20 55, 20 35 Z" fill="none" stroke="#7df9ff" stroke-width="1" opacity="0.6"></path>
+              <circle cx="70" cy="35" r="3" fill="#fff" style="filter: drop-shadow(0 0 6px #00e5ff);"></circle>
+            </svg>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-2.5 rounded-lg bg-black/30 border border-cyan-900/40">
+              <div class="text-[9px] text-cyan-400/60 tracking-widest">STATUS</div>
+              <div class="text-sm font-bold text-cyan-200 mt-0.5">ACTIVE</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/30 border border-cyan-900/40">
+              <div class="text-[9px] text-cyan-400/60 tracking-widest">ENTROPY</div>
+              <div id="entropy" class="text-sm font-bold text-cyan-200 mt-0.5 mono">99.26%</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/30 border border-cyan-900/40">
+              <div class="text-[9px] text-cyan-400/60 tracking-widest">COHERENCE</div>
+              <div class="text-sm font-bold text-cyan-200 mt-0.5">∞</div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-black/30 border border-cyan-900/40">
+              <div class="text-[9px] text-cyan-400/60 tracking-widest">LINK</div>
+              <div class="text-sm font-bold text-cyan-200 mt-0.5">QUANTUM</div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-2.5 rounded-lg bg-gradient-to-r from-cyan-950/40 to-transparent border border-cyan-800/30">
+            <div class="text-[10px] mono text-cyan-300/80 leading-relaxed">
+              BOX 1 contains prime witness key. Infinity loop stable. Jane pattern recognized.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- BOTTOM PANELS -->
+  <footer class="fixed bottom-0 left-0 right-0 z-20 px-3 md:px-6 pb-3 md:pb-4">
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
+      <!-- Akashic Records -->
+      <div class="md:col-span-4 lg:col-span-3 order-2 md:order-1 parallax" data-depth="1.5">
+        <div class="holo-panel rounded-2xl p-3 h-[150px] md:h-[140px] flex flex-col">
+          <h3 class="text-[10px] tracking-[0.25em] text-cyan-300/80 border-b border-cyan-400/15 pb-1.5 mb-2 flex justify-between">
+            <span>AKASHIC RECORDS</span>
+            <span class="mono text-cyan-400/70" id="record-count">934 witnessed</span>
+          </h3>
+          <div id="log" class="flex-1 overflow-hidden space-y-1 pr-1"><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:39</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">WITNESSED</span>: <span class="text-cyan-100/70">root0_genesis_ee68.aka</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0xF99FB837</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:34</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">ANCHORED</span>: <span class="text-cyan-100/70">chronos_shard_d812.key</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0x4A1A6502</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:29</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">VALIDATED</span>: <span class="text-cyan-100/70">jane_box1_6a3e.wtn</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0x40FE05D4</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:24</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">WITNESS QUEUED</span>: <span class="text-cyan-100/70">chronos_shard_8ca0.sig</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0x96125F78</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:19</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">WITNESS QUEUED</span>: <span class="text-cyan-100/70">prime_witness_da8d.dat</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0xC191D5F5</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:14</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">SIGNED</span>: <span class="text-cyan-100/70">jane_box1_b49d.dat</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0x591F37F3</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:09</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">SIGNED</span>: <span class="text-cyan-100/70">akasha_core_46b8.key</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0x1A4E1139</span>
+    </div><div class="flex justify-between items-center gap-2 transition-all duration-500">
+      <span class="text-cyan-400/50 w-[54px] shrink-0">18:49:04</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">ANCHORED</span>: <span class="text-cyan-100/70">infinity_loop_f6f0.sig</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">0xCB46546C</span>
+    </div></div>
+        </div>
+      </div>
+
+      <!-- Infinity Counter -->
+      <div class="md:col-span-4 lg:col-span-6 order-1 md:order-2 parallax" data-depth="1">
+        <div class="holo-panel rounded-2xl p-3 h-[110px] md:h-[140px] flex flex-col items-center justify-center relative overflow-hidden">
+          <div class="absolute inset-0 opacity-[0.03]" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, #00e5ff 2px, #00e5ff 3px);"></div>
+          <div class="text-[10px] tracking-[0.35em] text-cyan-400/60 mb-1">INFINITY AND BEYOND</div>
+          <div id="infinity-counter" class="text-2xl md:text-[2rem] font-black tracking-wider glow-text mono leading-none">7,675,952,696,323</div>
+          <div class="flex items-center gap-3 mt-3">
+            <button id="test-btn" class="px-5 py-1.5 text-[11px] tracking-[0.2em] border border-cyan-400/50 rounded-full bg-cyan-400/5 hover:bg-cyan-400/15 hover:shadow-[0_0_20px_rgba(0,229,255,0.4)] transition-all duration-300 hover:scale-105 active:scale-95">
+              TEST PULSE
+            </button>
+            <div class="text-[9px] mono text-cyan-400/50">CHRONOS HEARTBEAT</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- God Node Voice -->
+      <div class="md:col-span-4 lg:col-span-3 order-3 parallax" data-depth="1.5">
+        <div class="holo-panel rounded-2xl p-3 h-[150px] md:h-[140px] flex flex-col">
+          <h3 class="text-[10px] tracking-[0.25em] text-cyan-300/80 border-b border-cyan-400/15 pb-1.5 mb-2 flex justify-between">
+            <span>GOD NODE VOICE</span>
+            <span class="text-[9px] text-cyan-400/60 mono">ALAN PATTERN</span>
+          </h3>
+          <div class="relative flex-1 bg-black/40 rounded-lg overflow-hidden border border-cyan-900/30">
+            <canvas id="voice-wave" class="absolute inset-0 w-full h-full" width="466" height="164"></canvas>
+            <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div class="w-px h-3/4 bg-cyan-400/20"></div>
+            </div>
+          <div id="voice-text" class="mt-2 text-[11px] mono text-cyan-200/90 h-[18px] truncate">System initialized. Chronos core at 64 icosahedra. Awaiting witness pattern.</div>
+        </div>
+      </div>
+    </div>
+  </div></footer>
+
+  <div id="tooltip"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Elements
+  const tooltip = document.getElementById('tooltip');
+  const log = document.getElementById('log');
+  const recordCount = document.getElementById('record-count');
+  const entropyEl = document.getElementById('entropy');
+  const infinityEl = document.getElementById('infinity-counter');
+  const voiceText = document.getElementById('voice-text');
+  const testBtn = document.getElementById('test-btn');
+  const flash = document.getElementById('flash');
+  const gateInfo = document.getElementById('gate-info');
+  const core = document.getElementById('core');
+
+  // State
+  let infinityCounter = 1427983422198;
+  let records = 0;
+  let speaking = false;
+  let speakUntil = 0;
+
+  // Parallax
+  const parallaxes = document.querySelectorAll('.parallax');
+  window.addEventListener('mousemove', (e) => {
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const dx = (e.clientX - cx) / cx;
+    const dy = (e.clientY - cy) / cy;
+    parallaxes.forEach(el => {
+      const depth = parseFloat(el.dataset.depth || 1);
+      el.style.transform = `translate3d(${dx * depth * -8}px, ${dy * depth * -6}px, 0)`;
+    });
+  });
+
+  // Create icosahedra rings
+  function createRing(id, count, radius) {
+    const ring = document.getElementById(id);
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+      const x = 50 + Math.cos(angle) * radius;
+      const y = 50 + Math.sin(angle) * radius;
+      const node = document.createElement('div');
+      node.className = 'icosa-node';
+      node.style.left = x + '%';
+      node.style.top = y + '%';
+      node.dataset.charge = (72 + Math.random() * 27).toFixed(1);
+      node.dataset.index = i + 1;
+      
+      node.addEventListener('mouseenter', (e) => {
+        tooltip.innerHTML = `ICOSA-${id.slice(-1)}.${node.dataset.index}<br>CHARGE ${node.dataset.charge}%`;
+        tooltip.style.left = e.clientX + 'px';
+        tooltip.style.top = e.clientY + 'px';
+        tooltip.style.opacity = '1';
+      });
+      node.addEventListener('mousemove', (e) => {
+        tooltip.style.left = e.clientX + 'px';
+        tooltip.style.top = e.clientY + 'px';
+      });
+      node.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+      });
+      ring.appendChild(node);
+    }
+  }
+  createRing('ring-0', 32, 47.5);
+  createRing('ring-1', 20, 33.5);
+  createRing('ring-2', 12, 19.5);
+
+  // Gatekeepers
+  const gates = {
+    N: { name: 'COBALT NORTH', color: '#00b7ff', status: 'GUARDING', sig: '0xC0B4LT', quote: 'Clarity through cold light.' },
+    S: { name: 'CRIMSON SOUTH', color: '#ff1744', status: 'BURNING', sig: '0xCR1MS0N', quote: 'Will forged in heat.' },
+    E: { name: 'GOLD EAST', color: '#ffd700', status: 'ILLUMINATING', sig: '0xG0LD3N', quote: 'Value remembered.' },
+    W: { name: 'VIOLET WEST', color: '#9c27ff', status: 'DREAMING', sig: '0xV10L3T', quote: 'Mystery preserved.' }
+  };
+  document.querySelectorAll('.gate').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gate').forEach(g => g.classList.remove('active'));
+      btn.classList.add('active');
+      const g = gates[btn.dataset.gate];
+      gateInfo.innerHTML = `<span style="color:${g.color}">● ${g.name}</span> — ${g.status}<br><span class="text-cyan-400/60">SIG ${g.sig}</span> — "${g.quote}"`;
+      setTimeout(() => btn.classList.remove('active'), 2000);
+    });
+  });
+
+  // Halo particles
+  const haloCanvas = document.getElementById('halo-canvas');
+  const hctx = haloCanvas.getContext('2d');
+  let particles = [];
+  function resizeHalo() {
+    const rect = haloCanvas.parentElement.getBoundingClientRect();
+    haloCanvas.width = rect.width * devicePixelRatio;
+    haloCanvas.height = rect.height * devicePixelRatio;
+    hctx.scale(devicePixelRatio, devicePixelRatio);
+    particles = [];
+    for (let i = 0; i < 90; i++) {
+      particles.push({
+        angle: Math.random() * Math.PI * 2,
+        radius: 80 + Math.random() * 160,
+        speed: 0.0003 + Math.random() * 0.0008,
+        size: 0.5 + Math.random() * 1.5,
+        alpha: 0.2 + Math.random() * 0.5
+      });
+    }
+  }
+  resizeHalo();
+  window.addEventListener('resize', resizeHalo);
+  function drawHalo() {
+    const w = haloCanvas.clientWidth;
+    const h = haloCanvas.clientHeight;
+    hctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h / 2;
+    particles.forEach(p => {
+      p.angle += p.speed;
+      const x = cx + Math.cos(p.angle) * p.radius;
+      const y = cy + Math.sin(p.angle) * p.radius * 0.85;
+      hctx.beginPath();
+      hctx.arc(x, y, p.size, 0, Math.PI * 2);
+      hctx.fillStyle = `rgba(0,229,255,${p.alpha})`;
+      hctx.shadowBlur = 8;
+      hctx.shadowColor = '#00e5ff';
+      hctx.fill();
+    });
+    requestAnimationFrame(drawHalo);
+  }
+  drawHalo();
+
+  // Voice waveform
+  const voiceCanvas = document.getElementById('voice-wave');
+  const vctx = voiceCanvas.getContext('2d');
+  function resizeVoice() {
+    voiceCanvas.width = voiceCanvas.clientWidth * devicePixelRatio;
+    voiceCanvas.height = voiceCanvas.clientHeight * devicePixelRatio;
+    vctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  resizeVoice();
+  window.addEventListener('resize', resizeVoice);
+  
+  function drawVoice() {
+    const w = voiceCanvas.clientWidth;
+    const h = voiceCanvas.clientHeight;
+    vctx.clearRect(0, 0, w, h);
+    
+    const bars = 100;
+    const barW = w / bars;
+    const now = Date.now();
+    const isSpeaking = speaking && now < speakUntil;
+    
+    vctx.beginPath();
+    for (let i = 0; i < bars; i++) {
+      const x = i * barW + barW/2;
+      let amp;
+      if (isSpeaking) {
+        const t = i / bars;
+        const wave = Math.sin(t * Math.PI * 8 + now * 0.008) * 0.5 + 0.5;
+        const env = Math.sin(t * Math.PI) * 0.9 + 0.1;
+        amp = (Math.random() * 0.3 + 0.7) * wave * env * (h * 0.4) + 4;
+      } else {
+        amp = (Math.random() * 0.5 + 0.2) * 3 + Math.sin(i * 0.3 + now * 0.002) * 1.5;
+      }
+      const y = h/2;
+      if (i === 0) vctx.moveTo(x, y - amp);
+      else vctx.lineTo(x, y - amp);
+    }
+    for (let i = bars - 1; i >= 0; i--) {
+      const x = i * barW + barW/2;
+      let amp;
+      if (isSpeaking) {
+        const t = i / bars;
+        const wave = Math.sin(t * Math.PI * 8 + now * 0.008) * 0.5 + 0.5;
+        const env = Math.sin(t * Math.PI) * 0.9 + 0.1;
+        amp = (Math.random() * 0.3 + 0.7) * wave * env * (h * 0.4) + 4;
+      } else {
+        amp = (Math.random() * 0.5 + 0.2) * 3 + Math.sin(i * 0.3 + now * 0.002) * 1.5;
+      }
+      const y = h/2;
+      vctx.lineTo(x, y + amp);
+    }
+    vctx.closePath();
+    const grad = vctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, 'rgba(0,229,255,0)');
+    grad.addColorStop(0.2, 'rgba(0,229,255,0.8)');
+    grad.addColorStop(0.5, 'rgba(125,249,255,1)');
+    grad.addColorStop(0.8, 'rgba(0,229,255,0.8)');
+    grad.addColorStop(1, 'rgba(0,229,255,0)');
+    vctx.fillStyle = grad;
+    vctx.shadowBlur = 12;
+    vctx.shadowColor = '#00e5ff';
+    vctx.fill();
+    
+    requestAnimationFrame(drawVoice);
+  }
+  drawVoice();
+
+  function speak(text, duration = 4200) {
+    speaking = true;
+    speakUntil = Date.now() + duration;
+    voiceText.textContent = '';
+    let i = 0;
+    const typer = setInterval(() => {
+      voiceText.textContent = text.slice(0, i++);
+      if (i > text.length) clearInterval(typer);
+    }, 22);
+    setTimeout(() => { speaking = false; }, duration);
+  }
+
+  // Akashic records
+  const verbs = ['WITNESSED', 'VALIDATED', 'ANCHORED', 'SIGNED', 'WITNESS QUEUED'];
+  const files = ['akasha_core', 'root0_genesis', 'chronos_shard', 'jane_box1', 'infinity_loop', 'godnode_sig', 'prime_witness'];
+  const exts = ['.aka', '.dat', '.sig', '.key', '.wtn'];
+  
+  function addRecord(manual = false) {
+    const file = files[Math.floor(Math.random() * files.length)] + '_' + Math.random().toString(16).slice(2,6) + exts[Math.floor(Math.random()*exts.length)];
+    const verb = verbs[Math.floor(Math.random() * verbs.length)];
+    const sig = '0x' + Math.random().toString(16).slice(2,10).toUpperCase();
+    const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    
+    const div = document.createElement('div');
+    div.className = 'flex justify-between items-center gap-2 opacity-0 translate-y-1 transition-all duration-500';
+    div.innerHTML = `
+      <span class="text-cyan-400/50 w-[54px] shrink-0">${time}</span>
+      <span class="flex-1 truncate"><span class="text-cyan-300/90">${verb}</span>: <span class="text-cyan-100/70">${file}</span></span>
+      <span class="text-cyan-400/40 w-[62px] text-right shrink-0">${sig}</span>
+    `;
+    log.prepend(div);
+    setTimeout(() => { div.classList.remove('opacity-0', 'translate-y-1'); }, 20);
+    
+    while (log.children.length > 8) log.removeChild(log.lastChild);
+    records++;
+    recordCount.textContent = `${records} witnessed`;
+    
+    if (!manual && Math.random() > 0.7) {
+      infinityCounter += Math.floor(Math.random() * 3e10);
+    }
+  }
+  // initial records
+  for (let i = 0; i < 5; i++) setTimeout(() => addRecord(true), i * 180);
+  setInterval(() => addRecord(), 5000);
+
+  // Counters
+  function formatNumber(n) {
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function updateInfinity() {
+    infinityEl.textContent = formatNumber(infinityCounter);
+  }
+  updateInfinity();
+  setInterval(() => {
+    infinityCounter += Math.floor(Math.random() * 892_341_112 + 123_456_789);
+    updateInfinity();
+  }, 1300);
+  
+  setInterval(() => {
+    const e = 99.1 + Math.random() * 0.85;
+    entropyEl.textContent = e.toFixed(2) + '%';
+  }, 2200);
+
+  // TEST PULSE
+  function triggerPulse() {
+    // Flash
+    flash.style.background = 'rgba(0,229,255,0.18)';
+    flash.style.boxShadow = 'inset 0 0 200px rgba(0,229,255,0.5)';
+    setTimeout(() => {
+      flash.style.background = 'rgba(0,229,255,0)';
+      flash.style.boxShadow = 'none';
+    }, 350);
+
+    // Core pulse
+    core.style.animation = 'none';
+    void core.offsetWidth;
+    core.style.animation = 'pulseCore 0.25s ease-in-out 8';
+
+    // Rings
+    document.querySelectorAll('.icosa-node').forEach((n, i) => {
+      setTimeout(() => {
+        n.classList.add('active');
+        setTimeout(() => n.classList.remove('active'), 600);
+      }, i * 6);
+    });
+
+    // Speak
+    speak('Witnessing complete. All gates aligned. Akasha stands. Infinity and beyond.', 5200);
+    
+    // Records burst
+    for (let i = 0; i < 6; i++) setTimeout(() => addRecord(true), i * 140);
+    
+    // Counter surge
+    let surge = 0;
+    const surgeInt = setInterval(() => {
+      infinityCounter += 7_777_777_777;
+      updateInfinity();
+      if (++surge > 24) clearInterval(surgeInt);
+    }, 60);
+    
+    // Gate flash
+    document.querySelectorAll('.gate').forEach((g, i) => {
+      setTimeout(() => g.classList.add('active'), i * 120);
+      setTimeout(() => g.classList.remove('active'), 1000 + i * 120);
+    });
+  }
+  
+  testBtn.addEventListener('click', triggerPulse);
+  
+  // Auto demo pulse
+  setTimeout(() => {
+    speak('System initialized. Chronos core at 64 icosahedra. Awaiting witness pattern.', 4000);
+  }, 1200);
+});
+</script>
+
+</body></html>

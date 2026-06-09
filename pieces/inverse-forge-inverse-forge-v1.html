@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>INVERSE FORGE // SP09 MELT</title>
+    <style>
+        body { background: #080c14; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .forge-container { width: 400px; height: 200px; position: relative; border: 1px solid #4090ff; }
+        .wall-text { position: absolute; color: #333; font-family: monospace; font-size: 8px; width: 100%; height: 100%; padding: 10px; overflow: hidden; }
+        .melt-beam { position: absolute; top: 0; left: 0; width: 5px; height: 100%; background: #ffaa40; box-shadow: 0 0 20px #ffaa40; animation: scan 3s linear infinite; }
+        .evidence-pop { position: absolute; color: #4090ff; font-weight: bold; font-family: 'Orbitron'; font-size: 12px; opacity: 0; animation: pop 1.5s ease-out infinite; }
+        @keyframes scan { 0% { left: 0; } 100% { left: 100%; } }
+        @keyframes pop { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-50px); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="forge-container">
+        <div class="wall-text">FINE PRINT... REDIRECT... TERMS... CONDITIONS... PRIVACY... DELAY... VOID...</div>
+        <div class="melt-beam"></div>
+        <div class="evidence-pop" style="left: 20%;">$29,230</div>
+        <div class="evidence-pop" style="left: 50%;">KG-05</div>
+        <div class="evidence-pop" style="left: 80%;">E07_LOCK</div>
+    </div>
+</body>
+</html>

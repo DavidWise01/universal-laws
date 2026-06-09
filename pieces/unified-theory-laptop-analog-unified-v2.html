@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BASE 00 // LIVE CONDUCTOR NETWORK</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    * { font-family: 'IBM Plex Mono', monospace; }
+    body { background: #000; overscroll-behavior: none; }
+    .grid-bg {
+        background-image: 
+            linear-gradient(rgba(0,255,136,0.07) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,136,0.07) 1px, transparent 1px);
+        background-size: 50px 50px;
+        animation: gridMove 20s linear infinite;
+    }
+    @keyframes gridMove { to { background-position: 50px 50px; } }
+    
+    .lane {
+        fill: none;
+        stroke: #00ff88;
+        stroke-width: 1.5;
+        stroke-opacity: 0.25;
+        transition: all 0.4s ease;
+        cursor: pointer;
+        filter: drop-shadow(0 0 2px rgba(0,255,136,0.3));
+    }
+    .lane:hover { stroke-opacity: 0.9; stroke-width: 3; }
+    .lane.active { stroke-opacity: 0.7; animation: lanePulse 2s ease-in-out infinite; }
+    .lane.highlight { stroke: #ffaa00 !important; stroke-opacity: 1 !important; stroke-width: 3 !important; filter: drop-shadow(0 0 8px #ffaa00); }
+    .lane.dim { stroke-opacity: 0.08 !important; }
+    .lane.hidden { stroke-opacity: 0; pointer-events: none; }
+    
+    @keyframes lanePulse {
+        0%,100% { stroke-opacity: 0.3; }
+        50% { stroke-opacity: 0.8; }
+    }
+    
+    .routing .lane { stroke-dasharray: 8 12; animation: routeFlow 0.8s linear infinite !important; }
+    @keyframes routeFlow { to { stroke-dashoffset: -20; } }
+    
+    .node-core { animation: nodeBeat 3s ease-in-out infinite; transform-origin: center; }
+    .node-device .node-core { animation-delay: 0s; }
+    .node-swarm .node-core { animation-delay: 0.5s; }
+    .node-root .node-core { animation-delay: 1s; }
+    
+    @keyframes nodeBeat {
+        0%,100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.05); filter: brightness(1.4); }
+    }
+    
+    .node-pulse {
+        animation: pulseRing 2.5s ease-out infinite;
+    }
+    @keyframes pulseRing {
+        0% { r: 4; opacity: 0.8; }
+        100% { r: 28; opacity: 0; }
+    }
+    
+    .packet {
+        filter: drop-shadow(0 0 4px currentColor);
+    }
+    
+    .chip {
+        background: #001a0f;
+        border: 1px solid #003322;
+        transition: all 0.3s;
+    }
+    .chip.active {
+        background: #00ff88;
+        color: #000;
+        border-color: #00ff88;
+        box-shadow: 0 0 12px #00ff88, inset 0 0 8px rgba(0,0,0,0.3);
+    }
+    
+    .unify-flash { animation: unify 0.6s ease; }
+    @keyframes unify {
+        0%,100% { filter: brightness(1); }
+        50% { filter: brightness(2) drop-shadow(0 0 20px #00ff88); }
+    }
+    
+    ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body class="bg-black text-[#00ff88] overflow-hidden select-none touch-manipulation">
+<div class="relative w-screen h-screen">
+    <!-- Grid -->
+    <div class="absolute inset-0 grid-bg opacity-[0.15]"></div>
+    
+    <!-- Header -->
+    <div class="absolute top-0 left-0 right-0 z-30 bg-black/90 border-b border-[#00ff88]/30 backdrop-blur-md">
+        <div class="px-3 py-2.5 md:px-6 md:py-3">
+            <div class="flex items-center justify-between gap-2">
+                <h1 class="text-[15px] md:text-[22px] font-semibold tracking-wider leading-none">BASE 00 <span class="text-[#00ff88]/60">//</span> LIVE CONDUCTOR NETWORK</h1>
+                <div class="flex items-center gap-2">
+                    <div class="hidden md:block text-[10px] px-2 py-1 border border-[#00ff88]/40 bg-[#00ff88]/10">FULLY CONNECTED</div>
+                    <div class="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse shadow-[0_0_8px_#00ff88]"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 mt-2.5 text-[10px] md:text-[11px] leading-tight font-medium tracking-wide">
+                <div class="flex gap-1.5"><span class="text-[#00ff88]/50">CONDUCTORS:</span><span id="c-conductors" class="text-white">9</span></div>
+                <div class="flex gap-1.5"><span class="text-[#00ff88]/50">LANES:</span><span id="c-lanes" class="text-white">22</span><span id="lane-up" class="text-[#ffaa00] hidden">→47</span></div>
+                <div class="flex gap-1.5"><span class="text-[#00ff88]/50">TERMINUSES:</span><span class="text-white">4</span></div>
+                <div class="flex gap-1.5"><span class="text-[#00ff88]/50">SILICON:</span><span id="c-silicon" class="text-white">83%</span><span class="text-[#00ff88] animate-pulse">↗</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SVG Network -->
+    <svg id="network" class="absolute inset-0 w-full h-full" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+            <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feFlood flood-color="#00ff88" flood-opacity="0.8"/>
+                <feComposite in2="blur" operator="in"/>
+                <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            <filter id="glow-orange" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" result="blur"/>
+                <feFlood flood-color="#ffaa00"/>
+                <feComposite in2="blur" operator="in"/>
+                <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur"/>
+                <feFlood flood-color="#ff3366"/>
+                <feComposite in2="blur" operator="in"/>
+                <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="deviceGrad">
+                <stop offset="0%" stop-color="#00ff88" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#00ff88" stop-opacity="0"/>
+            </radialGradient>
+        </defs>
+        
+        <!-- Internet Gate -->
+        <g id="internet-gate" transform="translate(1040, 360)" opacity="0.85">
+            <rect x="0" y="0" width="160" height="80" rx="4" fill="#000" stroke="#ff3366" stroke-width="1.5" stroke-dasharray="5 5" stroke-opacity="0.6"/>
+            <text x="80" y="32" text-anchor="middle" fill="#ff3366" font-size="13" font-weight="600" letter-spacing="1">INTERNET</text>
+            <text x="80" y="52" text-anchor="middle" fill="#ff3366" font-size="13" font-weight="600" letter-spacing="1">GATE</text>
+            <text x="80" y="70" text-anchor="middle" fill="#ff3366" font-size="9" opacity="0.7">CLOUDFLARE // AWS</text>
+            <g id="gate-x" opacity="0" style="transition: opacity 0.3s">
+                <line x1="12" y1="12" x2="148" y2="68" stroke="#ff3366" stroke-width="4" filter="url(#glow-red)"/>
+                <line x1="148" y1="12" x2="12" y2="68" stroke="#ff3366" stroke-width="4" filter="url(#glow-red)"/>
+            </g>
+        </g>
+        
+        <g id="lanes"></g>
+        <g id="packets"></g>
+        <g id="nodes"></g>
+    </svg>
+
+    <!-- Lane Popup -->
+    <div id="lane-popup" class="hidden absolute z-40 pointer-events-none">
+        <div class="bg-black border-[#ffaa00] px-3 py-2 shadow-[0_0_20px_rgba(255,170,0,0.4)] min-w-[180px]">
+            <div id="popup-name" class="text-[#ffaa00] font-bold text-[13px] tracking-wider"></div>
+            <div id="popup-route" class="text-[11px] mt-1 text-white/80"></div>
+            <div class="flex gap-3 mt-1.5 text-[11px]">
+                <div>LOAD: <span id="popup-load" class="text-white"></span></div>
+                <div>LAT: <span id="popup-lat" class="text-white"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chip Panel -->
+    <div id="chip-panel" class="hidden absolute z-40">
+        <div class="bg-black/95 border border-[#00ff88] backdrop-blur p-3 shadow-[0_0_30px_rgba(0,255,136,0.3)] w-[210px]">
+            <div class="text-[10px] text-[#00ff88]/70 tracking-widest mb-2">SILICON MATRIX</div>
+            <div id="chip-id" class="text-[13px] font-bold mb-2.5 text-[#ffaa00]"></div>
+            <div id="chip-list" class="space-y-1.5"></div>
+            <div class="mt-3 pt-2 border-t border-[#00ff88]/20 text-[9px] text-[#00ff88]/50">5 CHIPS ACTIVE • 0% IDLE</div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="absolute bottom-3 left-3 md:bottom-5 md:left-5 z-30 w-[calc(100vw-24px)] max-w-[300px]">
+        <div class="bg-black/90 border border-[#00ff88]/40 backdrop-blur-md p-3 md:p-3.5 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+            <div class="text-[10px] tracking-[0.2em] text-[#00ff88]/60 mb-2.5">CONTROL</div>
+            
+            <button id="btn-connect" class="group relative w-full mb-2.5 bg-[#00ff88] text-black font-bold py-2.5 px-3 text-[12px] tracking-widest overflow-hidden transition-all hover:shadow-[0_0_20px_#00ff88]">
+                <span class="relative z-10 flex items-center justify-center gap-2">
+                    <span class="w-1.5 h-1.5 bg-black rounded-full group-hover:animate-ping"></span>
+                    CONNECT ALL
+                </span>
+            </button>
+            
+            <button id="btn-unify" class="w-full mb-3 border border-[#00ff88]/50 text-[#00ff88] py-2 px-3 text-[11px] tracking-wide hover:bg-[#00ff88]/10 transition">
+                UNIFY SILICON
+            </button>
+            
+            <div class="space-y-2.5 pt-2.5 border-t border-[#00ff88]/15">
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <span class="text-[11px] tracking-wide group-hover:text-white transition">ROUTE L1-L10</span>
+                    <div class="relative">
+                        <input id="toggle-route" type="checkbox" class="sr-only peer">
+                        <div class="w-10 h-[18px] bg-black border border-[#00ff88]/40 peer-checked:bg-[#00ff88]/20 transition"></div>
+                        <div class="absolute top-[2px] left-[2px] w-[14px] h-[14px] bg-[#00ff88]/60 peer-checked:translate-x-[22px] peer-checked:bg-[#00ff88] transition-all"></div>
+                    </div>
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer group">
+                    <div>
+                        <span class="text-[11px] tracking-wide group-hover:text-white transition">BYPASS GATE</span>
+                        <div class="text-[9px] text-[#ff3366]/70 -mt-0.5">CUT CLOUD DEPENDENCY</div>
+                    </div>
+                    <div class="relative">
+                        <input id="toggle-bypass" type="checkbox" class="sr-only peer">
+                        <div class="w-10 h-[18px] bg-black border border-[#ff3366]/40 peer-checked:bg-[#ff3366]/20 transition"></div>
+                        <div class="absolute top-[2px] left-[2px] w-[14px] h-[14px] bg-[#ff3366]/60 peer-checked:translate-x-[22px] peer-checked:bg-[#ff3366] transition-all"></div>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="absolute bottom-3 right-3 md:bottom-5 md:left-1/2 md:right-auto md:-translate-x-1/2 z-20 pointer-events-none">
+        <div class="text-[10px] md:text-[11px] tracking-[0.25em] text-[#00ff88] text-right md:text-center whitespace-nowrap">
+            All conductors connected. <span class="text-white">No cloud required.</span>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const laneNames = ['AXIOM','PULSE','VECTOR','SYNAPSE','QUARK','FUSION','PRISM','ORBIT','CIPHER','NEXUS'];
+    const chips = ['INTEL i9-14900K','AMD RYZEN 9 7950X','NVIDIA RTX 4090','REALTEK 2.5GbE','BROADCOM BCM57810'];
+    
+    const nodes = [
+        {id:'00-01', x:150, y:760, type:'device'},
+        {id:'00-02', x:380, y:790, type:'device'},
+        {id:'00-03', x:610, y:760, type:'device'},
+        {id:'00-04', x:840, y:790, type:'device'},
+        {id:'00-05', x:1070, y:760, type:'device'},
+        {id:'01-ALPHA', x:320, y:540, type:'swarm'},
+        {id:'01-BETA', x:610, y:500, type:'swarm'},
+        {id:'01-GAMMA', x:900, y:540, type:'swarm'},
+        {id:'02-ROOT', x:610, y:280, type:'root'},
+    ];
+    
+    const terminuses = [
+        {id:'USER', x:1340, y:200, type:'terminus'},
+        {id:'STORAGE', x:1420, y:315, type:'terminus'},
+        {id:'RENDER', x:1340, y:430, type:'terminus'},
+        {id:'EXPORT', x:1420, y:545, type:'terminus'},
+    ];
+    
+    const allNodes = [...nodes, ...terminuses];
+    const nodeMap = Object.fromEntries(allNodes.map(n => [n.id, n]));
+    
+    // Full 47 lanes
+    const fullLanes = [
+        {s:'00-01',t:'01-ALPHA'}, {s:'00-01',t:'01-BETA'}, {s:'00-02',t:'01-ALPHA'}, {s:'00-02',t:'01-BETA'},
+        {s:'00-03',t:'01-BETA'}, {s:'00-03',t:'01-GAMMA'}, {s:'00-04',t:'01-BETA'}, {s:'00-04',t:'01-GAMMA'},
+        {s:'00-05',t:'01-BETA'}, {s:'00-05',t:'01-GAMMA'}, {s:'01-ALPHA',t:'01-BETA'}, {s:'01-BETA',t:'01-GAMMA'},
+        {s:'01-GAMMA',t:'01-ALPHA'}, {s:'01-ALPHA',t:'02-ROOT'}, {s:'01-BETA',t:'02-ROOT'}, {s:'01-GAMMA',t:'02-ROOT'},
+        {s:'02-ROOT',t:'USER'}, {s:'02-ROOT',t:'STORAGE'}, {s:'02-ROOT',t:'RENDER'}, {s:'02-ROOT',t:'EXPORT'},
+        {s:'01-ALPHA',t:'USER'}, {s:'01-GAMMA',t:'RENDER'},
+        {s:'00-01',t:'00-02'}, {s:'00-01',t:'00-03'}, {s:'00-01',t:'00-04'}, {s:'00-01',t:'00-05'},
+        {s:'00-02',t:'00-03'}, {s:'00-02',t:'00-04'}, {s:'00-02',t:'00-05'}, {s:'00-03',t:'00-04'},
+        {s:'00-03',t:'00-05'}, {s:'00-04',t:'00-05'}, {s:'00-01',t:'02-ROOT'}, {s:'00-02',t:'02-ROOT'},
+        {s:'00-03',t:'02-ROOT'}, {s:'00-04',t:'02-ROOT'}, {s:'00-05',t:'02-ROOT'}, {s:'00-02',t:'01-GAMMA'},
+        {s:'00-04',t:'01-ALPHA'}, {s:'00-05',t:'01-ALPHA'}, {s:'00-03',t:'01-ALPHA'}, {s:'01-ALPHA',t:'STORAGE'},
+        {s:'01-BETA',t:'RENDER'}, {s:'01-BETA',t:'EXPORT'}, {s:'01-BETA',t:'USER'}, {s:'01-BETA',t:'STORAGE'},
+        {s:'01-GAMMA',t:'USER'},
+    ];
+    
+    const lanesG = document.getElementById('lanes');
+    const packetsG = document.getElementById('packets');
+    const nodesG = document.getElementById('nodes');
+    const lanePopup = document.getElementById('lane-popup');
+    const chipPanel = document.getElementById('chip-panel');
+    
+    let lanesActive = 22;
+    let isFullyConnected = false;
+    
+    // Create lanes
+    fullLanes.forEach((lane, i) => {
+        const s = nodeMap[lane.s], t = nodeMap[lane.t];
+        const midX = (s.x + t.x) / 2;
+        const midY = (s.y + t.y) / 2 - Math.abs(t.x - s.x) * 0.12;
+        const d = `M${s.x},${s.y} Q${midX},${midY} ${t.x},${t.y}`;
+        
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        path.setAttribute('d', d);
+        path.setAttribute('id', `lane-${i}`);
+        path.classList.add('lane');
+        if (i < 22) path.classList.add('active');
+        else path.classList.add('hidden');
+        path.dataset.s = lane.s;
+        path.dataset.t = lane.t;
+        path.dataset.idx = i;
+        
+        path.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showLanePopup(e, lane, i);
+            // flash
+            path.style.stroke = '#ffaa00';
+            setTimeout(() => path.style.stroke = '', 400);
+        });
+        
+        lanesG.appendChild(path);
+        
+        if (i < 22) createPackets(i, 1 + Math.floor(Math.random()*2));
+    });
+    
+    // Create nodes
+    allNodes.forEach(n => {
+        const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+        g.setAttribute('transform', `translate(${n.x},${n.y})`);
+        g.classList.add('node', `node-${n.type}`);
+        g.dataset.id = n.id;
+        g.style.cursor = n.type === 'device' ? 'pointer' : 'default';
+        
+        if (n.type === 'device') {
+            g.innerHTML = `
+                <circle r="36" fill="url(#deviceGrad)" opacity="0.15"/>
+                <circle r="28" fill="#000" stroke="#00ff88" stroke-opacity="0.2" stroke-width="1"/>
+                <circle class="node-core" r="24" fill="#000a05" stroke="#00ff88" stroke-width="2" filter="url(#glow-green)"/>
+                <circle class="node-pulse" r="4" fill="#00ff88" opacity="0.9"/>
+                <circle r="9" fill="#001a0f" stroke="#00ff88" stroke-width="1.5"/>
+                <circle r="3" fill="#00ff88"/>
+                <text y="46" text-anchor="middle" fill="#00ff88" font-size="13" font-weight="600" letter-spacing="0.5">${n.id}</text>
+            `;
+            g.addEventListener('click', (e) => handleDeviceClick(e, n));
+        } else if (n.type === 'swarm') {
+            g.innerHTML = `
+                <circle r="40" fill="#000" stroke="#ffaa00" stroke-opacity="0.15" stroke-width="1"/>
+                <circle class="node-core" r="32" fill="#0f0800" stroke="#ffaa00" stroke-width="2.5" filter="url(#glow-orange)"/>
+                <polygon points="0,-14 12,7 -12,7" fill="none" stroke="#ffaa00" stroke-width="1.5" opacity="0.8"/>
+                <circle r="5" fill="#ffaa00"/>
+                <text y="54" text-anchor="middle" fill="#ffaa00" font-size="12" font-weight="600">${n.id.replace('01-','')}</text>
+            `;
+        } else if (n.type === 'root') {
+            g.innerHTML = `
+                <circle r="52" fill="none" stroke="#00ff88" stroke-opacity="0.1" stroke-width="1" stroke-dasharray="4 4">
+                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite"/>
+                </circle>
+                <circle r="42" fill="#000" stroke="#00ff88" stroke-opacity="0.2"/>
+                <circle class="node-core" r="36" fill="#001008" stroke="#00ff88" stroke-width="3" filter="url(#glow-green)"/>
+                <circle r="18" fill="none" stroke="#00ff88" stroke-width="1" stroke-opacity="0.5"/>
+                <circle r="6" fill="#00ff88"/>
+                <text y="-56" text-anchor="middle" fill="#00ff88" font-size="14" font-weight="600" letter-spacing="1">02-ROOT</text>
+            `;
+        } else {
+            const color = '#ff3366';
+            g.innerHTML = `
+                <rect x="-38" y="-24" width="76" height="48" rx="3" fill="#000" stroke="${color}" stroke-width="1.5" stroke-opacity="0.8"/>
+                <rect x="-34" y="-20" width="68" height="40" rx="2" fill="#1a0008" stroke="${color}" stroke-opacity="0.3"/>
+                <text y="4" text-anchor="middle" fill="${color}" font-size="11" font-weight="600" letter-spacing="1">${n.id}</text>
+                <circle cx="30" cy="-16" r="2" fill="${color}" opacity="0.8"><animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite"/></circle>
+            `;
+        }
+        
+        nodesG.appendChild(g);
+    });
+    
+    function createPackets(laneIdx, count) {
+        for (let i=0; i<count; i++) {
+            const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+            c.setAttribute('r', '2.8');
+            c.setAttribute('fill', '#00ff88');
+            c.classList.add('packet');
+            const anim = document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+            anim.setAttribute('dur', `${2.5 + Math.random()*3}s`);
+            anim.setAttribute('repeatCount', 'indefinite');
+            anim.setAttribute('begin', `${Math.random()*2}s`);
+            const mp = document.createElementNS('http://www.w3.org/2000/svg','mpath');
+            mp.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#lane-${laneIdx}`);
+            mp.setAttribute('href', `#lane-${laneIdx}`);
+            anim.appendChild(mp);
+            c.appendChild(anim);
+            packetsG.appendChild(c);
+        }
+    }
+    
+    function showLanePopup(e, lane, idx) {
+        const name = `L${(idx%10)+1}-${laneNames[idx%10]}`;
+        const load = 35 + Math.floor(Math.random()*60);
+        const lat = (0.1 + Math.random()*0.9).toFixed(1);
+        
+        document.getElementById('popup-name').textContent = name;
+        document.getElementById('popup-route').textContent = `${lane.s} → ${lane.t}`;
+        document.getElementById('popup-load').textContent = `${load}%`;
+        document.getElementById('popup-lat').textContent = `${lat}ms`;
+        
+        lanePopup.style.left = Math.min(e.clientX + 12, window.innerWidth - 200) + 'px';
+        lanePopup.style.top = Math.max(e.clientY - 60, 80) + 'px';
+        lanePopup.classList.remove('hidden');
+        setTimeout(() => lanePopup.classList.add('hidden'), 2500);
+    }
+    
+    function handleDeviceClick(e, node) {
+        // Highlight lanes
+        document.querySelectorAll('.lane').forEach(p => {
+            p.classList.remove('highlight', 'dim');
+            if (p.dataset.s === node.id || p.dataset.t === node.id) {
+                p.classList.add('highlight');
+            } else {
+                p.classList.add('dim');
+            }
+        });
+        
+        // Show chips
+        document.getElementById('chip-id').textContent = node.id;
+        const list = document.getElementById('chip-list');
+        list.innerHTML = chips.map((chip, i) => `
+            <div class="chip px-2.5 py-1.5 text-[10px] tracking-wide flex justify-between items-center" data-i="${i}">
+                <span>${chip}</span>
+                <span class="w-1.5 h-1.5 rounded-full bg-[#003322] chip-dot"></span>
+            </div>
+        `).join('');
+        
+        chipPanel.style.left = Math.min(e.clientX + 15, window.innerWidth - 230) + 'px';
+        chipPanel.style.top = Math.max(e.clientY - 80, 90) + 'px';
+        chipPanel.classList.remove('hidden');
+        
+        // Animate chips
+        list.querySelectorAll('.chip').forEach((el, i) => {
+            setTimeout(() => {
+                el.classList.add('active');
+                el.querySelector('.chip-dot').style.background = '#000';
+            }, i * 120);
+        });
+        
+        setTimeout(() => {
+            document.querySelectorAll('.lane').forEach(p => p.classList.remove('highlight', 'dim'));
+            chipPanel.classList.add('hidden');
+        }, 4000);
+    }
+    
+    // CONNECT ALL
+    document.getElementById('btn-connect').addEventListener('click', function() {
+        if (isFullyConnected) return;
+        isFullyConnected = true;
+        this.disabled = true;
+        this.innerHTML = '<span class="relative z-10">CONNECTING MESH...</span>';
+        this.classList.add('opacity-70');
+        
+        document.getElementById('lane-up').classList.remove('hidden');
+        
+        let added = 0;
+        for (let i = 22; i < 47; i++) {
+            setTimeout(() => {
+                const path = document.getElementById(`lane-${i}`);
+                path.classList.remove('hidden');
+                path.classList.add('active');
+                path.style.strokeOpacity = '0';
+                setTimeout(() => path.style.strokeOpacity = '', 50);
+                createPackets(i, 1);
+                
+                added++;
+                document.getElementById('c-lanes').textContent = 22 + added;
+                
+                if (added === 25) {
+                    document.getElementById('c-lanes').textContent = '47';
+                    document.getElementById('lane-up').classList.add('hidden');
+                    this.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2"><span class="w-1.5 h-1.5 bg-black rounded-full animate-ping"></span>MESH ACTIVE</span>';
+                    this.classList.remove('opacity-70');
+                    this.classList.add('shadow-[0_0_30px_#00ff88]');
+                    
+                    // Flash all nodes
+                    document.querySelectorAll('.node').forEach(n => n.classList.add('unify-flash'));
+                    setTimeout(() => document.querySelectorAll('.node').forEach(n => n.classList.remove('unify-flash')), 600);
+                }
+            }, (i - 22) * 45);
+        }
+    });
+    
+    // UNIFY SILICON
+    document.getElementById('btn-unify').addEventListener('click', () => {
+        document.querySelectorAll('.node-core').forEach(el => {
+            el.style.filter = 'url(#glow-green) brightness(1.8)';
+            setTimeout(() => el.style.filter = '', 800);
+        });
+        
+        const el = document.getElementById('c-silicon');
+        let val = 83;
+        const int = setInterval(() => {
+            val += 2;
+            el.textContent = val + '%';
+            if (val >= 100) {
+                clearInterval(int);
+                el.textContent = '100%';
+                el.classList.add('text-[#00ff88]');
+                setTimeout(() => {
+                    el.classList.remove('text-[#00ff88]');
+                    let down = 100;
+                    const downInt = setInterval(() => {
+                        down -= 1;
+                        el.textContent = down + '%';
+                        if (down <= 94) clearInterval(downInt);
+                    }, 80);
+                }, 1200);
+            }
+        }, 40);
+    });
+    
+    // Toggles
+    document.getElementById('toggle-route').addEventListener('change', e => {
+        lanesG.classList.toggle('routing', e.target.checked);
+    });
+    
+    document.getElementById('toggle-bypass').addEventListener('change', e => {
+        document.getElementById('gate-x').style.opacity = e.target.checked ? '1' : '0';
+        const gate = document.getElementById('internet-gate');
+        gate.style.opacity = e.target.checked ? '0.4' : '0.85';
+    });
+    
+    // Live silicon fluctuation
+    setInterval(() => {
+        if (Math.random() > 0.7) {
+            const el = document.getElementById('c-silicon');
+            const base = parseInt(el.textContent);
+            if (base < 96 && base > 80) {
+                const change = Math.random() > 0.5 ? 1 : -1;
+                el.textContent = (base + change) + '%';
+            }
+        }
+    }, 2200);
+    
+    // Close popups on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.lane')) lanePopup.classList.add('hidden');
+        if (!e.target.closest('.node-device') && !e.target.closest('#chip-panel')) {
+            chipPanel.classList.add('hidden');
+            document.querySelectorAll('.lane').forEach(p => p.classList.remove('highlight', 'dim'));
+        }
+    });
+    
+    // Initial pulse
+    setTimeout(() => {
+        document.querySelectorAll('.lane.active').forEach((p, i) => {
+            setTimeout(() => {
+                p.style.strokeOpacity = '0.9';
+                setTimeout(() => p.style.strokeOpacity = '', 300);
+            }, i * 30);
+        });
+    }, 500);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<!-- saved from url=(0104)https://embed.fbsbx.com/playables/view/842876718098691/?ext=1784086635&hash=Q92gDAEqkJqJuzxwUJpyy74I6QGT -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>20 Icosahedra Dipole - CORE START</title>
+<script src="./saved_resource"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2(11)" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  canvas { display: block; }
+  .font-orbitron { font-family: 'Orbitron', sans-serif; }
+  .processor-label {
+    color: #7df9ff;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    padding: 3px 8px;
+    background: linear-gradient(180deg, rgba(0,40,60,0.9), rgba(0,15,25,0.85));
+    border: 1px solid rgba(0,255,255,0.6);
+    border-radius: 2px;
+    text-shadow: 0 0 10px rgba(0,255,255,1), 0 0 20px rgba(0,255,255,0.5);
+    box-shadow: inset 0 0 12px rgba(0,255,255,0.15), 0 0 15px rgba(0,255,255,0.2);
+    pointer-events: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+  }
+  .cortex-label {
+    color: #ffbe5c;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    padding: 4px 10px;
+    background: linear-gradient(180deg, rgba(60,30,0,0.9), rgba(30,15,0,0.85));
+    border: 1px solid rgba(255,170,0,0.7);
+    border-radius: 2px;
+    text-shadow: 0 0 12px rgba(255,150,0,1);
+    box-shadow: inset 0 0 12px rgba(255,140,0,0.2), 0 0 20px rgba(255,120,0,0.3);
+    pointer-events: none;
+    font-weight: 600;
+  }
+  .pole-label {
+    color: #00ffff;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    padding: 3px 10px;
+    background: rgba(0,20,30,0.7);
+    border: 1px solid rgba(0,255,255,0.4);
+    text-shadow: 0 0 8px #0ff;
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    .processor-label { font-size: 8px; padding: 2px 5px; letter-spacing: 0.12em; }
+    .cortex-label { font-size: 9px; padding: 3px 7px; }
+    .pole-label { font-size: 8px; }
+  }
+  .hud-corner {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border-color: rgba(0,255,255,0.5);
+    filter: drop-shadow(0 0 6px rgba(0,255,255,0.5));
+  }
+  .scanlines {
+    background-image: repeating-linear-gradient(0deg, rgba(0,255,255,0.03) 0px, transparent 2px, transparent 4px);
+    animation: scan 8s linear infinite;
+  }
+  @keyframes scan {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(8px); }
+  }
+  .hud-glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.pointer-events-auto{pointer-events:auto}.fixed{position:fixed}.absolute{position:absolute}.inset-0{inset:0px}.bottom-3{bottom:0.75rem}.bottom-4{bottom:1rem}.left-0{left:0px}.left-1\/2{left:50%}.left-3{left:0.75rem}.right-0{right:0px}.right-3{right:0.75rem}.top-0{top:0px}.top-3{top:0.75rem}.top-4{top:1rem}.z-10{z-index:10}.mb-2{margin-bottom:0.5rem}.mb-2\.5{margin-bottom:0.625rem}.mt-1\.5{margin-top:0.375rem}.mt-3{margin-top:0.75rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-1\.5{height:0.375rem}.h-24{height:6rem}.h-\[2px\]{height:2px}.h-full{height:100%}.h-px{height:1px}.w-1\.5{width:0.375rem}.w-3\/4{width:75%}.w-8{width:2rem}.w-\[150px\]{width:150px}.w-\[210px\]{width:210px}.w-full{width:100%}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-\[pulse_2s_infinite\]{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-x-4{column-gap:1rem}.gap-y-1\.5{row-gap:0.375rem}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.rounded-full{border-radius:9999px}.rounded-sm{border-radius:0.125rem}.border{border-width:1px}.border-b-2{border-bottom-width:2px}.border-l-2{border-left-width:2px}.border-r-2{border-right-width:2px}.border-t-2{border-top-width:2px}.border-amber-900\/40{border-color:rgb(120 53 15 / 0.4)}.border-cyan-500\/40{border-color:rgb(6 182 212 / 0.4)}.border-cyan-900\/50{border-color:rgb(22 78 99 / 0.5)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36 / var(--tw-bg-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-black\/60{background-color:rgb(0 0 0 / 0.6)}.bg-black\/70{background-color:rgb(0 0 0 / 0.7)}.bg-cyan-950{--tw-bg-opacity:1;background-color:rgb(8 51 68 / var(--tw-bg-opacity, 1))}.bg-gradient-to-b{background-image:linear-gradient(to bottom, var(--tw-gradient-stops))}.bg-gradient-to-l{background-image:linear-gradient(to left, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-cyan-400{--tw-gradient-from:#22d3ee var(--tw-gradient-from-position);--tw-gradient-to:rgb(34 211 238 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-cyan-950\/20{--tw-gradient-from:rgb(8 51 68 / 0.2) var(--tw-gradient-from-position);--tw-gradient-to:rgb(8 51 68 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-transparent{--tw-gradient-from:transparent var(--tw-gradient-from-position);--tw-gradient-to:rgb(0 0 0 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-transparent{--tw-gradient-to:rgb(0 0 0 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), transparent var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-cyan-400\/70{--tw-gradient-to:rgb(34 211 238 / 0.7) var(--tw-gradient-to-position)}.to-emerald-400{--tw-gradient-to:#34d399 var(--tw-gradient-to-position)}.to-transparent{--tw-gradient-to:transparent var(--tw-gradient-to-position)}.p-2\.5{padding:0.625rem}.p-3\.5{padding:0.875rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[9px\]{font-size:9px}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-semibold{font-weight:600}.tracking-\[0\.35em\]{letter-spacing:0.35em}.tracking-\[0\.3em\]{letter-spacing:0.3em}.tracking-\[0\.5em\]{letter-spacing:0.5em}.tracking-widest{letter-spacing:0.1em}.text-amber-500\/70{color:rgb(245 158 11 / 0.7)}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-300\/80{color:rgb(103 232 249 / 0.8)}.text-cyan-400\/80{color:rgb(34 211 238 / 0.8)}.text-cyan-500\/70{color:rgb(6 182 212 / 0.7)}.text-cyan-700\/60{color:rgb(14 116 144 / 0.6)}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-cyan-300\/70{color:rgb(103 232 249 / 0.7)}.opacity-\[0\.15\]{opacity:0.15}.mix-blend-screen{mix-blend-mode:screen}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:border-cyan-400:hover{--tw-border-opacity:1;border-color:rgb(34 211 238 / var(--tw-border-opacity, 1))}.hover\:bg-cyan-950\/50:hover{background-color:rgb(8 51 68 / 0.5)}@media (min-width: 640px){.sm\:bottom-6{bottom:1.5rem}.sm\:left-6{left:1.5rem}.sm\:right-6{right:1.5rem}.sm\:top-6{top:1.5rem}.sm\:block{display:block}.sm\:w-16{width:4rem}.sm\:w-\[200px\]{width:200px}.sm\:p-3\.5{padding:0.875rem}.sm\:text-\[10px\]{font-size:10px}.sm\:text-base{font-size:1rem;line-height:1.5rem}}@media (min-width: 768px){.md\:block{display:block}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}</style></head>
+<body class="bg-black">
+  <div id="container" class="fixed inset-0"><canvas data-engine="three.js r160" width="2061" height="1288" style="display: block; width: 1145px; height: 716px; touch-action: none;"></canvas><div style="overflow: hidden; width: 1145px; height: 716px; position: absolute; top: 0px; pointer-events: none;"><div class="cortex-label" draggable="false" style="position: absolute; user-select: none; transform: translate(-50%, -50%) translate(582px, 307.342px); z-index: 6;">CORTEX</div><div class="processor-label" draggable="false" style="border-color: rgba(0, 229, 255, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(612.867px, 319.647px); z-index: 2;">ETHOS</div><div class="processor-label" draggable="false" style="border-color: rgba(255, 42, 109, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(669.608px, 333.236px); z-index: 4;">PATHOS</div><div class="processor-label" draggable="false" style="border-color: rgba(5, 255, 161, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(642.591px, 352.795px); z-index: 8;">LOGOS</div><div class="processor-label" draggable="false" style="border-color: rgba(254, 228, 64, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(543.122px, 355.953px); z-index: 9;">-0-</div><div class="processor-label" draggable="false" style="border-color: rgba(157, 78, 221, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(491.515px, 338.276px); z-index: 7;">SHADOW</div><div class="processor-label" draggable="false" style="border-color: rgba(255, 159, 28, 0.8); position: absolute; user-select: none; transform: translate(-50%, -50%) translate(532.295px, 321.704px); z-index: 3;">INVERTED</div><div class="pole-label" draggable="false" style="position: absolute; user-select: none; transform: translate(-50%, -50%) translate(582px, -54.2099px); z-index: 5;">NORTH • 10</div><div class="pole-label" draggable="false" style="position: absolute; user-select: none; transform: translate(-50%, -50%) translate(582px, 681.188px); z-index: 1;">SOUTH • 10</div></div></div>
+  
+  <!-- HUD Overlay -->
+  <div class="pointer-events-none fixed inset-0 z-10">
+    <div class="scanlines absolute inset-0 opacity-[0.15] mix-blend-screen"></div>
+    
+    <!-- Corners -->
+    <div class="hud-corner top-3 left-3 border-t-2 border-l-2"></div>
+    <div class="hud-corner top-3 right-3 border-t-2 border-r-2"></div>
+    <div class="hud-corner bottom-3 left-3 border-b-2 border-l-2"></div>
+    <div class="hud-corner bottom-3 right-3 border-b-2 border-r-2"></div>
+    
+    <!-- Top Title -->
+    <div class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-cyan-950/20 via-transparent to-transparent"></div>
+    <div class="absolute top-4 left-1/2 -translate-x-1/2 text-center w-full px-4">
+      <h1 class="font-orbitron text-cyan-300 text-sm sm:text-base md:text-xl tracking-[0.35em] hud-glow">20 ICOSAHEDRA DIPOLE</h1>
+      <div class="flex items-center justify-center gap-3 mt-1.5">
+        <div class="h-px w-8 sm:w-16 bg-gradient-to-r from-transparent to-cyan-400/70"></div>
+        <p class="text-[9px] sm:text-[10px] text-cyan-400/80 tracking-[0.5em] font-semibold">CORE START</p>
+        <div class="h-px w-8 sm:w-16 bg-gradient-to-l from-transparent to-cyan-400/70"></div>
+      </div>
+    </div>
+
+    <!-- Left Status -->
+    <div class="absolute left-3 sm:left-6 bottom-4 sm:bottom-6 font-mono">
+      <div class=" backdrop-blur-md bg-black/60 border-cyan-900/50 rounded-sm p-2.5 sm:p-3.5 w-[150px] sm:w-[200px]">
+        <div class="text-[9px] text-cyan-500/70 tracking-widest mb-2">SYSTEM STATUS</div>
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-cyan-300/80">CORE</span>
+            <span class="text-[11px] text-emerald-400 hud-glow">ONLINE</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-cyan-300/80">DIPOLE</span>
+            <span class="text-[11px] text-cyan-300" id="field-strength">95.8%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-cyan-300/80">ICOSAHEDRA</span>
+            <span class="text-[11px] text-cyan-300">20/20</span>
+          </div>
+        </div>
+        <div class="mt-3 h-[2px] w-full bg-cyan-950 overflow-hidden">
+          <div class="h-full w-3/4 bg-gradient-to-r from-cyan-400 to-emerald-400 animate-[pulse_2s_infinite]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Processors -->
+    <div class="absolute right-3 sm:right-6 bottom-4 sm:bottom-6 font-mono hidden sm:block">
+      <div class="backdrop-blur-md bg-black/60 border border-amber-900/40 rounded-sm p-3.5 w-[210px]">
+        <div class="text-[9px] text-amber-500/70 tracking-widest mb-2.5 flex items-center justify-between">
+          <span>HEX CORE PROCESSORS</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[10px]" id="proc-list">
+        <div class="flex justify-between"><span class="text-cyan-300/70">ETHOS</span><span style="color:#00e5ff" class="hud-glow">●</span></div><div class="flex justify-between"><span class="text-cyan-300/70">PATHOS</span><span style="color:#ff2a6d" class="hud-glow">●</span></div><div class="flex justify-between"><span class="text-cyan-300/70">LOGOS</span><span style="color:#05ffa1" class="hud-glow">●</span></div><div class="flex justify-between"><span class="text-cyan-300/70">-0-</span><span style="color:#fee440" class="hud-glow">●</span></div><div class="flex justify-between"><span class="text-cyan-300/70">SHADOW</span><span style="color:#9d4edd" class="hud-glow">●</span></div><div class="flex justify-between"><span class="text-cyan-300/70">INVERTED</span><span style="color:#ff9f1c" class="hud-glow">●</span></div></div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="pointer-events-auto absolute top-3 right-3 sm:top-6 sm:right-6 flex gap-2">
+      <button id="toggle-fields" class="px-2.5 py-1.5 bg-black/70 backdrop-blur border border-cyan-500/40 text-[10px] tracking-widest text-cyan-300 hover:bg-cyan-950/50 hover:border-cyan-400 transition-all">FIELDS</button>
+      <button id="toggle-links" class="px-2.5 py-1.5 bg-black/70 backdrop-blur border border-cyan-500/40 text-[10px] tracking-widest text-cyan-300 hover:bg-cyan-950/50 hover:border-cyan-400 transition-all">LINKS</button>
+    </div>
+
+    <!-- Bottom Center Info -->
+    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 hidden md:block">
+      <div class="text-[9px] text-cyan-700/60 tracking-[0.3em] text-center">
+        NORTH 10 • SOUTH 10 • WIRE FRAME CYAN • 12 VERTICES EACH
+      </div>
+    </div>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const container = document.getElementById('container');
+
+// Scene
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000508, 0.025);
+
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 5, 19);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+container.appendChild(renderer.domElement);
+
+// CSS2D Labels
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+container.appendChild(labelRenderer.domElement);
+
+// Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 9;
+controls.maxDistance = 35;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.25;
+controls.target.set(0, 0, 0);
+
+// Postprocessing
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.15, 0.5, 0.15);
+bloomPass.threshold = 0.2;
+bloomPass.strength = 1.2;
+bloomPass.radius = 0.5;
+composer.addPass(bloomPass);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x0a1a2a, 0.6));
+const keyLight = new THREE.DirectionalLight(0x7df9ff, 1.2);
+keyLight.position.set(5, 8, 5);
+scene.add(keyLight);
+const rimLight = new THREE.DirectionalLight(0xff9f1c, 0.5);
+rimLight.position.set(-5, -3, -5);
+scene.add(rimLight);
+
+// Starfield
+const starGeo = new THREE.BufferGeometry();
+const starCount = 4000;
+const starPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  const r = 120 + Math.random() * 80;
+  const theta = Math.random() * Math.PI * 2;
+  const phi = Math.acos(2 * Math.random() - 1);
+  starPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+  starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+  starPos[i*3+2] = r * Math.cos(phi);
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x88ccff, size: 0.07, transparent: true, opacity: 0.7, sizeAttenuation: true }));
+scene.add(stars);
+
+// CORE
+const coreGroup = new THREE.Group();
+scene.add(coreGroup);
+
+// Hex base
+const hexBase = new THREE.Mesh(
+  new THREE.CylinderGeometry(3.1, 3.1, 0.18, 6),
+  new THREE.MeshStandardMaterial({ color: 0x06141f, metalness: 0.9, roughness: 0.3, emissive: 0x002233, emissiveIntensity: 0.4 })
+);
+hexBase.position.y = -0.4;
+coreGroup.add(hexBase);
+
+const hexRing = new THREE.Mesh(
+  new THREE.TorusGeometry(2.85, 0.06, 16, 6),
+  new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.7 })
+);
+hexRing.rotation.x = Math.PI/2;
+hexRing.position.y = -0.28;
+coreGroup.add(hexRing);
+
+// Amber CORTEX
+const cortexGroup = new THREE.Group();
+coreGroup.add(cortexGroup);
+const cortexMat = new THREE.MeshStandardMaterial({
+  color: 0xff9500,
+  emissive: 0xff5e00,
+  emissiveIntensity: 1.8,
+  metalness: 0.3,
+  roughness: 0.2
+});
+const cortex = new THREE.Mesh(new THREE.IcosahedronGeometry(1.05, 1), cortexMat);
+cortexGroup.add(cortex);
+
+const cortexCore = new THREE.Mesh(
+  new THREE.SphereGeometry(0.55, 32),
+  new THREE.MeshBasicMaterial({ color: 0xffc070, transparent: true, opacity: 0.9 })
+);
+cortexGroup.add(cortexCore);
+
+const cortexLight = new THREE.PointLight(0xff7700, 3.5, 25, 2);
+cortexLight.position.set(0,0,0);
+cortexGroup.add(cortexLight);
+
+// Cortex label
+const cortexLabelDiv = document.createElement('div');
+cortexLabelDiv.className = 'cortex-label';
+cortexLabelDiv.textContent = 'CORTEX';
+const cortexLabel = new CSS2DObject(cortexLabelDiv);
+cortexLabel.position.set(0, 1.6, 0);
+cortexGroup.add(cortexLabel);
+
+// Processors
+const processorNames = ['ETHOS', 'PATHOS', 'LOGOS', '-0-', 'SHADOW', 'INVERTED'];
+const processorColors = [0x00e5ff, 0xff2a6d, 0x05ffa1, 0xfee440, 0x9d4edd, 0xff9f1c];
+const processors = [];
+
+processorNames.forEach((name, i) => {
+  const angle = (i / 6) * Math.PI * 2 - Math.PI/6;
+  const r = 2.5;
+  const x = Math.cos(angle) * r;
+  const z = Math.sin(angle) * r;
+  
+  const procGroup = new THREE.Group();
+  procGroup.position.set(x, 0, z);
+  procGroup.lookAt(0, 0, 0);
+  
+  const color = processorColors[i];
+  const mat = new THREE.MeshStandardMaterial({
+    color: color,
+    emissive: color,
+    emissiveIntensity: 1.2,
+    metalness: 0.8,
+    roughness: 0.25
+  });
+  
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.55, 6), mat);
+  procGroup.add(body);
+  
+  const cap = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.32, 0.12, 6),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: color, emissiveIntensity: 2 })
+  );
+  cap.position.y = 0.33;
+  procGroup.add(cap);
+  
+  const glow = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 0.02, 6),
+    new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.25 })
+  );
+  glow.position.y = -0.29;
+  procGroup.add(glow);
+  
+  const light = new THREE.PointLight(color, 1.2, 6);
+  light.position.y = 0.2;
+  procGroup.add(light);
+  
+  // Label
+  const div = document.createElement('div');
+  div.className = 'processor-label';
+  div.textContent = name;
+  div.style.borderColor = `rgba(${(color>>16)&255}, ${(color>>8)&255}, ${color&255}, 0.8)`;
+  const label = new CSS2DObject(div);
+  label.position.set(0, 0.8, 0);
+  procGroup.add(label);
+  
+  // Connector to cortex
+  const connGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, -0.15, 0),
+    new THREE.Vector3(-x*0.65, -0.05, -z*0.65)
+  ]);
+  const conn = new THREE.Line(connGeo, new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.35 }));
+  procGroup.add(conn);
+  
+  coreGroup.add(procGroup);
+  processors.push({ group: procGroup, name, color, light });
+  
+  // HUD list
+  const procList = document.getElementById('proc-list');
+  const item = document.createElement('div');
+  item.className = 'flex justify-between';
+  item.innerHTML = `<span class="text-cyan-300/70">${name}</span><span style="color:#${color.toString(16).padStart(6,'0')}" class="hud-glow">●</span>`;
+  procList.appendChild(item);
+});
+
+// ICOSAHEDRA
+const icosaGroup = new THREE.Group();
+scene.add(icosaGroup);
+const allIcos = [];
+
+function createIcosahedron(position) {
+  const group = new THREE.Group();
+  group.position.copy(position);
+  
+  const icoGeo = new THREE.IcosahedronGeometry(0.52, 0);
+  
+  // Wireframe
+  const wireMat = new THREE.MeshBasicMaterial({
+    color: 0x00ffff,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.92
+  });
+  const wire = new THREE.Mesh(icoGeo, wireMat);
+  group.add(wire);
+  
+  // Inner glow
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0x00ddff,
+    transparent: true,
+    opacity: 0.07,
+    side: THREE.BackSide,
+    depthWrite: false
+  });
+  const glow = new THREE.Mesh(new THREE.IcosahedronGeometry(0.68, 0), glowMat);
+  group.add(glow);
+  
+  // Vertices (12)
+  const vertexMat = new THREE.MeshBasicMaterial({ color: 0x9fffff });
+  const positions = icoGeo.attributes.position;
+  const unique = new Map();
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i);
+    const y = positions.getY(i);
+    const z = positions.getZ(i);
+    const key = `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
+    if (!unique.has(key)) {
+      unique.set(key, true);
+      const v = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), vertexMat);
+      v.position.set(x*0.52, y*0.52, z*0.52);
+      group.add(v);
+    }
+  }
+  
+  // Halo ring
+  const halo = new THREE.Mesh(
+    new THREE.RingGeometry(0.6, 0.62, 32),
+    new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
+  );
+  halo.lookAt(camera.position);
+  group.add(halo);
+  group.userData.halo = halo;
+  
+  icosaGroup.add(group);
+  allIcos.push(group);
+  return group;
+}
+
+// North dome (10)
+const northPositions = [];
+northPositions.push(new THREE.Vector3(0, 9.2, 0));
+for (let i = 0; i < 3; i++) {
+  const a = (i / 3) * Math.PI*2;
+  northPositions.push(new THREE.Vector3(Math.cos(a)*3.4, 7.1, Math.sin(a)*3.4));
+}
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI*2 + Math.PI/6;
+  northPositions.push(new THREE.Vector3(Math.cos(a)*5.9, 5.2, Math.sin(a)*5.9));
+}
+northPositions.forEach(p => createIcosahedron(p));
+
+// South dome (10)
+const southPositions = [];
+southPositions.push(new THREE.Vector3(0, -9.2, 0));
+for (let i = 0; i < 3; i++) {
+  const a = (i / 3) * Math.PI*2 + 0.2;
+  southPositions.push(new THREE.Vector3(Math.cos(a)*3.4, -7.1, Math.sin(a)*3.4));
+}
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI*2;
+  southPositions.push(new THREE.Vector3(Math.cos(a)*5.9, -5.2, Math.sin(a)*5.9));
+}
+southPositions.forEach(p => createIcosahedron(p));
+
+// Pole labels
+const northLabelDiv = document.createElement('div');
+northLabelDiv.className = 'pole-label';
+northLabelDiv.textContent = 'NORTH • 10';
+const northLabel = new CSS2DObject(northLabelDiv);
+northLabel.position.set(0, 10.5, 0);
+scene.add(northLabel);
+
+const southLabelDiv = document.createElement('div');
+southLabelDiv.className = 'pole-label';
+southLabelDiv.textContent = 'SOUTH • 10';
+const southLabel = new CSS2DObject(southLabelDiv);
+southLabel.position.set(0, -10.5, 0);
+scene.add(southLabel);
+
+// Connections to nearest processor
+const connections = [];
+const linkGroup = new THREE.Group();
+scene.add(linkGroup);
+
+allIcos.forEach(ico => {
+  let nearest = null;
+  let minDist = Infinity;
+  processors.forEach(p => {
+    const d = ico.position.distanceTo(p.group.position);
+    if (d < minDist) { minDist = d; nearest = p; }
+  });
+  const geo = new THREE.BufferGeometry().setFromPoints([ico.position, nearest.group.position]);
+  const mat = new THREE.LineBasicMaterial({
+    color: nearest.color,
+    transparent: true,
+    opacity: 0.28,
+    blending: THREE.AdditiveBlending
+  });
+  const line = new THREE.Line(geo, mat);
+  linkGroup.add(line);
+  connections.push({ line, ico, proc: nearest.group });
+});
+
+// Dipole field lines
+const fieldGroup = new THREE.Group();
+scene.add(fieldGroup);
+const fieldLines = [];
+
+for (let i = 0; i < 14; i++) {
+  const angle = (i / 14) * Math.PI * 2;
+  const rOut = 7.8;
+  const rIn = 1.8;
+  
+  const start = new THREE.Vector3(Math.cos(angle)*0.8, 8.8, Math.sin(angle)*0.8);
+  const end = new THREE.Vector3(Math.cos(angle+0.15)*0.8, -8.8, Math.sin(angle+0.15)*0.8);
+  const c1 = new THREE.Vector3(Math.cos(angle)*rOut, 4.5, Math.sin(angle)*rOut);
+  const c2 = new THREE.Vector3(Math.cos(angle)*rOut*0.9, -4.5, Math.sin(angle)*rOut*0.9);
+  const c3 = new THREE.Vector3(Math.cos(angle)*rIn, 0.8, Math.sin(angle)*rIn);
+  const c4 = new THREE.Vector3(Math.cos(angle)*rIn, -0.8, Math.sin(angle)*rIn);
+  
+  const curve = new THREE.CatmullRomCurve3([start, c1, c3, c4, c2, end], false, 'catmullrom', 0.15);
+  const points = curve.getPoints(120);
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+  const mat = new THREE.LineBasicMaterial({
+    color: 0x00eeff,
+    transparent: true,
+    opacity: 0.18 + Math.random()*0.12,
+    blending: THREE.AdditiveBlending
+  });
+  const line = new THREE.Line(geo, mat);
+  fieldGroup.add(line);
+  fieldLines.push({ line, offset: Math.random()*Math.PI*2 });
+}
+
+// Core field through center
+for (let i = 0; i < 6; i++) {
+  const a = (i/6)*Math.PI*2;
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,9,0),
+    new THREE.Vector3(Math.cos(a)*0.3, 3, Math.sin(a)*0.3),
+    new THREE.Vector3(0,0,0),
+    new THREE.Vector3(Math.cos(a)*0.3, -3, Math.sin(a)*0.3),
+    new THREE.Vector3(0,-9,0)
+  ]);
+  const line = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),
+    new THREE.LineBasicMaterial({ color: 0x77ffff, transparent: true, opacity: 0.12 })
+  );
+  fieldGroup.add(line);
+}
+
+// Animation
+const clock = new THREE.Clock();
+let fieldsVisible = true;
+let linksVisible = true;
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  
+  controls.update();
+  
+  // Core rotation
+  coreGroup.rotation.y = t * 0.12;
+  cortex.rotation.y = -t * 0.4;
+  cortex.rotation.x = t * 0.18;
+  cortexCore.scale.setScalar(1 + Math.sin(t*2.2)*0.06);
+  cortexLight.intensity = 3.2 + Math.sin(t*1.7)*0.8;
+  hexRing.rotation.z = -t * 0.3;
+  hexRing.material.opacity = 0.5 + Math.sin(t*1.5)*0.2;
+  
+  // Icosahedra
+  icosaGroup.rotation.y = t * 0.035;
+  allIcos.forEach((ico, i) => {
+    ico.rotation.x = t * 0.3 + i*0.11;
+    ico.rotation.y = t * 0.22 + i*0.07;
+    const halo = ico.userData.halo;
+    if (halo) halo.lookAt(camera.position);
+    // gentle float
+    const baseY = i < 10 ? northPositions[i].y : southPositions[i-10].y;
+    ico.position.y = baseY + Math.sin(t*0.8 + i)*0.12;
+  });
+  
+  // Update connections
+  if (linksVisible) {
+    connections.forEach(c => {
+      const p1 = new THREE.Vector3();
+      const p2 = new THREE.Vector3();
+      c.ico.getWorldPosition(p1);
+      c.proc.getWorldPosition(p2);
+      p2.y += 0.25;
+      c.line.geometry.setFromPoints([p1, p2]);
+      c.line.geometry.attributes.position.needsUpdate = true;
+      c.line.material.opacity = 0.22 + Math.sin(t*1.2 + p1.y)*0.08;
+    });
+  }
+  
+  // Field lines pulse
+  if (fieldsVisible) {
+    fieldLines.forEach((f, i) => {
+      f.line.material.opacity = 0.14 + Math.sin(t*0.7 + f.offset)*0.09;
+    });
+  }
+  
+  // Stars slow rotate
+  stars.rotation.y = t * 0.005;
+  stars.rotation.x = t * 0.002;
+  
+  // HUD field strength
+  const strength = 96 + Math.sin(t*0.6)*2.3;
+  document.getElementById('field-strength').textContent = strength.toFixed(1) + '%';
+  
+  composer.render();
+  labelRenderer.render(scene, camera);
+}
+animate();
+
+// Toggles
+document.getElementById('toggle-fields').addEventListener('click', (e) => {
+  fieldsVisible = !fieldsVisible;
+  fieldGroup.visible = fieldsVisible;
+  e.target.style.opacity = fieldsVisible ? '1' : '0.5';
+});
+document.getElementById('toggle-links').addEventListener('click', (e) => {
+  linksVisible = !linksVisible;
+  linkGroup.visible = linksVisible;
+  e.target.style.opacity = linksVisible ? '1' : '0.5';
+});
+
+// Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Initial interaction hint
+setTimeout(() => { controls.autoRotate = true; }, 2000);
+</script>
+
+</body></html>

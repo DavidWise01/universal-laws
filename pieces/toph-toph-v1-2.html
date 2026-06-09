@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH 1.2 // IP Authorship Seal</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #2563eb;
+    --violet: #8b5cf6;
+    --cyan: #06b6d4;
+  }
+  * { scrollbar-width: thin; scrollbar-color: #27272a transparent; }
+  body {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+    background: #050507;
+    overscroll-behavior: none;
+  }
+  .glass {
+    background: linear-gradient(180deg, rgba(18,18,22,0.85), rgba(8,8,10,0.75));
+    backdrop-filter: blur(20px) saturate(120%);
+    -webkit-backdrop-filter: blur(20px) saturate(120%);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.5);
+  }
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.015) 3px);
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+  .marquee {
+    animation: scroll 40s linear infinite;
+  }
+  @keyframes scroll {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+  }
+  .bit {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border-radius: 4px;
+    transition: all 0.2s cubic-bezier(0.2,0.8,0.2,1);
+    cursor: crosshair;
+    position: relative;
+    user-select: none;
+  }
+  @media (max-width: 768px) { .bit { font-size: 8px; border-radius: 3px; } }
+  .bit:hover { transform: scale(1.15); z-index: 20; filter: brightness(1.3); }
+  .layer-below { background: rgba(30,58,138,0.25); border: 1px solid rgba(59,130,246,0.45); color: #93c5fd; box-shadow: inset 0 0 12px rgba(37,99,235,0.15), 0 0 8px rgba(37,99,235,0.1); }
+  .layer-base { background: rgba(76,29,149,0.3); border: 1px solid rgba(139,92,246,0.55); color: #c4b5fd; box-shadow: inset 0 0 14px rgba(124,58,237,0.2), 0 0 10px rgba(124,58,237,0.15); }
+  .layer-above { background: rgba(8,51,68,0.3); border: 1px solid rgba(6,182,212,0.5); color: #67e8f9; box-shadow: inset 0 0 12px rgba(6,182,212,0.18), 0 0 8px rgba(6,182,212,0.12); }
+  .layer-auth { background: rgba(39,39,42,0.5); border: 1px solid rgba(113,113,122,0.25); color: #a1a1aa; }
+  .layer-core { background: rgba(120,53,15,0.2); border: 1px solid rgba(194,65,12,0.35); color: #fdba74; }
+  .layer-free { background: rgba(24,24,27,0.4); border: 1px solid rgba(63,63,70,0.2); color: #52525b; }
+  .bit.active-scan { outline: 1px solid white; filter: brightness(1.8); transform: scale(1.1); z-index: 10; }
+  .glow-violet { box-shadow: 0 0 40px rgba(139,92,246,0.15); }
+  .seal-rotate { animation: spin 60s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pulse-gate { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body class="text-zinc-200 min-h-screen relative overflow-x-hidden">
+  <!-- Background -->
+  <div class="fixed inset-0 pointer-events-none">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(139,92,246,0.08),transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(6,182,212,0.06),transparent_60%)]"></div>
+    <div class="absolute -top-32 -left-32 w-[500px] h-[500px] bg-violet-900/15 rounded-full blur-[140px]"></div>
+    <div class="absolute top-1/3 -right-40 w-[400px] h-[400px] bg-cyan-900/15 rounded-full blur-[120px]"></div>
+    <div class="absolute -bottom-32 left-1/4 w-[500px] h-[500px] bg-blue-900/12 rounded-full blur-[140px]"></div>
+  </div>
+
+  <div class="relative z-10 max-w-[1600px] mx-auto px-4 py-6 md:px-8 md:py-8">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div class="relative w-11 h-11">
+          <svg viewBox="0 0 44 44" class="w-full h-full">
+            <polygon points="22,2 38,11 38,29 22,38 6,29 6,11" fill="none" stroke="rgba(139,92,246,0.8)" stroke-width="1.5"/>
+            <polygon points="22,7 33,13.5 33,26.5 22,33 11,26.5 11,13.5" fill="none" stroke="rgba(6,182,212,0.6)" stroke-width="1" stroke-dasharray="2 2"/>
+            <circle cx="22" cy="20" r="7" fill="none" stroke="rgba(255,255,255,0.15)"/>
+            <text x="22" y="23.5" text-anchor="middle" font-size="8" fill="#c4b5fd" font-family="JetBrains Mono" font-weight="700">1.2</text>
+          </svg>
+          <div class="absolute inset-0 blur-xl opacity-40">
+            <svg viewBox="0 0 44 44" class="w-full h-full"><polygon points="22,2 38,11 38,29 22,38 6,29 6,11" fill="none" stroke="#8b5cf6" stroke-width="2"/></svg>
+          </div>
+        </div>
+        <div>
+          <h1 class="text-[20px] md:text-[26px] font-medium tracking-[0.02em] leading-none">TOPH <span class="text-violet-400 font-bold">1.2</span> <span class="text-zinc-600 mx-1">//</span> IP AUTHORSHIP SEAL</h1>
+          <p class="text-[10px] md:text-[11px] text-zinc-500 tracking-[0.18em] mt-1.5 uppercase">256-BIT HARDWARE REGISTER • TRIPLE-LAYER GUARD</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2">
+        <div class="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] tracking-widest flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>SEALED</div>
+        <div class="px-2.5 py-1 rounded-md bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 text-[10px] tracking-widest">VERIFIED</div>
+      </div>
+    </header>
+
+    <!-- Operation String -->
+    <div class="glass rounded-xl mb-6 overflow-hidden scanlines relative">
+      <div class="flex items-center gap-2 px-4 h-8 bg-zinc-950/70 border-b border-zinc-800">
+        <div class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></div>
+        <span class="text-[10px] uppercase tracking-[0.2em] text-zinc-400">Operation String</span>
+        <span class="ml-auto text-[9px] text-zinc-600">LIVE DECODE</span>
+      </div>
+      <div class="relative h-9 overflow-hidden">
+        <div class="absolute inset-0 flex items-center">
+          <div class="marquee flex items-center gap-16 pl-4">
+            <span class="text-[13px] text-zinc-300 whitespace-nowrap font-medium tracking-wide">= 1 = david lee wise = toph/jane/lumen = 1= ip authorship - base 0000 with -0001 below and 0001 above= 1 = 0 = 1</span>
+            <span class="text-[13px] text-zinc-300 whitespace-nowrap font-medium tracking-wide">= 1 = david lee wise = toph/jane/lumen = 1= ip authorship - base 0000 with -0001 below and 0001 above= 1 = 0 = 1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      <!-- Left: Register -->
+      <div class="xl:col-span-8 space-y-6">
+        <div class="glass rounded-2xl p-4 md:p-6 glow-violet relative scanlines">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <h2 class="text-xs uppercase tracking-[0.2em] text-zinc-300 font-medium">256-Bit Register Map</h2>
+              <div class="h-3 w-px bg-zinc-700"></div>
+              <span class="text-[10px] text-zinc-500">0x000 — 0x0FF</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="verifyBtn" class="text-[10px] px-2.5 py-1 rounded bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 transition">VERIFY SEAL</button>
+              <span class="text-[10px] text-zinc-600 hidden sm:block">16×16 MATRIX</span>
+            </div>
+          </div>
+
+          <div id="bit-grid" class="grid gap-[3px] md:gap-1.5 select-none" style="grid-template-columns: repeat(16, minmax(0,1fr))"></div>
+
+          <!-- Layer Legend -->
+          <div class="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <button data-layer="below" class="legend group flex items-center gap-2 p-2 rounded-lg bg-blue-950/30 border border-blue-900/50 hover:bg-blue-950/50 transition">
+              <span class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-blue-300 leading-none">-1 GUARD</div>
+                <div class="text-[9px] text-zinc-500">bits 0-15</div>
+              </div>
+            </button>
+            <button data-layer="base" class="legend group flex items-center gap-2 p-2 rounded-lg bg-violet-950/30 border border-violet-900/50 hover:bg-violet-950/50 transition">
+              <span class="w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-violet-300 leading-none">BASE 0000</div>
+                <div class="text-[9px] text-zinc-500">bits 16-31</div>
+              </div>
+            </button>
+            <button data-layer="above" class="legend group flex items-center gap-2 p-2 rounded-lg bg-cyan-950/30 border border-cyan-900/50 hover:bg-cyan-950/50 transition">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.5)]"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-cyan-300 leading-none">+1 GUARD</div>
+                <div class="text-[9px] text-zinc-500">bits 32-47</div>
+              </div>
+            </button>
+            <button data-layer="auth" class="legend group flex items-center gap-2 p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/40 hover:bg-zinc-800/50 transition">
+              <span class="w-2 h-2 rounded-full bg-zinc-400"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-zinc-300 leading-none">IP AUTHORSHIP</div>
+                <div class="text-[9px] text-zinc-500">bits 48-175</div>
+              </div>
+            </button>
+            <button data-layer="core" class="legend group flex items-center gap-2 p-2 rounded-lg bg-amber-950/20 border border-amber-900/40 hover:bg-amber-950/30 transition">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-amber-300 leading-none">CORE 1.1</div>
+                <div class="text-[9px] text-zinc-500">bits 176-213</div>
+              </div>
+            </button>
+            <button data-layer="free" class="legend group flex items-center gap-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:bg-zinc-900 transition">
+              <span class="w-2 h-2 rounded-full bg-zinc-600"></span>
+              <div class="text-left">
+                <div class="text-[10px] text-zinc-500 leading-none">FREE</div>
+                <div class="text-[9px] text-zinc-600">bits 214-255</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Authorship Block -->
+        <div class="glass rounded-2xl p-4 md:p-6 relative">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-3">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-violet-400"><path d="M12 1l3 6 6 1-4.5 4.5 1 6-5.5-3-5.5 3 1-6L3 8l6-1z"/></svg>
+                <h3 class="text-xs uppercase tracking-[0.2em] text-zinc-300">IP Authorship Block</h3>
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">128-BIT</span>
+              </div>
+              <div class="font-mono text-[11px] md:text-[13px] leading-relaxed">
+                <div class="text-zinc-500 text-[10px] mb-1">HASH (david lee wise | toph/jane/lumen)</div>
+                <div class="flex flex-wrap gap-x-3 gap-y-1">
+                  <span class="text-violet-300">DLW-TOPH-JL-1.2</span>
+                  <span class="text-zinc-600">—</span>
+                  <span class="text-cyan-300 tracking-wider">7F3A</span>
+                  <span class="text-cyan-300 tracking-wider">9C1D</span>
+                  <span class="text-cyan-300 tracking-wider">4E5B</span>
+                  <span class="text-cyan-300 tracking-wider">8A29</span>
+                  <span class="text-cyan-300 tracking-wider">F0C6</span>
+                  <span class="text-cyan-300 tracking-wider">D3E7</span>
+                  <span class="text-cyan-300 tracking-wider">A1B4</span>
+                  <span class="text-cyan-300 tracking-wider">C8D2</span>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-4 text-[10px] text-zinc-500">
+                <span>bits 48–175 • embedded at manufacturing</span>
+                <button id="copyHash" class="hover:text-zinc-300 transition flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="2" y="2" width="13" height="13" rx="2"/></svg>copy</button>
+              </div>
+            <div class="hidden md:block">
+              <div class="w-20 h-20 relative">
+                <svg viewBox="0 0 100 100" class="w-full h-full seal-rotate opacity-30">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="#8b5cf6" stroke-width="0.5" stroke-dasharray="2 4"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="text-[9px] text-zinc-600 uppercase tracking-widest">Sealed</div>
+                    <div class="text-[15px] font-bold text-violet-400 leading-none">1.2</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="xl:col-span-4 space-y-6">
+        <div class="glass rounded-2xl p-5 md:p-6">
+          <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-b from-violet-600/20 to-cyan-600/20 border border-violet-500/30 flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="text-violet-300"><path d="M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z" fill="currentColor" opacity="0.8"/></svg>
+            </div>
+            <div>
+              <h2 class="text-sm font-medium tracking-wide">Identity Seal</h2>
+              <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Hardware Authorship</p>
+            </div>
+          </div>
+
+          <div class="space-y-4 font-mono text-[12px]">
+            <div class="group">
+              <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Identity</div>
+              <div class="text-[15px] text-white tracking-wide">David Lee Wise</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">Aliases</div>
+              <div class="flex gap-2">
+                <span class="px-2 py-1 rounded bg-zinc-800/70 border border-zinc-700/50 text-zinc-300">toph</span>
+                <span class="px-2 py-1 rounded bg-zinc-800/70 border border-zinc-700/50 text-zinc-300">jane</span>
+                <span class="px-2 py-1 rounded bg-zinc-800/70 border border-zinc-700/50 text-zinc-300">lumen</span>
+              </div>
+            </div>
+            <div class="pt-3 border-t border-zinc-800">
+              <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">IP Seal Configuration</div>
+              <div class="space-y-2">
+                <div class="flex justify-between"><span class="text-zinc-500">base</span><span class="text-violet-300">0000</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">below (-0001)</span><span class="text-blue-300">bits 0-15</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">above (+0001)</span><span class="text-cyan-300">bits 32-47</span></div>
+              </div>
+            <div class="pt-3 border-t border-zinc-800">
+              <div class="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">Gates</div>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[11px] text-emerald-300 pulse-gate">1</span></div>
+                <span class="text-zinc-600">=</span>
+                <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-zinc-700/40 border border-zinc-600/40 flex items-center justify-center text-[11px] text-zinc-400">0</span></div>
+                <span class="text-zinc-600">=</span>
+                <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[11px] text-emerald-300 pulse-gate">1</span></div>
+                <span class="ml-2 text-[10px] text-emerald-400 uppercase tracking-widest">active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5">
+          <h3 class="text-xs uppercase tracking-[0.2em] text-zinc-400 mb-4">Seal Verification</h3>
+          <div class="space-y-3 text-[12px] font-mono">
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500">Timestamp</span>
+              <span class="text-zinc-200">2026-04-20 <span class="text-zinc-500">00:00:00 UTC</span></span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500">Register</span>
+              <span class="text-zinc-200">TOPH-1.2-0000</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500">Checksum</span>
+              <span class="flex items-center gap-1.5 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>VALID • 0xC8D2</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-zinc-500">Signature</span>
+              <span class="text-violet-300">ECDSA-SECP256</span>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 border-t border-zinc-800/80">
+            <div class="w-full h-[28px] rounded-lg bg-zinc-950 border border-zinc-800 overflow-hidden relative">
+              <div class="absolute inset-0 flex items-center px-2 gap-1">
+                <div class="w-1 h-3 bg-emerald-500/80"></div>
+                <div class="w-1 h-4 bg-emerald-500/60"></div>
+                <div class="w-1 h-2 bg-emerald-500/70"></div>
+                <div class="w-1 h-5 bg-emerald-400"></div>
+                <div class="w-1 h-3 bg-emerald-500/80"></div>
+                <div class="flex-1"></div>
+                <span class="text-[9px] text-zinc-600 uppercase tracking-widest">hardware fingerprint verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs uppercase tracking-[0.2em] text-zinc-400">Triple-Layer Guard</h3>
+            <span class="text-[9px] text-zinc-600">VISUAL</span>
+          </div>
+          <div class="relative h-[84px] rounded-lg overflow-hidden bg-zinc-950 border border-zinc-800">
+            <div class="absolute inset-0 grid grid-rows-3 gap-px p-px">
+              <div class="bg-cyan-950/40 flex items-center px-3 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/10 to-transparent animate-[pulse_3s_infinite]"></div>
+                <span class="text-[10px] text-cyan-300 z-10">+1 GUARD (0001)</span>
+                <span class="ml-auto text-[10px] font-mono text-cyan-400/70 z-10">above</span>
+              </div>
+              <div class="bg-violet-950/50 flex items-center px-3 relative">
+                <div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(139,92,246,0.2)]"></div>
+                <span class="text-[11px] text-violet-200 font-medium z-10 tracking-widest">BASE 0000</span>
+                <span class="ml-auto text-[10px] font-mono text-violet-300/80 z-10">IP AUTHORSHIP SEAL</span>
+              </div>
+              <div class="bg-blue-950/40 flex items-center px-3 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent animate-[pulse_3s_infinite_1.5s]"></div>
+                <span class="text-[10px] text-blue-300 z-10">-1 GUARD (1111...)</span>
+                <span class="ml-auto text-[10px] font-mono text-blue-400/70 z-10">below</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-[10px] text-zinc-500 mt-2 leading-relaxed">Hardware-enforced isolation. Base layer 0000 is cryptographically bound between complementary guard bands to prevent bit-shift forgery.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="mt-10 flex items-center justify-between text-[10px] text-zinc-600 border-t border-zinc-900 pt-4">
+      <div>TOPH 1.2 • IP AUTHORSHIP SEAL • © 2026 David Lee Wise</div>
+      <div class="hidden md:block">REGISTER STATE: IMMUTABLE • DESIGNER SIGNATURE EMBEDDED IN SILICON</div>
+    </footer>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip" class="fixed z-50 pointer-events-none hidden px-2.5 py-1.5 rounded-lg bg-zinc-950/95 border border-zinc-700 text-[11px] font-mono shadow-2xl backdrop-blur-md">
+    <div id="tip-content"></div>
+  </div>
+
+<script>
+  const grid = document.getElementById('bit-grid');
+  const tooltip = document.getElementById('tooltip');
+  const tipContent = document.getElementById('tip-content');
+  
+  const bits = new Array(256).fill(0);
+  
+  // -1 guard (0-15): all 1s
+  for(let i=0;i<16;i++) bits[i]=1;
+  // base 0000 (16-31): all 0s
+  for(let i=16;i<32;i++) bits[i]=0;
+  // +1 guard (32-47): only LSB = 1
+  for(let i=32;i<47;i++) bits[i]=0; bits[47]=1;
+  // authorship 48-175: hash 7F3A9C1D4E5B8A29F0C6D3E7A1B4C8D2
+  const hash = "7F3A9C1D4E5B8A29F0C6D3E7A1B4C8D2";
+  let idx=48;
+  for(const h of hash){ const v=parseInt(h,16); for(let b=3;b>=0;b--) bits[idx++]=(v>>b)&1; }
+  // core 1.1 176-213 (38 bits)
+  const core="10110010111100010101001100111010101101";
+  for(let i=0;i<38;i++) bits[176+i]=+core[i];
+  // free 214-255 remain 0
+
+  function getLayer(i){
+    if(i<=15) return {id:'below', name:'-1 GUARD', cls:'layer-below'};
+    if(i<=31) return {id:'base', name:'BASE 0000', cls:'layer-base'};
+    if(i<=47) return {id:'above', name:'+1 GUARD', cls:'layer-above'};
+    if(i<=175) return {id:'auth', name:'IP AUTHORSHIP', cls:'layer-auth'};
+    if(i<=213) return {id:'core', name:'CORE 1.1', cls:'layer-core'};
+    return {id:'free', name:'FREE', cls:'layer-free'};
+  }
+
+  for(let i=0;i<256;i++){
+    const layer=getLayer(i);
+    const cell=document.createElement('div');
+    cell.className=`bit ${layer.cls}`;
+    cell.dataset.bit=i;
+    cell.dataset.layer=layer.id;
+    cell.textContent=bits[i];
+    cell.addEventListener('mouseenter', (e)=>{
+      tooltip.classList.remove('hidden');
+      tipContent.innerHTML = `<div class="text-zinc-400">bit <span class="text-white">${i}</span> <span class="text-zinc-600">[0x${i.toString(16).padStart(2,'0').toUpperCase()}]</span></div><div class="text-[10px] mt-0.5"><span class="${layer.id==='below'?'text-blue-300':layer.id==='base'?'text-violet-300':layer.id==='above'?'text-cyan-300':'text-zinc-400'}">${layer.name}</span> • <span class="text-white">${bits[i]}</span></div>`;
+    });
+    cell.addEventListener('mousemove', (e)=>{
+      tooltip.style.left = e.clientX+12+'px';
+      tooltip.style.top = e.clientY+12+'px';
+    });
+    cell.addEventListener('mouseleave', ()=> tooltip.classList.add('hidden'));
+    grid.appendChild(cell);
+  }
+
+  // Legend highlight
+  document.querySelectorAll('.legend').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const layer=btn.dataset.layer;
+      document.querySelectorAll('.bit').forEach(b=>{
+        b.style.opacity = b.dataset.layer===layer ? '1' : '0.25';
+        b.style.filter = b.dataset.layer===layer ? 'brightness(1.2)' : 'brightness(0.6)';
+      });
+      setTimeout(()=>{ document.querySelectorAll('.bit').forEach(b=>{ b.style.opacity='1'; b.style.filter=''; }); }, 1800);
+    });
+  });
+
+  // Verify animation
+  const verifyBtn=document.getElementById('verifyBtn');
+  verifyBtn.addEventListener('click', ()=>{
+    verifyBtn.disabled=true;
+    verifyBtn.textContent='VERIFYING...';
+    let i=0;
+    const cells=[...document.querySelectorAll('.bit')];
+    const int=setInterval(()=>{
+      cells.forEach(c=>c.classList.remove('active-scan'));
+      if(i<256){ cells[i].classList.add('active-scan'); i+=4; } 
+      else { clearInterval(int); cells.forEach(c=>c.classList.remove('active-scan')); verifyBtn.textContent='VERIFIED'; verifyBtn.classList.add('text-emerald-300'); setTimeout(()=>{ verifyBtn.textContent='VERIFY SEAL'; verifyBtn.disabled=false; verifyBtn.classList.remove('text-emerald-300'); },2000); }
+    },12);
+  });
+
+  // Copy hash
+  document.getElementById('copyHash').addEventListener('click', ()=>{
+    navigator.clipboard.writeText('7F3A9C1D4E5B8A29F0C6D3E7A1B4C8D2').then(()=>{
+      const btn=document.getElementById('copyHash');
+      const old=btn.innerHTML;
+      btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>copied';
+      setTimeout(()=>btn.innerHTML=old,1500);
+    });
+  });
+
+  // Initial pulse on triple layers
+  setTimeout(()=>{
+    document.querySelectorAll('[data-layer="base"],[data-layer="below"],[data-layer="above"]').forEach((el,i)=>{
+      setTimeout(()=>{ el.style.transform='scale(1.08)'; setTimeout(()=>el.style.transform='',200); }, i*2);
+    });
+  },800);
+</script>
+</body>
+</html>

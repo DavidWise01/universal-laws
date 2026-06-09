@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PLANETARY ANTHEM // 639Hz</title>
+    <style>
+        body { background: #05080a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .oscillator { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .wave-ring { position: absolute; border: 1px solid #d4a84c; border-radius: 50%; animation: ripple 4s infinite linear; opacity: 0; }
+        @keyframes ripple {
+            0% { width: 0px; height: 0px; opacity: 1; }
+            100% { width: 1500px; height: 1500px; opacity: 0; }
+        }
+        .frequency-label { color: #d4a84c; font-family: 'Orbitron'; font-size: 5rem; letter-spacing: 20px; text-shadow: 0 0 20px #d4a84c; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div class="oscillator">
+        <div class="frequency-label">639Hz</div>
+        <div class="wave-ring" style="animation-delay: 0s;"></div>
+        <div class="wave-ring" style="animation-delay: 1s;"></div>
+        <div class="wave-ring" style="animation-delay: 2s;"></div>
+        <div class="wave-ring" style="animation-delay: 3s;"></div>
+    </div>
+</body>
+</html>

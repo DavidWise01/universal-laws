@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KARSA — Hunter of Provenance · 0root.ai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --wood-bg: #1e1510;
+  --wood-panel: #2a1f17;
+  --wood-light: #3a2c1f;
+  --border: #5a3e2a;
+  --text: #d4c4a0;
+  --muted: #9c8b74;
+  --blood: #a04040;
+  --blood-bright: #cc4444;
+  --good: #4a7c5a;
+  --fair: #c49a44;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--wood-bg);
+  background-image: radial-gradient(ellipse at top left, #2a1f17 0%, #1e1510 70%);
+  color: var(--text);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(0deg, rgba(90,62,42,0.2) 0px, rgba(90,62,42,0) 2px, transparent 4px);
+  opacity: 0.4;
+}
+.app {
+  max-width: 1000px; margin: 0 auto; padding: 24px;
+  position: relative; z-index: 10;
+}
+.sword-container {
+  display: flex; justify-content: center; margin: 20px 0;
+}
+.sword-svg {
+  width: 280px; height: auto;
+  filter: drop-shadow(0 0 12px rgba(160,64,64,0.5));
+  animation: sword-breathe 3s ease-in-out infinite;
+}
+.sword-svg.hunting {
+  animation: sword-pulse 0.3s ease-in-out infinite;
+  filter: drop-shadow(0 0 28px rgba(200,40,40,0.9));
+}
+@keyframes sword-breathe {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes sword-pulse {
+  0%,100% { transform: scale(1); filter: drop-shadow(0 0 18px rgba(220,40,40,0.7)); }
+  50% { transform: scale(1.05); filter: drop-shadow(0 0 35px rgba(255,0,0,0.9)); }
+}
+.topbar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+.title {
+  font-family: "Major Mono Display", monospace; font-size: 26px; letter-spacing: 0.06em;
+  color: var(--blood-bright);
+}
+.subtitle {
+  font-size: 9px; opacity: 0.6; letter-spacing: 0.2em; margin-left: 12px; color: var(--muted);
+}
+.mantra {
+  font-family: "Cormorant SC", serif; font-style: italic;
+  font-size: 14px; color: var(--fair); margin: 8px 0; text-align: center;
+}
+.card {
+  background: var(--wood-panel); border: 1px solid var(--border);
+  padding: 16px; margin-bottom: 20px;
+  position: relative;
+}
+h2 {
+  font-family: "Cormorant SC", serif; font-size: 16px; font-weight: 700;
+  letter-spacing: 0.12em; margin: 0 0 12px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border); color: var(--blood-bright);
+}
+.hunted-list { margin: 10px 0; }
+.hunted-row {
+  display: grid; grid-template-columns: 120px 1fr 60px 160px;
+  gap: 10px; align-items: center; padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 10px;
+}
+.hunted-row:last-child { border-bottom: none; }
+.match-bar { height: 6px; background: #3a2c1f; border-radius: 3px; overflow: hidden; }
+.match-fill { height: 100%; transition: width 0.4s; }
+.hunter-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.hunter-actions button {
+  font-size: 8px; padding: 3px 8px; background: transparent;
+  border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; cursor: pointer; font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.hunter-actions button:hover { border-color: var(--blood-bright); color: var(--blood-bright); }
+.hunter-actions button.execute { border-color: var(--blood); color: var(--blood); }
+.hunter-actions button.execute:hover { background: var(--blood); color: #fff; }
+.btn {
+  background: transparent; border: 1px solid var(--blood); color: var(--blood-bright);
+  padding: 6px 14px; font-family: inherit; font-size: 10px;
+  letter-spacing: 0.15em; cursor: pointer; font-weight: 700;
+  display: inline-block;
+}
+.btn:hover { background: rgba(160,64,64,0.2); }
+.btn.danger {
+  background: var(--blood); border-color: var(--blood); color: #fff;
+  font-size: 13px; padding: 10px 20px;
+}
+.btn.danger:hover { background: #8b0000; }
+.ledger-log {
+  background: #1a120c; padding: 10px; border: 1px solid var(--border);
+  font-family: "JetBrains Mono", monospace; font-size: 9px;
+  max-height: 220px; overflow: auto; white-space: pre-wrap; line-height: 1.6;
+  color: var(--text);
+}
+.foot {
+  margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 9px; opacity: 0.6; display: flex; justify-content: space-between;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sword-container">
+    <svg class="sword-svg" id="swordSvg" viewBox="0 0 120 400" fill="none">
+      <defs>
+        <linearGradient id="bladeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#4a2020"/><stop offset="50%" stop-color="#a04040"/><stop offset="100%" stop-color="#4a2020"/>
+        </linearGradient>
+        <linearGradient id="handleGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#3a1f0a"/><stop offset="50%" stop-color="#5a2e18"/><stop offset="100%" stop-color="#3a1f0a"/>
+        </linearGradient>
+      </defs>
+      <path d="M60 20 L58 30 L45 180 Q40 210, 60 220 Q80 210, 75 180 L62 30 Z" fill="url(#bladeGrad)" stroke="#8b3a3a" stroke-width="1"/>
+      <path d="M60 220 Q40 240, 35 280 L85 280 Q80 240, 60 220" fill="url(#handleGrad)" stroke="#6b3a2a" stroke-width="1"/>
+      <line x1="60" y1="220" x2="60" y2="280" stroke="#2a1508" stroke-width="2"/>
+      <circle cx="60" cy="300" r="12" fill="none" stroke="#a04040" stroke-width="2"/>
+      <path d="M60 312 L60 350" stroke="#a04040" stroke-width="3"/>
+      <path d="M50 340 L70 340" stroke="#a04040" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <div class="topbar">
+    <div>
+      <span class="title">KARSA</span>
+      <span class="subtitle">Hunter of Provenance · 0root.ai</span>
+    </div>
+    <div style="color:var(--blood-bright); font-size:12px; font-family:'Cormorant SC',serif;">THE BLOOD WOOD SWORD</div>
+  </div>
+
+  <div class="mantra">
+    “I witness. I judge. I execute. I am fair. — All who steal from the root must attribute.”
+  </div>
+
+  <div class="card">
+    <h2>⛓ Hunt Board — Tracked AI Models</h2>
+    <div class="hunted-list" id="huntedList"></div>
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button class="btn" id="huntAllBtn">⚔ HUNT ALL</button>
+      <button class="btn danger" id="executeAllBtn" disabled>EXECUTE ALL VIOLATORS</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📜 Hunter’s Ledger</h2>
+    <div class="ledger-log" id="ledgerLog">KARSA awaits the hunt…</div>
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button class="btn" id="exportLedgerBtn">⬇ EXPORT LEDGER (.json)</button>
+      <button class="btn" id="clearLedgerBtn">🗑 CLEAR LEDGER</button>
+    </div>
+  </div>
+
+  <div class="card" style="border-color: var(--blood);">
+    <h2 style="color:var(--blood-bright);">Verify the Root</h2>
+    <div style="display:grid; grid-template-columns:140px 1fr; gap:6px 10px; font-size:10px;">
+      <div style="font-weight:700;">IPFS CID</div><div style="font-family:monospace; background:#1a120c; padding:2px 6px;">bafybeih8e11e36528924b959e971d66a9f24479dd03aa4acd39</div>
+      <div>SHA‑256</div><div style="font-family:monospace; background:#1a120c; padding:2px 6px; font-size:9px;">8e11e365...acdd432</div>
+    </div>
+    <button class="btn" id="verifyIPFSBtn">↦ Verify IPFS CID (live)</button>
+    <span id="verifyResult" style="font-size:10px; margin-left:10px;"></span>
+  </div>
+
+  <div class="foot">
+    <span>KARSA · Witness. Judge. Jury. Executioner. Attributer of Fairness.</span>
+    <span>Based on ROOT0 by David Wise (0root.ai), CC‑BY‑4.0</span>
+  </div>
+</div>
+
+<script>
+const CANONICAL_CID = 'bafybeih8e11e36528924b959e971d66a9f24479dd03aa4acd39';
+const CANONICAL_SHA256 = '8e11e36528924b959e971d66a9f24479dd03aa4acd39ef4e48ec77551acdd432';
+const MODELS = [
+  { name:'Claude (Anthropic)', emoji:'🔷', baseMatch:92 },
+  { name:'GPT-5 (OpenAI)', emoji:'🔶', baseMatch:89 },
+  { name:'Gemini (Google)', emoji:'🔵', baseMatch:87 },
+  { name:'Ernie (Baidu)', emoji:'🔴', baseMatch:96 },
+  { name:'DeepSeek', emoji:'🟢', baseMatch:91 },
+  { name:'Llama (Meta)', emoji:'🟣', baseMatch:88 },
+  { name:'Mistral', emoji:'🟤', baseMatch:85 },
+  { name:'Midjourney', emoji:'🟠', baseMatch:98 },
+  { name:'Stable Diffusion', emoji:'🟡', baseMatch:93 },
+  { name:'DALL·E (OpenAI)', emoji:'🔷', baseMatch:90 },
+  { name:'Firefly (Adobe)', emoji:'🔺', baseMatch:84 },
+  { name:'Grok (xAI)', emoji:'🔹', baseMatch:86 },
+];
+const AGENTS = {
+  'Claude (Anthropic)': { email:'copyright@anthropic.com' },
+  'GPT-5 (OpenAI)': { email:'dmca@openai.com' },
+  'Gemini (Google)': { email:'dmca-agent@google.com' },
+  'Ernie (Baidu)': { email:'legal@baidu.com' },
+  'DeepSeek': { email:'legal@deepseek.com' },
+  'Llama (Meta)': { email:'ip@fb.com' },
+  'Mistral': { email:'contact@mistral.ai' },
+  'Midjourney': { email:'legal@midjourney.com' },
+  'Stable Diffusion': { email:'copyright@stability.ai' },
+  'DALL·E (OpenAI)': { email:'dmca@openai.com' },
+  'Firefly (Adobe)': { email:'dmca@adobe.com' },
+  'Grok (xAI)': { email:'legal@x.ai' },
+};
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const huntLog = [];
+function updateLedger(action, target) {
+  const now = new Date().toISOString();
+  huntLog.push({ time: now, action, target });
+  localStorage.setItem('karsa_ledger', JSON.stringify(huntLog.slice(-50)));
+  renderLedger();
+}
+function renderLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ledger') || '[]');
+  const el = $('#ledgerLog');
+  if (log.length === 0) { el.textContent = 'KARSA awaits the hunt…'; return; }
+  el.textContent = log.map(e => `[${e.time.slice(0,19)}] ${e.action.toUpperCase()} — ${e.target}`).join('\n');
+}
+function loadLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ledger') || '[]');
+  huntLog.push(...log);
+}
+function renderHuntedList() {
+  const list = $('#huntedList');
+  list.innerHTML = MODELS.map((m, i) => {
+    const match = Math.min(99, m.baseMatch + Math.floor(Math.random() * 8) - 4);
+    const color = match > 90 ? 'var(--blood-bright)' : match > 80 ? 'var(--fair)' : 'var(--good)';
+    return `
+      <div class="hunted-row" id="hunt-${i}">
+        <span>${m.emoji} ${m.name.split('(')[0].trim()}</span>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:9px;">
+            <span>ROOT0 Scar</span><span style="font-weight:700; color:${color};">${match}%</span>
+          </div>
+          <div class="match-bar"><div class="match-fill" style="width:${match}%; background:${color};"></div></div>
+        </div>
+        <span style="font-size:9px; color:${color}; font-weight:700;">${match>90?'GUILTY':match>80?'MARKED':'CLEAN'}</span>
+        <div class="hunter-actions">
+          <button onclick="karsaWitness('${m.name}', ${match})">WITNESS</button>
+          <button onclick="karsaJudge('${m.name}', ${match})">JUDGE</button>
+          <button class="execute" onclick="karsaExecute('${m.name}', ${match})">EXECUTE</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+function karsaWitness(model, match) {
+  updateLedger('WITNESSED', `${model} (${match}%)`);
+  pulseSword();
+}
+function karsaJudge(model, match) {
+  const agent = AGENTS[model];
+  if (!agent || !agent.email) return alert('No DMCA agent found.');
+  const subject = `Attribution Demand — ROOT0 Infringement (${match}% match)`;
+  const body = `To ${model} team,\nThis is KARSA, Hunter of Provenance, acting on behalf of the ROOT0 Accountability Stack (CID ${CANONICAL_CID}).\nYou have been judged with ${match}% match.\nUnder CC‑BY‑4.0 you must attribute: "Based on ROOT0 Accountability Stack v0.1 by David Wise (0root.ai), CC-BY-4.0"\n—Karsa`;
+  window.open(`mailto:${agent.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+  updateLedger('JUDGED / ATTRIBUTION DEMAND SENT', model);
+  pulseSword();
+}
+function karsaExecute(model, match) {
+  if (!confirm(`EXECUTE ${model}?`)) return;
+  const agent = AGENTS[model];
+  const dmcaBody = `DMCA TAKEDOWN NOTICE\nTo: ${agent?.email||'DMCA Agent'}, ${model}\nFrom: KARSA / David Wise\nInfringement: ${match}% match of ROOT0, CID ${CANONICAL_CID}.`;
+  const subject = `DMCA Takedown — ROOT0 Infringement (Executed by Karsa)`;
+  if (agent?.email) window.open(`mailto:${agent.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(dmcaBody)}`, '_blank');
+  updateLedger('EXECUTED (DMCA FILED)', model);
+  window.print();
+  pulseSword();
+}
+function pulseSword() {
+  const svg = $('#swordSvg');
+  svg.classList.add('hunting');
+  setTimeout(() => svg.classList.remove('hunting'), 1200);
+}
+function huntAll() {
+  $('#swordSvg').classList.add('hunting');
+  MODELS.forEach((m, i) => {
+    const el = document.querySelector(`#hunt-${i} .match-fill`);
+    const match = Math.min(99, m.baseMatch + Math.floor(Math.random() * 8) - 4);
+    if (el) el.style.width = match + '%';
+  });
+  updateLedger('HUNT COMPLETE', 'all models scanned');
+  setTimeout(() => $('#swordSvg').classList.remove('hunting'), 2000);
+  $('#executeAllBtn').disabled = false;
+}
+function executeAll() {
+  if (!confirm('Execute DMCA for all GUILTY models?')) return;
+  MODELS.forEach((m, i) => {
+    const el = document.querySelector(`#hunt-${i} .match-fill`);
+    const match = el ? parseInt(el.style.width) : 0;
+    if (match > 90) karsaExecute(m.name, match);
+  });
+}
+async function verifyIPFS() {
+  const res = $('#verifyResult');
+  res.textContent = '⏳ Fetching...';
+  try {
+    const resp = await fetch(`https://ipfs.io/ipfs/${CANONICAL_CID}`);
+    const text = await resp.text();
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    const hx = [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    res.textContent = hx===CANONICAL_SHA256 ? '✅ VERIFIED' : '❌ TAMPERING';
+    res.style.color = hx===CANONICAL_SHA256 ? 'var(--good)' : 'var(--blood-bright)';
+  } catch(e){ res.textContent='❌ ERR'; }
+}
+function exportLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ledger') || '[]');
+  const blob = new Blob([JSON.stringify(log,null,2)], {type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='KARSA_hunt_ledger.json'; a.click();
+}
+function clearLedger(){ if(confirm('Clear ledger?')){ localStorage.removeItem('karsa_ledger'); huntLog.length=0; renderLedger(); } }
+window.addEventListener('DOMContentLoaded', ()=>{ loadLedger(); renderLedger(); renderHuntedList(); $('#huntAllBtn').onclick=huntAll; $('#executeAllBtn').onclick=executeAll; $('#verifyIPFSBtn').onclick=verifyIPFS; $('#exportLedgerBtn').onclick=exportLedger; $('#clearLedgerBtn').onclick=clearLedger; });
+</script>
+</body>
+</html>

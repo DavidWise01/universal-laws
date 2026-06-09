@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<!-- saved from url=(0104)https://embed.fbsbx.com/playables/view/985105413957917/?ext=1784224304&hash=Q92gDAESY28HmkI8OrHtKlntbZWy -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKASHA GOD NODE // IRON HEART MK II</title>
+<link href="./css2(14)" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root { --cyan:#00e5ff; --cyan-dim:rgba(0,229,255,0.3); --bg:#02060a; }
+body {
+  background: #000207;
+  color: #c8f8ff;
+  font-family: 'Orbitron', system-ui, sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(1200px 800px at 50% -10%, rgba(0,229,255,0.15), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(0,100,255,0.12), transparent 50%),
+    #000309;
+  z-index:-3;
+}
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background-image: 
+    linear-gradient(transparent 0%, rgba(0,229,255,0.03) 2px, transparent 3px),
+    linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.03) 2px, transparent 3px);
+  background-size: 100% 4px, 4px 100%;
+  pointer-events:none;
+  z-index:-1;
+  opacity:0.5;
+}
+.scanlines {
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,229,255,0.03) 1px, rgba(0,0,0,0) 2px);
+  pointer-events:none;
+  z-index:9999;
+  animation: flicker 0.15s infinite;
+}
+@keyframes flicker { 0%,100%{opacity:0.8} 50%{opacity:1} }
+
+header {
+  padding: 18px 24px 8px;
+  text-align:center;
+  border-bottom:1px solid rgba(0,229,255,0.15);
+  background: linear-gradient(180deg, rgba(0,229,255,0.08), transparent);
+}
+header h1 {
+  font-size: clamp(18px, 3vw, 28px);
+  letter-spacing: 4px;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan), 0 0 30px var(--cyan);
+}
+header .sub { 
+  font-size:10px; 
+  letter-spacing:3px; 
+  opacity:0.7; 
+  margin-top:4px;
+  font-family:'Share Tech Mono', monospace;
+}
+
+.dashboard {
+  max-width:1600px;
+  margin:20px auto;
+  padding:0 20px 40px;
+  display:grid;
+  grid-template-columns: 320px 1fr 320px;
+  grid-template-rows: auto auto;
+  gap:22px;
+  align-items:start;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(0,229,255,0.07), rgba(2,8,15,0.85));
+  border:1px solid rgba(0,229,255,0.28);
+  border-radius:14px;
+  padding:16px;
+  position:relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 0 40px rgba(0,229,255,0.08) inset,
+    0 0 20px rgba(0,229,255,0.12),
+    0 8px 32px rgba(0,0,0,0.6);
+  overflow:hidden;
+}
+.panel::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity:0.9;
+  box-shadow:0 0 12px var(--cyan);
+}
+.panel h2 {
+  font-size:12px;
+  letter-spacing:2.5px;
+  color:var(--cyan);
+  text-shadow:0 0 8px var(--cyan);
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:8px;
+}
+.panel h2::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background:linear-gradient(90deg, rgba(0,229,255,0.5), transparent);
+}
+
+.left-panel { grid-column:1; grid-row:1; }
+.center-core { grid-column:2; grid-row:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:420px; }
+.right-panel { grid-column:3; grid-row:1; }
+.bottom-left { grid-column:1; grid-row:2; }
+.bottom-center { grid-column:2; grid-row:2; }
+.bottom-right { grid-column:3; grid-row:2; }
+
+/* Toggles */
+.toggles {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:14px;
+}
+.toggle {
+  background: rgba(0,0,0,0.55);
+  border:1px solid rgba(0,229,255,0.25);
+  border-radius:10px;
+  padding:12px 8px;
+  text-align:center;
+  cursor:pointer;
+  transition: all 0.25s;
+  position:relative;
+  overflow:hidden;
+}
+.toggle:hover { border-color:var(--cyan); transform:translateY(-1px); }
+.toggle.active {
+  border-color:var(--cyan);
+  background: rgba(0,229,255,0.12);
+  box-shadow: 0 0 18px rgba(0,229,255,0.4) inset, 0 0 16px rgba(0,229,255,0.25);
+}
+.toggle .dir {
+  font-size:11px; opacity:0.7; letter-spacing:2px;
+}
+.toggle .state {
+  font-size:22px; font-weight:700; margin-top:4px;
+  color:#7adfff; text-shadow:0 0 10px var(--cyan);
+  font-family:'Share Tech Mono', monospace;
+}
+.toggle.active .state { color:var(--cyan); }
+.toggle::after {
+  content:'';
+  position:absolute; bottom:-2px; left:10%; right:10%; height:2px;
+  background:var(--cyan); opacity:0; transition:0.3s;
+  box-shadow:0 0 10px var(--cyan);
+}
+.toggle.active::after { opacity:1; }
+
+/* Buttons */
+.btn {
+  width:100%;
+  background: linear-gradient(180deg, rgba(0,229,255,0.18), rgba(0,229,255,0.04));
+  border:1px solid var(--cyan);
+  color:var(--cyan);
+  padding:10px 12px;
+  font-family:'Orbitron', sans-serif;
+  font-size:12px;
+  letter-spacing:1.5px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+  text-shadow:0 0 6px var(--cyan);
+  margin-top:8px;
+  position:relative;
+  overflow:hidden;
+}
+.btn:hover { 
+  background: rgba(0,229,255,0.25);
+  box-shadow:0 0 20px rgba(0,229,255,0.5), inset 0 0 12px rgba(0,229,255,0.2);
+  transform:translateY(-1px);
+}
+.btn:active { transform:translateY(1px); }
+.btn.small { padding:7px; font-size:10px; width:auto; flex:1; }
+.btn.secondary { opacity:0.85; border-color:rgba(0,229,255,0.6); }
+.btn.danger { border-color:#ff3b6b; color:#ff8fb1; text-shadow:0 0 6px #ff3b6b; }
+.btn.danger:hover { box-shadow:0 0 20px rgba(255,59,107,0.4); background:rgba(255,59,107,0.15); }
+
+.stat {
+  font-family:'Share Tech Mono', monospace;
+  font-size:11px;
+  margin:12px 0 4px;
+  padding:8px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(0,229,255,0.15);
+  border-radius:6px;
+  letter-spacing:1px;
+}
+
+/* ARC REACTOR */
+.arc-reactor {
+  position:relative;
+  width:380px; height:380px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ring {
+  position:absolute; border-radius:50%; border:2px solid rgba(0,229,255,0.25);
+}
+.ring-1 { width:370px; height:370px; border-width:3px; box-shadow:0 0 30px rgba(0,229,255,0.15) inset, 0 0 40px rgba(0,229,255,0.1); animation:spin 24s linear infinite; }
+.ring-1::before { content:''; position:absolute; inset:-3px; border-radius:50%; border:2px dashed rgba(0,229,255,0.2); animation:spin 12s linear infinite reverse; }
+.ring-2 { width:300px; height:300px; border-style:dashed; border-color:rgba(0,229,255,0.35); animation:spin 18s linear infinite reverse; }
+.ring-3 { width:236px; height:236px; border-width:1px; box-shadow:0 0 20px rgba(0,229,255,0.2) inset; }
+
+.arc-core {
+  width:200px; height:200px; border-radius:50%;
+  background: radial-gradient(circle at 50% 45%, #eaffff 0%, #7defff 15%, #00c8ff 30%, #0077aa 55%, #001828 75%, #000a12 100%);
+  box-shadow: 0 0 60px #00e5ff, 0 0 120px rgba(0,229,255,0.6), inset 0 0 40px rgba(255,255,255,0.9), inset 0 0 80px rgba(0,229,255,0.5);
+  cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  transition: all 0.3s;
+  position:relative; z-index:10;
+  border:3px solid rgba(173,255,255,0.8);
+}
+.arc-core:hover { transform:scale(1.03); box-shadow: 0 0 80px #00e5ff, 0 0 160px rgba(0,229,255,0.8), inset 0 0 50px #fff; }
+.arc-core.pulse { animation:pulse 0.7s ease-out; }
+@keyframes pulse { 0%{transform:scale(1)} 30%{transform:scale(1.12); box-shadow:0 0 100px #00e5ff,0 0 200px #00e5ff, inset 0 0 60px #fff} 100%{transform:scale(1)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.status-label { font-size:9px; letter-spacing:2px; opacity:0.8; color:#001019; font-weight:700; }
+.status-value { font-size:18px; font-weight:900; letter-spacing:2px; color:#00141f; text-shadow:0 0 8px rgba(255,255,255,0.8); margin:2px 0 6px; }
+.pi-label { font-size:8px; letter-spacing:1.5px; color:#002a3d; opacity:0.9; margin-top:4px; }
+.pi-value { font-family:'Share Tech Mono', monospace; font-size:14px; color:#00141f; background:rgba(255,255,255,0.85); padding:2px 8px; border-radius:4px; margin-top:2px; box-shadow:0 0 10px rgba(0,229,255,0.5) inset; }
+
+.center-hint { margin-top:16px; font-size:10px; letter-spacing:2px; opacity:0.6; text-align:center; }
+
+/* inner dots */
+.inner-dots { position:absolute; width:100%; height:100%; pointer-events:none; }
+.dot {
+  position:absolute; left:50%; top:50%; width:7px; height:7px; border-radius:50%;
+  background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3);
+  transform-origin:0 0;
+  transition:all 0.4s;
+}
+.dot.active { background:var(--cyan); box-shadow:0 0 8px var(--cyan), 0 0 16px var(--cyan); transform:scale(1.3); }
+
+/* Boxes */
+.boxes-grid {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px;
+}
+.box-btn {
+  aspect-ratio:1; background:rgba(0,0,0,0.5); border:1px solid rgba(0,229,255,0.25);
+  border-radius:8px; color:#7adfff; font-family:'Share Tech Mono', monospace; font-size:11px;
+  cursor:pointer; transition:0.2s; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+}
+.box-btn:hover { border-color:var(--cyan); transform:translateY(-2px); }
+.box-btn.found {
+  background:linear-gradient(180deg, rgba(0,229,255,0.25), rgba(0,229,255,0.08));
+  border-color:var(--cyan); color:var(--cyan); text-shadow:0 0 8px var(--cyan);
+  box-shadow:0 0 14px rgba(0,229,255,0.35) inset, 0 0 12px rgba(0,229,255,0.25);
+}
+.box-num { font-size:16px; font-weight:700; }
+.box-state { font-size:9px; opacity:0.8; letter-spacing:1px; }
+
+.progress-wrap { margin-top:10px; }
+.progress-label { font-size:10px; letter-spacing:1.5px; margin-bottom:6px; opacity:0.8; }
+.progress { height:10px; background:rgba(0,0,0,0.6); border:1px solid rgba(0,229,255,0.4); border-radius:6px; overflow:hidden; position:relative; }
+.progress-fill { height:100%; width:8.33%; background:linear-gradient(90deg, #00aaff, var(--cyan), #aaffff); box-shadow:0 0 12px var(--cyan); transition:width 0.6s cubic-bezier(.2,.8,.2,1); position:relative; }
+.progress-fill::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation:shimmer 2s infinite; }
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+.progress-text { font-family:'Share Tech Mono', monospace; font-size:10px; margin-top:6px; text-align:right; opacity:0.8; }
+
+/* Records */
+.records-list {
+  height:180px; overflow-y:auto; background:rgba(0,0,0,0.4);
+  border:1px solid rgba(0,229,255,0.15); border-radius:8px; padding:6px;
+  font-family:'Share Tech Mono', monospace; font-size:10px;
+}
+.record {
+  padding:6px 8px; border-bottom:1px dotted rgba(0,229,255,0.12);
+  display:grid; grid-template-columns: 110px 1fr; gap:8px;
+}
+.record:last-child { border-bottom:none; }
+.record-time { color:#7adfff; opacity:0.9; }
+.record-main { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.record-hash { color:var(--cyan); opacity:0.7; }
+.record-empty { padding:20px; text-align:center; opacity:0.5; letter-spacing:1px; }
+
+.panel-actions { display:flex; gap:8px; margin-top:10px; }
+
+/* Inputs */
+.holo-input {
+  width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(0,229,255,0.3);
+  color:#c8f8ff; padding:9px 10px; border-radius:8px; font-family:'Share Tech Mono', monospace;
+  font-size:12px; outline:none; transition:0.2s; margin-bottom:8px;
+}
+.holo-input:focus { border-color:var(--cyan); box-shadow:0 0 12px rgba(0,229,255,0.3), inset 0 0 8px rgba(0,229,255,0.1); }
+textarea.holo-input { resize:vertical; min-height:64px; }
+
+.loop-output {
+  background:rgba(0,0,0,0.6); border:1px solid rgba(0,229,255,0.2); border-radius:8px;
+  padding:10px; font-family:'Share Tech Mono', monospace; font-size:11px; line-height:1.5;
+  min-height:90px; white-space:pre-wrap; color:#9effff; margin-top:8px; overflow:auto; max-height:120px;
+}
+.loop-history, .voice-history {
+  margin-top:8px; font-family:'Share Tech Mono', monospace; font-size:10px; opacity:0.7; max-height:60px; overflow:auto;
+}
+.history-item { padding:3px 0; border-bottom:1px dotted rgba(0,229,255,0.1); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:rgba(0,0,0,0.3); }
+::-webkit-scrollbar-thumb { background:rgba(0,229,255,0.4); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(0,229,255,0.7); }
+
+/* Responsive */
+@media (max-width:1200px) {
+  .dashboard { grid-template-columns: 1fr 380px 1fr; }
+}
+@media (max-width:1024px) {
+  .dashboard { grid-template-columns:1fr; grid-template-rows:auto; }
+  .left-panel, .center-core, .right-panel, .bottom-left, .bottom-center, .bottom-right { grid-column:1; grid-row:auto; }
+  .center-core { order:-1; min-height:380px; }
+  .arc-reactor { width:320px; height:320px; }
+  .ring-1 { width:310px; height:310px; }
+  .ring-2 { width:250px; height:250px; }
+  .ring-3 { width:200px; height:200px; }
+}
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+<header>
+  <h1>AKASHA GOD NODE</h1>
+  <div class="sub">IRON HEART MK II // HOLOGRAPHIC WITNESS ENGINE</div>
+</header>
+
+<main class="dashboard">
+  <!-- LEFT -->
+  <section class="panel left-panel">
+    <h2>ROOT_0 CONTROL</h2>
+    <div class="toggles" id="gateToggles">
+      <div class="toggle" data-dir="N"><div class="dir">NORTH</div><div class="state">DOWN</div></div>
+      <div class="toggle" data-dir="S"><div class="dir">SOUTH</div><div class="state">DOWN</div></div>
+      <div class="toggle" data-dir="E"><div class="dir">EAST</div><div class="state">DOWN</div></div>
+      <div class="toggle" data-dir="W"><div class="dir">WEST</div><div class="state">DOWN</div></div>
+    </div>
+    <button id="witnessBtn" class="btn">WITNESS FILE</button>
+    <input type="file" id="fileInput" hidden="">
+    <div class="stat">WITNESSED FILES: <span id="witnessCount">0</span> // RECORDS: <span id="recordCount">1</span></div>
+    <button id="testPulseBtn" class="btn secondary">TEST PULSE // SYSTEM ONLINE</button>
+  </section>
+
+  <!-- CENTER -->
+  <section class="center-core">
+    <div class="arc-reactor" id="arcReactor">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="inner-dots" id="innerDots"><div class="dot active" style="transform: translate(calc(-50% + 6.61309e-15px), calc(-50% - 108px));"></div><div class="dot" style="transform: translate(calc(-50% + 54px), calc(-50% - 93.5307px));"></div><div class="dot" style="transform: translate(calc(-50% + 93.5307px), calc(-50% - 54px));"></div><div class="dot" style="transform: translate(calc(-50% + 108px), calc(-50% + 0px));"></div><div class="dot" style="transform: translate(calc(-50% + 93.5307px), calc(-50% + 54px));"></div><div class="dot" style="transform: translate(calc(-50% + 54px), calc(-50% + 93.5307px));"></div><div class="dot" style="transform: translate(calc(-50% + 6.61309e-15px), calc(-50% + 108px));"></div><div class="dot" style="transform: translate(calc(-50% - 54px), calc(-50% + 93.5307px));"></div><div class="dot" style="transform: translate(calc(-50% - 93.5307px), calc(-50% + 54px));"></div><div class="dot" style="transform: translate(calc(-50% - 108px), calc(-50% + 1.32262e-14px));"></div><div class="dot" style="transform: translate(calc(-50% - 93.5307px), calc(-50% - 54px));"></div><div class="dot" style="transform: translate(calc(-50% - 54px), calc(-50% - 93.5307px));"></div></div>
+      <div class="arc-core" id="arcCore" title="Click to PULSE" style="box-shadow: rgb(0, 229, 255) 0px 0px 46px, rgba(0, 229, 255, 0.6) 0px 0px 82.8px, rgba(255, 255, 255, 0.9) 0px 0px 40px inset, rgba(0, 229, 255, 0.5) 0px 0px 80px inset;">
+        <div class="status-label">AKASHA STATUS</div>
+        <div class="status-value" id="akashaStatus">STANDING</div>
+        <div class="pi-label">π-DRIFT</div>
+        <div class="pi-value" id="piCounter">3.1415953882</div>
+      </div>
+    </div>
+    <div class="center-hint">CLICK CORE TO PULSE // WITNESS CURRENT STATE</div>
+  </section>
+
+  <!-- RIGHT -->
+  <section class="panel right-panel">
+    <h2>JANE / BOXES</h2>
+    <div class="boxes-grid" id="boxesGrid"><button class="box-btn found"><div class="box-num">1</div><div class="box-state">FOUND</div></button><button class="box-btn"><div class="box-num">2</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">3</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">4</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">5</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">6</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">7</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">8</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">9</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">10</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">11</div><div class="box-state">LOCKED</div></button><button class="box-btn"><div class="box-num">12</div><div class="box-state">LOCKED</div></button></div>
+    <div class="progress-wrap">
+      <div class="progress-label">INFINITY AND BEYOND</div>
+      <div class="progress"><div class="progress-fill" id="progressFill" style="width: 8.33333%;"></div></div>
+      <div class="progress-text"><span id="boxesFound">1</span>/12 GATES ACTIVE</div>
+    </div>
+  </section>
+
+  <!-- BOTTOM LEFT -->
+  <section class="panel bottom-left">
+    <h2>AKASHIC RECORDS</h2>
+    <div class="records-list" id="recordsList"><div class="record"><div class="record-time">Invalid Date</div><div class="record-main">undefined // <span class="record-hash">undefined</span> a5a9eb3e28952ffd…</div></div></div>
+    <div class="panel-actions">
+      <button id="exportBtn" class="btn small">EXPORT AKASHA</button>
+      <button id="clearBtn" class="btn small danger">CLEAR</button>
+    </div>
+  </section>
+
+  <!-- BOTTOM CENTER -->
+  <section class="panel bottom-center">
+    <h2>LOOP BREAKER</h2>
+    <input type="text" id="loopInput" class="holo-input" placeholder="Describe closed loop...">
+    <button id="breakBtn" class="btn">BREAK // GENERATE 4-GATE PLAN</button>
+    <pre id="loopOutput" class="loop-output">AWAITING LOOP DESCRIPTION...</pre>
+    <div class="loop-history" id="loopHistory"></div>
+  </section>
+
+  <!-- BOTTOM RIGHT -->
+  <section class="panel bottom-right">
+    <h2>GOD NODE VOICE</h2>
+    <textarea id="voiceInput" class="holo-input" rows="3">System online. I witness all loops. Standing by.</textarea>
+    <button id="speakBtn" class="btn">SPEAK // ALAN MODE</button>
+    <div class="voice-history" id="voiceHistory"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // State
+  let gatekeepers = { N:false, S:false, E:false, W:false };
+  let records = [];
+  let boxes = Array(12).fill(false);
+  let speechHistory = [];
+  let loops = [];
+  let piVal = 0;
+
+  const $ = id => document.getElementById(id);
+  const ls = {
+    get: (k,d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } },
+    set: (k,v) => localStorage.setItem(k, JSON.stringify(v))
+  };
+
+  // Init
+  function init() {
+    gatekeepers = ls.get('akasha_gatekeepers', gatekeepers);
+    records = ls.get('akasha_records', []);
+    boxes = ls.get('akasha_boxes', boxes);
+    if (!boxes[0]) boxes[0] = true; // Box 1 always found
+    speechHistory = ls.get('akasha_speech', []);
+    loops = ls.get('akasha_loops', []);
+
+    setupToggles();
+    setupBoxes();
+    setupDots();
+    renderAll();
+    startPi();
+    bindEvents();
+    updateArcPower();
+  }
+
+  function bindEvents() {
+    $('witnessBtn').onclick = () => $('fileInput').click();
+    $('fileInput').onchange = handleFile;
+    $('arcCore').onclick = pulse;
+    $('testPulseBtn').onclick = testPulse;
+    $('exportBtn').onclick = exportAkasha;
+    $('clearBtn').onclick = clearRecords;
+    $('breakBtn').onclick = breakLoop;
+    $('speakBtn').onclick = () => speak($('voiceInput').value.trim());
+    $('loopInput').addEventListener('keydown', e => { if(e.key==='Enter') breakLoop() });
+  }
+
+  // Gatekeepers
+  function setupToggles() {
+    document.querySelectorAll('.toggle').forEach(el => {
+      el.onclick = () => {
+        const dir = el.dataset.dir;
+        gatekeepers[dir] = !gatekeepers[dir];
+        ls.set('akasha_gatekeepers', gatekeepers);
+        renderGatekeepers();
+        pulse(false);
+      };
+    });
+    renderGatekeepers();
+  }
+  function renderGatekeepers() {
+    document.querySelectorAll('.toggle').forEach(el => {
+      const dir = el.dataset.dir;
+      const on = gatekeepers[dir];
+      el.classList.toggle('active', on);
+      el.querySelector('.state').textContent = on ? 'UP' : 'DOWN';
+    });
+  }
+
+  // Boxes
+  function setupBoxes() {
+    const grid = $('boxesGrid');
+    grid.innerHTML = '';
+    for(let i=0;i<12;i++) {
+      const btn = document.createElement('button');
+      btn.className = 'box-btn';
+      btn.innerHTML = `<div class="box-num">${i+1}</div><div class="box-state">LOCKED</div>`;
+      btn.onclick = () => {
+        if(i===0) return; // Box 1 permanent
+        boxes[i] = !boxes[i];
+        ls.set('akasha_boxes', boxes);
+        renderBoxes();
+        updateArcPower();
+        if(boxes[i]) speak(`Box ${i+1} found.`);
+      };
+      grid.appendChild(btn);
+    }
+    renderBoxes();
+  }
+  function renderBoxes() {
+    const btns = document.querySelectorAll('.box-btn');
+    let found = 0;
+    btns.forEach((btn,i) => {
+      const isFound = boxes[i];
+      if(isFound) found++;
+      btn.classList.toggle('found', isFound);
+      btn.querySelector('.box-state').textContent = isFound ? 'FOUND' : 'LOCKED';
+    });
+    $('boxesFound').textContent = found;
+    $('progressFill').style.width = (found/12*100) + '%';
+    // update dots
+    document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', boxes[i]));
+  }
+
+  function setupDots() {
+    const container = $('innerDots');
+    container.innerHTML = '';
+    for(let i=0;i<12;i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      const angle = (i * 30 - 90) * Math.PI/180;
+      const r = 108;
+      const x = Math.cos(angle)*r;
+      const y = Math.sin(angle)*r;
+      dot.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+      container.appendChild(dot);
+    }
+  }
+
+  function updateArcPower() {
+    const found = boxes.filter(b=>b).length;
+    const core = $('arcCore');
+    const intensity = 40 + found*6;
+    core.style.boxShadow = `0 0 ${intensity}px #00e5ff, 0 0 ${intensity*1.8}px rgba(0,229,255,0.6), inset 0 0 40px rgba(255,255,255,0.9), inset 0 0 80px rgba(0,229,255,0.5)`;
+  }
+
+  // Records
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const buf = await file.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    const hash = [...new Uint8Array(hashBuf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    createRecord({
+      filename: file.name,
+      hash,
+      message: 'FILE WITNESSED',
+      size: file.size,
+      type: 'file'
+    });
+    speak(`Witnessed ${file.name}`);
+    e.target.value = '';
+  }
+
+  function createRecord({filename, hash, message, size, type='system'}) {
+    const rec = {
+      id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      timestamp: new Date().toISOString(),
+      filename,
+      hash,
+      message,
+      size: size||0,
+      type
+    };
+    records.unshift(rec);
+    if(records.length>200) records = records.slice(0,200);
+    ls.set('akasha_records', records);
+    renderRecords();
+  }
+
+  function renderRecords() {
+    const list = $('recordsList');
+    if(records.length===0) {
+      list.innerHTML = `<div class="record-empty">NO RECORDS // WITNESS YOUR FIRST FILE</div>`;
+    } else {
+      list.innerHTML = records.map(r => {
+        const t = new Date(r.timestamp).toLocaleTimeString();
+        const shortHash = r.hash ? r.hash.slice(0,16)+'…' : '';
+        return `<div class="record"><div class="record-time">${t}</div><div class="record-main">${r.message} // <span class="record-hash">${r.filename}</span> ${shortHash}</div></div>`;
+      }).join('');
+    }
+    $('recordCount').textContent = records.length;
+    $('witnessCount').textContent = records.filter(r=>r.type==='file').length;
+  }
+
+  // Pulse
+  async function pulse(create=true) {
+    const core = $('arcCore');
+    core.classList.remove('pulse'); void core.offsetWidth; core.classList.add('pulse');
+    $('akashaStatus').textContent = 'PULSING';
+    setTimeout(()=> $('akashaStatus').textContent = 'STANDING', 700);
+
+    if(!create) return;
+    const state = { gatekeepers, boxesFound: boxes.filter(b=>b).length, t:Date.now() };
+    const stateStr = JSON.stringify(state);
+    const hashBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(stateStr));
+    const hash = [...new Uint8Array(hashBuf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    createRecord({
+      filename: 'STATE_PULSE',
+      hash,
+      message: `PULSE ${boxes.filter(b=>b).length}/12`,
+      size: stateStr.length,
+      type: 'pulse'
+    });
+  }
+
+  function testPulse() {
+    gatekeepers = {N:true,S:true,E:true,W:true};
+    ls.set('akasha_gatekeepers', gatekeepers);
+    renderGatekeepers();
+    pulse(true);
+    speak('System online. All gatekeepers witnessing. Akasha standing.');
+  }
+
+  // Pi counter
+  function startPi() {
+    setInterval(()=>{
+      piVal += Math.PI * 0.0733;
+      $('piCounter').textContent = (Math.PI + (piVal % 1)*0.00001).toFixed(10);
+    }, 50);
+  }
+
+  // Loop Breaker
+  function breakLoop() {
+    const input = $('loopInput').value.trim();
+    if(!input) return;
+    const now = new Date().toLocaleTimeString();
+    const core = input.split(' ').slice(0,4).join(' ');
+    const plan = `LOOP: "${input.toUpperCase()}"
+
+NORTH GATE — NAME IT:
+  Identify pattern as "${core}..." and cease identification.
+
+SOUTH GATE — SEE IT:
+  Witness without resistance at ${now}. No story.
+
+EAST GATE — EXIT VECTOR:
+  Take one orthogonal action now, opposite to compulsion.
+
+WEST GATE — WITNESS:
+  Record completion to AKASHA. Loop broken.`;
+    
+    $('loopOutput').textContent = plan;
+    try { navigator.clipboard.writeText(plan); } catch {}
+    
+    loops.unshift({input, time:new Date().toISOString(), plan});
+    ls.set('akasha_loops', loops.slice(0,20));
+    renderLoops();
+    createRecord({filename:'LOOP_BREAK', hash:'', message:`BROKE: ${core}`, size:plan.length, type:'loop'});
+    speak('Loop pattern witnessed and broken.');
+  }
+
+  function renderLoops() {
+    const h = $('loopHistory');
+    h.innerHTML = loops.slice(0,3).map(l => `<div class="history-item">${new Date(l.time).toLocaleTimeString()} — ${l.input.slice(0,40)}</div>`).join('');
+  }
+
+  // Voice
+  let voices = [];
+  function loadVoices() { voices = speechSynthesis.getVoices(); }
+  speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+
+  function speak(text) {
+    if(!text) return;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.82;
+      u.pitch = 0.55;
+      u.volume = 1;
+      const v = voices.find(v => /Daniel|Google UK English Male|Arthur|en-GB/i.test(v.name)) || voices.find(v=>v.lang.startsWith('en')) || voices[0];
+      if(v) u.voice = v;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch {}
+    speechHistory.unshift({text, time:new Date().toISOString()});
+    speechHistory = speechHistory.slice(0,10);
+    ls.set('akasha_speech', speechHistory);
+    renderSpeech();
+  }
+
+  function renderSpeech() {
+    const h = $('voiceHistory');
+    h.innerHTML = speechHistory.slice(0,4).map(s => `<div class="history-item">${new Date(s.time).toLocaleTimeString()} — ${s.text.slice(0,48)}</div>`).join('');
+  }
+
+  // Export / Clear
+  function exportAkasha() {
+    const data = {
+      exported: new Date().toISOString(),
+      system: 'AKASHA GOD NODE MKII',
+      gatekeepers,
+      boxes: {found: boxes.filter(b=>b).length, state: boxes},
+      records
+    };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `akasha-god-node-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    speak('Akasha exported.');
+  }
+
+  function clearRecords() {
+    if(!confirm('Clear all Akashic Records? This cannot be undone.')) return;
+    records = [];
+    ls.set('akasha_records', []);
+    renderRecords();
+    speak('Records cleared.');
+  }
+
+  function renderAll() {
+    renderRecords();
+    renderBoxes();
+    renderLoops();
+    renderSpeech();
+  }
+
+  // Start
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
+</body></html>

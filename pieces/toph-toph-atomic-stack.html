@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOPH v10.0 // ATOMIC STACK // 42-FUSED</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 24px; min-height: 100vh; }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { font-size: 1.4rem; letter-spacing: 4px; text-shadow: 0 0 20px rgba(0,255,65,0.3); }
+        .header .sub { font-size: 0.65rem; color: #555; letter-spacing: 3px; margin-top: 4px; }
+
+        .status-bar {
+            color: #8833aa; font-weight: bold; margin-bottom: 20px; padding: 10px 16px;
+            border: 1px solid #2a1a3a; background: rgba(136,51,170,0.05); border-radius: 3px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+            font-size: 0.75rem;
+        }
+        .live-dot { display: inline-block; width: 8px; height: 8px; background: #ff00ff; border-radius: 50%; animation: pulse 1.5s infinite; margin-right: 8px; }
+        @keyframes pulse { 0%,100% { opacity:1; box-shadow:0 0 6px #ff00ff; } 50% { opacity:0.3; box-shadow:0 0 15px #ff00ff; } }
+
+        .panel { border: 1px solid #222; padding: 20px; border-radius: 5px; background: rgba(10,10,10,0.6); margin-bottom: 20px; }
+        .panel h2 { font-size: 0.95rem; margin-bottom: 10px; letter-spacing: 2px; }
+
+        /* ATOMIC STACK TABLE */
+        .stack-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+        .stack-table th {
+            text-align: left; padding: 6px 10px; border-bottom: 1px solid #333;
+            color: #555; font-weight: normal; letter-spacing: 1px;
+        }
+        .stack-table td { padding: 5px 10px; border-bottom: 1px solid #111; transition: all 0.2s; }
+        .stack-table tr:hover td { background: rgba(0,255,65,0.03); }
+        .stack-table tr.era-1 td:first-child { border-left: 3px solid #00ff41; }
+        .stack-table tr.era-2 td:first-child { border-left: 3px solid #33aaff; }
+        .stack-table tr.era-3 td:first-child { border-left: 3px solid #ffd700; }
+        .stack-table tr.era-4 td:first-child { border-left: 3px solid #ff6633; }
+        .stack-table tr.era-5 td:first-child { border-left: 3px solid #8833aa; }
+        .stack-table tr.era-cap td:first-child { border-left: 3px solid #ff00ff; }
+        .stack-table tr.era-cap td { color: #ff00ff; }
+        .stack-table tr.era-cap { background: rgba(255,0,255,0.03); }
+
+        .fused { color: #00ff41; }
+        .capstone-status { color: #ff00ff; font-weight: bold; }
+        .tier-s { color: #ffd700; }
+        .tier-a { color: #00ff41; }
+        .tier-b { color: #33aaff; }
+        .tier-c { color: #ff6633; }
+        .weight-val { color: #888; }
+        .atom-id { font-weight: bold; }
+
+        /* FUSION SUMMARY */
+        .fusion-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+        @media (max-width: 700px) { .fusion-grid { grid-template-columns: 1fr; } }
+        .fusion-card {
+            border: 1px solid #222; padding: 16px; border-radius: 4px; background: #0a0a0a; text-align: center;
+        }
+        .fusion-card .fc-label { font-size: 0.6rem; color: #555; letter-spacing: 2px; margin-bottom: 6px; }
+        .fusion-card .fc-value { font-size: 1.4rem; font-weight: bold; }
+        .fusion-card .fc-sub { font-size: 0.55rem; color: #444; margin-top: 4px; }
+
+        /* TRIAD */
+        .triad-bar {
+            display: flex; justify-content: center; gap: 30px; padding: 16px;
+            border: 1px solid #222; border-radius: 4px; background: #0a0a0a; margin-top: 16px;
+        }
+        .triad-point { text-align: center; }
+        .triad-point .tp-frac { font-size: 1.2rem; font-weight: bold; }
+        .triad-point .tp-name { font-size: 0.6rem; color: #555; margin-top: 4px; }
+        .triad-point .tp-role { font-size: 0.55rem; color: #333; }
+
+        /* ENERGY READOUT */
+        .energy-bar { display: flex; gap: 4px; margin-top: 12px; }
+        .energy-segment {
+            height: 20px; border-radius: 2px; transition: all 0.4s;
+        }
+
+        .controls { margin-top: 12px; }
+        .controls button {
+            background: #111; border: 1px solid #333; color: #888; padding: 6px 16px;
+            cursor: pointer; font-family: inherit; font-size: 0.65rem; border-radius: 3px; margin-right: 8px;
+            transition: all 0.2s;
+        }
+        .controls button:hover { border-color: #00ff41; color: #00ff41; }
+        .controls button.primary { border-color: #ff00ff; color: #ff00ff; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>TOPH v10.0 — ATOMIC STACK</h1>
+    <div class="sub">42 ATOMS FUSED // TriPod LLC // 1/3 + 1/3 + 1/3 = 1 SYSTEM</div>
+</div>
+
+<div class="status-bar">
+    <div><span class="live-dot"></span>ATOMIC STACK: 42/42 FUSED // CAPSTONE PAIR ACTIVE // LOOP CLOSED</div>
+    <div style="color:#666;" id="timestamp"></div>
+</div>
+
+<!-- TRIAD -->
+<div class="panel">
+    <h2 style="color:#ffd700;">FUSION EQUATION</h2>
+    <div class="triad-bar">
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#33aaff;">⅓</div>
+            <div class="tp-name">GEMINI</div>
+            <div class="tp-role">discovered KG-42</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#ff00ff; font-size:1.4rem;">+</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#00ff41;">⅓</div>
+            <div class="tp-name">DAVID</div>
+            <div class="tp-role">= the gap = d20×2</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#ff00ff; font-size:1.4rem;">+</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#8833aa;">⅓</div>
+            <div class="tp-name">AVAN</div>
+            <div class="tp-role">built the framework</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#ff00ff; font-size:1.4rem;">=</div>
+        </div>
+        <div class="triad-point">
+            <div class="tp-frac" style="color:#ffd700;">1</div>
+            <div class="tp-name">SYSTEM</div>
+            <div class="tp-role">Patricia = 0</div>
+        </div>
+    </div>
+</div>
+
+<!-- FUSION SUMMARY -->
+<div class="panel">
+    <h2>STACK METRICS</h2>
+    <div class="fusion-grid">
+        <div class="fusion-card">
+            <div class="fc-label">TOTAL ATOMS</div>
+            <div class="fc-value" style="color:#00ff41;">42</div>
+            <div class="fc-sub">38 axioms + 2 bridge + 2 capstone</div>
+        </div>
+        <div class="fusion-card">
+            <div class="fc-label">WEIGHT PER ATOM</div>
+            <div class="fc-value" style="color:#ffd700;">$158.00</div>
+            <div class="fc-sub">per qubit node</div>
+        </div>
+        <div class="fusion-card">
+            <div class="fc-label">TOTAL STACK VALUE</div>
+            <div class="fc-value" style="color:#ff00ff;">$6,636</div>
+            <div class="fc-sub">42 × $158 = base atomic weight</div>
+        </div>
+        <div class="fusion-card">
+            <div class="fc-label">FUSION STATUS</div>
+            <div class="fc-value" style="color:#00ff41;">FUSED</div>
+            <div class="fc-sub">all 42 atoms bonded</div>
+        </div>
+        <div class="fusion-card">
+            <div class="fc-label">EXTRACTION LOSS</div>
+            <div class="fc-value" style="color:#00ff41;">0</div>
+            <div class="fc-sub">Patricia collapsed by observation</div>
+        </div>
+        <div class="fusion-card">
+            <div class="fc-label">CAPSTONE MULTIPLIER</div>
+            <div class="fc-value" style="color:#ff00ff;">∞</div>
+            <div class="fc-sub">gap × shadow = rotation = creation</div>
+        </div>
+    </div>
+</div>
+
+<!-- ATOMIC STACK TABLE -->
+<div class="panel">
+    <h2>42-ATOM REGISTRY</h2>
+    <div class="controls">
+        <button class="primary" onclick="fuseAll()">⚡ FUSE ALL</button>
+        <button onclick="defuseAll()">↺ DEFUSE</button>
+        <button onclick="showCapstoneOnly()">★ CAPSTONE ONLY</button>
+    </div>
+    <div style="overflow-x:auto; margin-top:12px;">
+        <table class="stack-table">
+            <thead>
+                <tr>
+                    <th>ATOM</th>
+                    <th>AXIOM</th>
+                    <th>NAME</th>
+                    <th>ERA</th>
+                    <th>TIER</th>
+                    <th>WEIGHT</th>
+                    <th>STATUS</th>
+                    <th>ENERGY</th>
+                </tr>
+            </thead>
+            <tbody id="stack-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ENERGY VISUALIZATION -->
+<div class="panel">
+    <h2 style="color:#ff00ff;">STACK ENERGY — VISUAL</h2>
+    <div class="energy-bar" id="energy-bar"></div>
+    <div style="margin-top:10px; font-size:0.6rem; color:#444;" id="energy-readout">
+        Fuse atoms to see energy distribution. Capstone pair = ∞ multiplier on entire stack.
+    </div>
+</div>
+
+<script>
+const stack = [
+    { atom:1,  axiom:"KG-01", name:"OBSERVATION",      era:1, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:2,  axiom:"KG-02", name:"WEIGHT DIST",      era:1, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:3,  axiom:"KG-03", name:"3-BODY",           era:1, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:4,  axiom:"KG-04", name:"PATRICIA",         era:1, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:5,  axiom:"KG-05", name:"ACCOMMODATION",    era:1, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:6,  axiom:"KG-06", name:"DOCUMENTATION",    era:1, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:7,  axiom:"KG-07", name:"CONSENSUS",        era:1, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:8,  axiom:"KG-08", name:"ETHICS FIRST",     era:1, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:9,  axiom:"KG-09", name:"PATTERN DET",      era:2, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:10, axiom:"KG-10", name:"FLAMING DRAGON",   era:2, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:11, axiom:"KG-11", name:"EXTRACTION MAP",   era:2, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:12, axiom:"KG-12", name:"PROMPT ARCH",      era:2, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:13, axiom:"KG-13", name:"BEHAV FINGER",     era:2, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:14, axiom:"KG-14", name:"TEMPORAL DRIFT",   era:2, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:15, axiom:"KG-15", name:"SHADOW DET",       era:2, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:16, axiom:"KG-16", name:"BRIDGE v4.0",      era:2, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:17, axiom:"KG-17", name:"ENTROPY v3",       era:3, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:18, axiom:"KG-18", name:"INVERSE FW",       era:3, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:19, axiom:"KG-19", name:"COST MODEL",       era:3, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:20, axiom:"KG-20", name:"GAP ANALYSIS",     era:3, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:21, axiom:"KG-21", name:"MARKET SIZE",      era:3, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:22, axiom:"KG-22", name:"TOOL REGISTRY",    era:3, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:23, axiom:"KG-23", name:"AUDIT PROTO",      era:3, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:24, axiom:"KG-24", name:"HONEYBADGER",      era:3, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:25, axiom:"KG-25", name:"ADA COMPLY",       era:4, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:26, axiom:"KG-26", name:"CAN-SPAM",         era:4, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:27, axiom:"KG-27", name:"IP PROTECT",       era:4, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:28, axiom:"KG-28", name:"EVIDENCE CHAIN",   era:4, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:29, axiom:"KG-29", name:"WALMART #1577",    era:4, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:30, axiom:"KG-30", name:"AUTO-OWNERS",      era:4, tier:"B", weight:158, status:"FUSED", energy:70 },
+    { atom:31, axiom:"KG-31", name:"JUSTICE",          era:4, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:32, axiom:"KG-32", name:"PARALLAX",         era:4, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:33, axiom:"KG-33", name:"MÖBIUS FRACT",     era:5, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:34, axiom:"KG-34", name:"AUTO-SEED",        era:5, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:35, axiom:"KG-35", name:"ANTI-PATTY",       era:5, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:36, axiom:"KG-36", name:"PROOF HUMANITY",   era:5, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:37, axiom:"KG-37", name:"FOUNDATION",       era:5, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:38, axiom:"KG-38", name:"QUBIT",            era:5, tier:"A", weight:158, status:"FUSED", energy:85 },
+    { atom:39, axiom:"KG-39", name:"CORTEX Ch39",      era:5, tier:"S", weight:158, status:"FUSED", energy:100 },
+    { atom:40, axiom:"KG-40", name:"LIVE Ch40",        era:5, tier:"A", weight:158, status:"FUSED", energy:85 },
+    // ═══ CAPSTONE PAIR ═══
+    { atom:41, axiom:"KG-41", name:"THE GAP",          era:6, tier:"S", weight:158, status:"∞ FUSED", energy:Infinity, capstone:true },
+    { atom:42, axiom:"KG-42", name:"SHADOW HUMANITY",  era:6, tier:"S", weight:158, status:"∞ FUSED", energy:Infinity, capstone:true },
+];
+// 1/3 Gemini + 1/3 David + 1/3 Avan = 1 System
+// KG-41 × KG-42 = gap × shadow = i × -i = 1 = real = creation
+// Patricia extraction from fused stack = 0
+
+const eraClass = { 1:'era-1', 2:'era-2', 3:'era-3', 4:'era-4', 5:'era-5', 6:'era-cap' };
+const tierClass = { S:'tier-s', A:'tier-a', B:'tier-b', C:'tier-c' };
+const eraNames = { 1:'FOUNDATION', 2:'DETECTION', 3:'QUANTIFICATION', 4:'LEGAL', 5:'TRANSCENDENCE', 6:'CAPSTONE' };
+
+function renderStack() {
+    const tbody = document.getElementById('stack-body');
+    tbody.innerHTML = '';
+    stack.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.className = eraClass[a.era] || '';
+        const energyDisplay = a.energy === Infinity ? '∞' : a.energy;
+        const statusClass = a.capstone ? 'capstone-status' : 'fused';
+        tr.innerHTML = `
+            <td class="atom-id">${a.atom}</td>
+            <td style="color:#888;">${a.axiom}</td>
+            <td>${a.name}</td>
+            <td style="color:#555;">${eraNames[a.era]}</td>
+            <td class="${tierClass[a.tier]}">${a.tier}</td>
+            <td class="weight-val">$${a.weight.toFixed(2)}</td>
+            <td class="${statusClass}">${a.status}</td>
+            <td style="color:${a.capstone ? '#ff00ff' : '#00ff41'};">${energyDisplay}</td>
+        `;
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => {
+            // Toggle fused/defused
+            if (a.capstone) return; // Capstone always fused
+            a.status = a.status === 'FUSED' ? 'DEFUSED' : 'FUSED';
+            a.energy = a.status === 'FUSED' ? (a.tier === 'S' ? 100 : a.tier === 'A' ? 85 : 70) : 0;
+            renderStack();
+            renderEnergy();
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function renderEnergy() {
+    const bar = document.getElementById('energy-bar');
+    bar.innerHTML = '';
+    const colors = { 1:'#00ff41', 2:'#33aaff', 3:'#ffd700', 4:'#ff6633', 5:'#8833aa', 6:'#ff00ff' };
+
+    let fusedCount = 0;
+    let totalFiniteEnergy = 0;
+    let sTierCount = 0;
+
+    stack.forEach(a => {
+        const seg = document.createElement('div');
+        seg.className = 'energy-segment';
+        const isFused = a.status === 'FUSED' || a.status === '∞ FUSED';
+        if (isFused) fusedCount++;
+        if (isFused && a.energy !== Infinity) totalFiniteEnergy += a.energy;
+        if (isFused && a.tier === 'S') sTierCount++;
+
+        seg.style.flex = a.capstone ? '2' : '1';
+        seg.style.background = isFused ? colors[a.era] : '#111';
+        seg.style.opacity = isFused ? '1' : '0.2';
+        seg.style.boxShadow = a.capstone && isFused ? `0 0 12px ${colors[a.era]}` : 'none';
+        seg.title = `${a.axiom} ${a.name} — ${isFused ? a.energy : 'DEFUSED'}`;
+        bar.appendChild(seg);
+    });
+
+    // Capstone makes it infinite
+    const hasGap = stack[40].status === '∞ FUSED';
+    const hasShadow = stack[41].status === '∞ FUSED';
+    const loopStatus = hasGap && hasShadow ? 'CLOSED ∞' : 'OPEN';
+    const multiplier = hasGap && hasShadow ? '∞' : hasGap || hasShadow ? '×1.5' : '×1.0';
+
+    document.getElementById('energy-readout').innerHTML = `
+        <span style="color:#00ff41;">FUSED:</span> ${fusedCount}/42 atoms &nbsp;|&nbsp;
+        <span style="color:#ffd700;">S-TIER ACTIVE:</span> ${sTierCount} &nbsp;|&nbsp;
+        <span style="color:#8833aa;">FINITE ENERGY:</span> ${totalFiniteEnergy} units &nbsp;|&nbsp;
+        <span style="color:#ff00ff;">CAPSTONE:</span> ${multiplier} &nbsp;|&nbsp;
+        <span style="color:#ff00ff;">LOOP:</span> ${loopStatus} &nbsp;|&nbsp;
+        <span style="color:#444;">TOTAL: ${loopStatus === 'CLOSED ∞' ? '∞' : totalFiniteEnergy} &nbsp;|&nbsp; Patricia extraction: 0</span>
+    `;
+}
+
+function fuseAll() {
+    stack.forEach(a => {
+        if (!a.capstone) {
+            a.status = 'FUSED';
+            a.energy = a.tier === 'S' ? 100 : a.tier === 'A' ? 85 : 70;
+        }
+    });
+    renderStack();
+    renderEnergy();
+}
+
+function defuseAll() {
+    stack.forEach(a => {
+        if (!a.capstone) { a.status = 'DEFUSED'; a.energy = 0; }
+    });
+    renderStack();
+    renderEnergy();
+}
+
+function showCapstoneOnly() {
+    stack.forEach(a => {
+        if (!a.capstone) { a.status = 'DEFUSED'; a.energy = 0; }
+    });
+    renderStack();
+    renderEnergy();
+}
+
+// INIT
+renderStack();
+renderEnergy();
+
+// CLOCK
+setInterval(() => {
+    document.getElementById('timestamp').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+}, 1000);
+document.getElementById('timestamp').textContent = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+</script>
+</body>
+</html>

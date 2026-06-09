@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>COMMAND THRONE // ASSEMBLY</title>
+    <style>
+        body { background: #05080a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .throne-silhouette { width: 300px; height: 450px; background: rgba(212, 168, 76, 0.05); border: 1px dashed #d4a84c; position: relative; }
+        .filling { position: absolute; bottom: 0; width: 100%; background: linear-gradient(0deg, #d4a84c 0%, #4090ff 100%); animation: fill 10s ease-in-out forwards; }
+        @keyframes fill { 0% { height: 0%; } 100% { height: 100%; } }
+        .glitch-text { position: absolute; top: 10%; width: 100%; text-align: center; color: #fff; font-family: 'Orbitron'; font-size: 10px; letter-spacing: 5px; }
+        .spark { position: absolute; width: 2px; height: 2px; background: #fff; box-shadow: 0 0 10px #4090ff; animation: fly 2s infinite; }
+        @keyframes fly { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+    </style>
+</head>
+<body>
+    <div class="throne-silhouette">
+        <div class="filling"></div>
+        <div class="glitch-text">AUDITOR COMMAND: INITIALIZING</div>
+        <script>
+            for(let i=0; i<30; i++){
+                const s = document.createElement('div');
+                s.className = 'spark';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.bottom = Math.random() * 100 + '%';
+                document.querySelector('.throne-silhouette').appendChild(s);
+            }
+        </script>
+    </div>
+</body>
+</html>

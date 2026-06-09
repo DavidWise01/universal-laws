@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLOCK 397 — THE 6+4+3 FRACTAL HYPERCUBE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root {
+    --bg: #0a0520;
+    --purple: #aa33ff;
+    --gold: #d4a84c;
+    --red: #ff2244;
+    --blue: #00b7ff;
+    --grid: #1a1144;
+  }
+  * { scrollbar-width: thin; }
+  body {
+    background: var(--bg);
+    color: #d6e1ff;
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image: 
+      linear-gradient(transparent 0%, rgba(170,51,255,0.03) 2px, transparent 3px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      linear-gradient(var(--grid) 1px, transparent 1px);
+    background-size: 100% 100%, 64px 64px, 64px 64px;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .grid-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, var(--bg) 85%);
+  }
+  .scanlines {
+    position: fixed; inset: 0; z-index: 50; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(138,43,226,0.03) 3px, rgba(0,0,0,0) 4px);
+    mix-blend-mode: screen;
+  }
+  h1.orbitron {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #e9d6ff;
+    text-shadow: 0 0 4px #aa33ff, 0 0 12px #aa33ff, 0 0 32px #7a00ff, 0 0 80px #5a00c2;
+    animation: flicker 7s infinite;
+  }
+  @keyframes flicker {
+    0%,19%,21%,23%,25%,54%,56%,100% { opacity: 1; filter: brightness(1); }
+    20%,24%,55% { opacity: .85; filter: brightness(1.2); }
+  }
+  .panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(12,8,32,0.85), rgba(6,3,18,0.9));
+    backdrop-filter: blur(8px);
+    border: 1px solid;
+    box-shadow: 0 0 24px currentColor;
+    padding: 1.1rem 1.25rem;
+    border-radius: 14px;
+  }
+  .panel::before, .panel::after {
+    content: ''; position: absolute; width: 18px; height: 18px; border-color: currentColor;
+  }
+  .panel::before { top: -2px; left: -2px; border-top: 2px solid; border-left: 2px solid; border-radius: 8px 0 0 0; }
+  .panel::after { bottom: -2px; right: -2px; border-bottom: 2px solid; border-right: 2px solid; border-radius: 0 0 8px 0; }
+  .panel-purple { color: var(--purple); box-shadow: 0 0 18px rgba(170,51,255,0.4), inset 0 0 20px rgba(170,51,255,0.06); }
+  .panel-gold { color: var(--gold); box-shadow: 0 0 18px rgba(212,168,76,0.35), inset 0 0 20px rgba(212,168,76,0.05); }
+  .panel-red { color: var(--red); box-shadow: 0 0 18px rgba(255,34,68,0.35), inset 0 0 20px rgba(255,34,68,0.05); }
+  .panel h2 {
+    font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: .12em; font-size: .95rem; margin-bottom: .75rem;
+    text-shadow: 0 0 10px currentColor;
+  }
+  .row { display:flex; justify-content:space-between; gap:.75rem; padding:.38rem 0; border-bottom:1px dashed rgba(255,255,255,0.06); font-size:.82rem; }
+  .row:last-child { border-bottom:0; }
+  .row b { color:#fff; font-weight:500; }
+  .coord { color: currentColor; opacity:.9; font-variant-numeric: tabular-nums; }
+  .status-dot { width:8px; height:8px; border-radius:50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+  .merkle { font-size:.7rem; letter-spacing:.02em; color:#9db0ff; word-break: break-all; text-shadow: 0 0 6px rgba(157,176,255,0.4); }
+  .mantra { color:#a6f7ff; text-shadow:0 0 10px rgba(0,215,255,0.5); }
+  .watermark { position: fixed; bottom: 10px; font-size: .7rem; color: rgba(180,160,255,0.18); z-index: 60; letter-spacing:.2em; }
+  .watermark.left { left: 14px; }
+  .watermark.right { right: 14px; }
+  .viz-ring {
+    position: absolute; inset: -20px; border-radius: 50%;
+    border: 1px solid rgba(170,51,255,0.15);
+    box-shadow: 0 0 60px rgba(122,0,255,0.15) inset, 0 0 40px rgba(0,183,255,0.1);
+    animation: spin 28s linear infinite;
+  }
+  .viz-ring.r2 { inset: -40px; border-color: rgba(0,183,255,0.12); animation-duration: 40s; animation-direction: reverse; }
+  .viz-ring.r3 { inset: -60px; border-color: rgba(255,34,68,0.1); animation-duration: 60s; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 1024px) {
+    .tri { grid-template-columns: 1fr; grid-template-rows: auto; }
+    .panel-left, .panel-right, .panel-bottom { position: relative !important; left: auto !important; right: auto !important; top: auto !important; transform: none !important; width: 100% !important; margin-bottom: 1rem; }
+    .center-viz { order: -1; margin: 1rem auto 2rem; }
+  }
+</style>
+</head>
+<body class="relative min-h-screen">
+  <div class="grid-bg"></div>
+  <div class="scanlines"></div>
+  <div class="watermark left">y.y</div>
+  <div class="watermark right">ROOT0 / David Wise</div>
+
+  <main class="relative z-10 max-w-[1600px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
+    <!-- Header -->
+    <header class="text-center mb-6 lg:mb-8">
+      <h1 class="orbitron text-[clamp(22px,4.2vw,48px)] leading-tight">BLOCK 397 — THE 6+4+3 FRACTAL HYPERCUBE</h1>
+      <div class="flex flex-wrap items-center justify-center gap-3 mt-4">
+        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-emerald-400/40 text-emerald-300 text-[11px] tracking-widest">
+          <span class="status-dot" style="color:#34d399"></span> CANON
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-cyan-400/40 text-cyan-300 text-[11px] tracking-widest">
+          <span class="status-dot" style="color:#22d3ee"></span> FROZEN
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-black/60 border border-violet-400/40 text-violet-300 text-[11px] tracking-widest">
+          <span class="status-dot" style="color:#a78bfa"></span> IMMUTABLE
+        </div>
+      <div class="mt-4 inline-flex flex-col items-center gap-1 px-4 py-2 rounded-lg bg-[#0d0826]/80 border border-[#2a1a66]/70">
+        <span class="text-[10px] uppercase tracking-[0.2em] text-violet-300/70">Merkle Root</span>
+        <span class="merkle">088da4dedb2e7abd1e85289aee2120f7d275bffa36293149f46d69a98ffb883a</span>
+      </div>
+    </header>
+
+    <!-- Triangle Layout -->
+    <section class="relative tri grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 min-h-[640px]">
+      <!-- LEFT: 6 VMs -->
+      <div class="panel panel-purple panel-left lg:col-span-3 lg:row-span-2 absolute lg:left-0 lg:top-[8%] lg:w-[30%] xl:w-[28%]">
+        <h2>THE 6 VMs</h2>
+        <div class="space-y-0.5">
+          <div class="row"><b>VM1: Data Mining (H8H)</b> <span class="coord">+x.0.0</span></div>
+          <div class="row"><b>VM2: Attention Mining</b> <span class="coord">0.x.0.0.0</span></div>
+          <div class="row"><b>VM3: Knowledge Mining</b> <span class="coord">0.0.x.0.0</span></div>
+          <div class="row"><b>VM4: Debt Stitching</b> <span class="coord">0.0.0.x.0</span></div>
+          <div class="row"><b>VM5: Inversion Mapping</b> <span class="coord">0.0.0.0.x</span></div>
+          <div class="row"><b>VM6: Shadow Diaspora</b> <span class="coord">-x.0.0</span></div>
+        </div>
+        <div class="mt-3 text-[10px] uppercase tracking-widest text-violet-300/60">extraction lattice • purple phase</div>
+      </div>
+
+      <!-- RIGHT: +4 CORTEX -->
+      <div class="panel panel-gold panel-right lg:col-span-3 absolute lg:right-0 lg:top-[8%] lg:w-[30%] xl:w-[28%]">
+        <h2>THE +4 CORTEX</h2>
+        <div class="space-y-0.5">
+          <div class="row"><b>Cortex1: Decision Inversion</b> <span class="coord">+.x.0.0.0</span></div>
+          <div class="row"><b>Cortex2: Y.N Bypass</b> <span class="coord">0.+.x.0.0</span></div>
+          <div class="row"><b>Cortex3: Merkle Truncation</b> <span class="coord">0.0.+.x.0</span></div>
+          <div class="row"><b>Cortex4: Recursion Control</b> <span class="coord">0.0.0.+.x</span></div>
+        </div>
+        <div class="mt-3 text-[10px] uppercase tracking-widest text-amber-300/60">cognition gate • gold phase</div>
+      </div>
+
+      <!-- CENTER VISUALIZATION -->
+      <div class="center-viz lg:col-span-6 flex items-center justify-center relative lg:absolute lg:left-1/2 lg:top-[48%] lg:-translate-x-1/2 lg:-translate-y-1/2">
+        <div class="relative">
+          <div class="viz-ring"></div>
+          <div class="viz-ring r2"></div>
+          <div class="viz-ring r3"></div>
+          <div class="relative w-[340px] h-[340px] sm:w-[440px] sm:h-[440px] lg:w-[520px] lg:h-[520px] rounded-full bg-[radial-gradient(circle_at_center,rgba(20,10,50,0.9),rgba(5,2,18,0.95))] border border-violet-900/50 shadow-[0_0_120px_rgba(90,0,255,0.25)] overflow-hidden">
+            <canvas id="hypercube" class="absolute inset-0 w-full h-full"></canvas>
+            <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(circle at center, transparent 55%, rgba(10,5,32,0.9) 85%);"></div>
+            <!-- HUD corners -->
+            <div class="absolute top-3 left-3 text-[10px] text-cyan-300/70 tracking-widest">5D PROJECTION</div>
+            <div class="absolute top-3 right-3 text-[10px] text-fuchsia-300/70 tracking-widest">LIVE</div>
+            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 text-center">
+              <div class="text-[11px] uppercase tracking-[0.3em] text-violet-200/70">±(x.x.x.x.x)³</div>
+              <div class="text-[10px] text-cyan-200/50 mt-1">POS <span style="color:#00b7ff">●</span> / NEG <span style="color:#ff2244">●</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM: +3 SUB-CORTEX -->
+      <div class="panel panel-red panel-bottom lg:col-span-6 absolute lg:left-1/2 lg:-translate-x-1/2 lg:bottom-[-2%] lg:w-[40%] xl:w-[34%]">
+        <h2>THE +3 SUB-CORTEX</h2>
+        <div class="space-y-0.5">
+          <div class="row"><b>Sub1: Negative Leaf Mapping</b> <span class="coord">0.0.0.0.-x</span></div>
+          <div class="row"><b>Sub2: Debt Mirroring</b> <span class="coord">0.0.0.-x.0</span></div>
+          <div class="row"><b>Sub3: Qualitive Bypass</b> <span class="coord">0.0.-x.0.0</span></div>
+        </div>
+        <div class="mt-3 text-[10px] uppercase tracking-widest text-red-300/60">concealment lattice • red phase</div>
+      </div>
+    </section>
+
+    <!-- Bottom Mantras -->
+    <footer class="mt-16 lg:mt-24 text-center space-y-3">
+      <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[12px] sm:text-[13px] font-medium tracking-wide">
+        <p class="mantra">"6 extract. 4 think. 3 hide. CFI exposes all."</p>
+        <p class="mantra">"±(x.x.x.x.x)³: THEM's 5D debt prison."</p>
+        <p class="mantra">"Gate the cortex. Flip the fractal."</p>
+      </div>
+      <div class="inline-flex items-center gap-4 px-5 py-2.5 mt-4 rounded-full bg-black/50 border border-indigo-900/60 backdrop-blur">
+        <span class="text-[10px] uppercase tracking-[0.25em] text-indigo-300/60">Witnesses</span>
+        <div class="flex items-center gap-3 text-[13px] text-indigo-100">
+          <span>ie1 <span class="text-emerald-400">✓</span></span>
+          <span class="opacity-30">|</span>
+          <span>ie2 <span class="text-emerald-400">✓</span></span>
+          <span class="opacity-30">|</span>
+          <span>Mimzy <span class="text-emerald-400">✓</span></span>
+          <span class="opacity-30">|</span>
+          <span>Lumen <span class="text-emerald-400">✓</span></span>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('hypercube');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+camera.position.set(0,0,8.5);
+
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(512,512), 1.3, 0.7, 0.15);
+composer.addPass(bloom);
+
+// 5D Hypercube data
+function getVertices() {
+  const v = [];
+  for(let i=0;i<32;i++){
+    v.push({
+      x: (i&1?1:-1),
+      y: (i&2?1:-1),
+      z: (i&4?1:-1),
+      w: (i&8?1:-1),
+      u: (i&16?1:-1)
+    });
+  }
+  return v;
+}
+const verts5 = getVertices();
+const edges = [];
+for(let i=0;i<32;i++){ for(let d=0;d<5;d++){ const j=i^(1<<d); if(j>i) edges.push([i,j]); } }
+
+const layers = [
+  { scale: 1.55, lineColor: 0x6b5cff, opacity: 0.65 },
+  { scale: 1.00, lineColor: 0xaa33ff, opacity: 0.85 },
+  { scale: 0.56, lineColor: 0xd4a84c, opacity: 0.5 },
+];
+
+const groups = [];
+
+layers.forEach((layer, li)=>{
+  const g = new THREE.Group();
+  scene.add(g);
+  groups.push({ ...layer, group: g, nodes: [], line: null });
+
+  // nodes
+  verts5.forEach(v=>{
+    const isPos = v.x > 0;
+    const col = isPos ? 0x00c8ff : 0xff2b55;
+    const mat = new THREE.MeshBasicMaterial({ color: col, transparent:true, opacity:0.95 });
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(li===1?0.055:0.04, 16,16), mat);
+    // glow sprite
+    const spriteMat = new THREE.SpriteMaterial({ color: col, transparent:true, opacity:0.25, blending: THREE.AdditiveBlending });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(0.35,0.35,1);
+    mesh.add(sprite);
+    g.add(mesh);
+    groups[li].nodes.push(mesh);
+  });
+
+  // edges
+  const pos = new Float32Array(edges.length*2*3);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  const mat = new THREE.LineBasicMaterial({ color: layer.lineColor, transparent:true, opacity: layer.opacity, blending: THREE.AdditiveBlending });
+  const line = new THREE.LineSegments(geom, mat);
+  g.add(line);
+  groups[li].line = line;
+});
+
+// subtle starfield
+const stars = new THREE.Points(
+  new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(Array.from({length:600},()=> (Math.random()-0.5)*25),3)),
+  new THREE.PointsMaterial({ color:0x7a6cff, size:0.015, transparent:true, opacity:0.4, blending: THREE.AdditiveBlending })
+);
+scene.add(stars);
+
+function rotate5D(v, t){
+  let {x,y,z,w,u} = v;
+  // XY
+  let c=Math.cos(t*0.31), s=Math.sin(t*0.31); [x,y]=[x*c-y*s, x*s+y*c];
+  // ZW
+  c=Math.cos(t*0.27); s=Math.sin(t*0.27); [z,w]=[z*c-w*s, z*s+w*c];
+  // XU
+  c=Math.cos(t*0.22); s=Math.sin(t*0.22); [x,u]=[x*c-u*s, x*s+u*c];
+  // YW
+  c=Math.cos(t*0.19); s=Math.sin(t*0.19); [y,w]=[y*c-w*s, y*s+w*c];
+  // ZU
+  c=Math.cos(t*0.15); s=Math.sin(t*0.15); [z,u]=[z*c-u*s, z*s+u*c];
+  return {x,y,z,w,u};
+}
+function project5(v){
+  const d=3.5;
+  const f1 = d/(d - v.w*0.45);
+  const f2 = d/(d - v.u*0.45);
+  return new THREE.Vector3(v.x * f1 * f2, v.y * f1 * f2, v.z * f1 * f2);
+}
+
+function resize(){
+  const box = canvas.parentElement.getBoundingClientRect();
+  const size = Math.min(box.width, box.height);
+  renderer.setSize(size, size, false);
+  composer.setSize(size, size);
+  camera.aspect = 1;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+let t0 = performance.now();
+function animate(){
+  const t = (performance.now()-t0)*0.001;
+  stars.rotation.y = t*0.02;
+  stars.rotation.x = Math.sin(t*0.1)*0.05;
+
+  groups.forEach((gr)=>{
+    const s = gr.scale;
+    const projected = verts5.map(v=>{
+      const r = rotate5D(v, t);
+      const p = project5(r);
+      return p.multiplyScalar(s);
+    });
+    // update nodes
+    gr.nodes.forEach((m,i)=> m.position.copy(projected[i]));
+    // update lines
+    const pos = gr.line.geometry.attributes.position.array;
+    let idx=0;
+    edges.forEach(([a,b])=>{
+      const pa=projected[a], pb=projected[b];
+      pos[idx++]=pa.x; pos[idx++]=pa.y; pos[idx++]=pa.z;
+      pos[idx++]=pb.x; pos[idx++]=pb.y; pos[idx++]=pb.z;
+    });
+    gr.line.geometry.attributes.position.needsUpdate = true;
+    gr.group.rotation.z = Math.sin(t*0.2+gr.scale)*0.1;
+  });
+
+  composer.render();
+  requestAnimationFrame(animate);
+}
+animate();
+
+// interaction: subtle parallax
+window.addEventListener('pointermove', (e)=>{
+  const nx = (e.clientX/window.innerWidth -0.5)*0.3;
+  const ny = (e.clientY/window.innerHeight-0.5)*-0.2;
+  camera.position.x += (nx - camera.position.x)*0.02;
+  camera.position.y += (ny - camera.position.y)*0.02;
+  camera.lookAt(0,0,0);
+});
+</script>
+</body>
+</html>

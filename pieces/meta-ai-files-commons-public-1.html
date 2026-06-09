@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<!-- saved from url=(0278)https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&_nc_cat=102&_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&ccb=14-4&oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&oe=69E60A93&_nc_sid=4ee932 -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>commons1 — free education</title>
+<meta name="description" content="commons1 — free education. Read only. Tied to the commons.">
+<style>
+  :root{
+    --green:#00aa00;
+    --green-600:#008800;
+    --green-50:#e9f9e9;
+    --bg:#ffffff;
+    --gray:#f6f7f6;
+    --gray-2:#eef1ee;
+    --text:#161616;
+    --muted:#6b7280;
+    --shadow:0 10px 30px rgba(0,0,0,.06);
+    --shadow-soft:0 6px 16px rgba(0,0,0,.05);
+    --radius:26px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    line-height:1.45;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px}
+
+  /* header */
+  .top{
+    padding:56px 0 18px;
+    text-align:center;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(48px,14vw,88px);
+    font-weight:900;
+    letter-spacing:-.02em;
+    line-height:.9;
+  }
+  .subtitle{
+    margin:14px 0 0;
+    color:var(--muted);
+    font-size:clamp(14px,3.5vw,18px);
+    letter-spacing:.01em;
+  }
+
+  /* sticky emoji nav */
+  nav{
+    position:sticky;
+    top:0;
+    z-index:50;
+    padding:12px 0 16px;
+    background:rgba(255,255,255,.85);
+    backdrop-filter:saturate(180%) blur(10px);
+    border-bottom:1px solid #f0f0f0;
+  }
+  .nav-inner{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:10px;
+    max-width:560px;
+    margin:0 auto;
+  }
+  .nav-btn{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:14px 8px;
+    background:#fff;
+    border-radius:20px;
+    text-decoration:none;
+    color:#222;
+    box-shadow:var(--shadow-soft);
+    border:2px solid #f2f2f2;
+    min-height:78px;
+    transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .nav-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .nav-btn:active{transform:translateY(0) scale(.98)}
+  .nav-btn.active{border-color:var(--green);box-shadow:0 8px 20px rgba(0,170,0,.15)}
+  .nav-emoji{font-size:28px;line-height:1}
+  .nav-label{font-size:13px;font-weight:600;color:#444}
+
+  /* sections */
+  section{
+    padding:72px 0;
+    scroll-margin-top:110px;
+  }
+  .center{
+    text-align:center;
+    max-width:680px;
+    margin:0 auto;
+  }
+  .section-title{
+    font-size:clamp(28px,6vw,40px);
+    font-weight:900;
+    letter-spacing:-.01em;
+    margin:0 0 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .section-sub{
+    color:var(--muted);
+    font-size:17px;
+    margin:0 0 28px;
+  }
+
+  /* home */
+  #home{padding-top:56px;padding-bottom:80px}
+  .lead{
+    font-size:clamp(24px,5.2vw,36px);
+    font-weight:750;
+    line-height:1.25;
+    margin:18px 0 32px;
+    letter-spacing:-.01em;
+  }
+  .btn-green{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:20px 34px;
+    background:var(--green);
+    color:white;
+    font-size:20px;
+    font-weight:800;
+    border:none;
+    border-radius:999px;
+    box-shadow:0 12px 24px rgba(0,170,0,.22);
+    cursor:pointer;
+    text-decoration:none;
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn-green:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(0,170,0,.26);background:var(--green-600)}
+  .btn-green:active{transform:translateY(0) scale(.98)}
+
+  /* learn grid */
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:16px;
+    max-width:760px;
+    margin:0 auto;
+  }
+  @media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
+  @media(min-width:860px){.grid{grid-template-columns:1fr 1fr 1fr}}
+  .card{
+    background:var(--gray);
+    border-radius:var(--radius);
+    padding:28px 22px;
+    text-align:center;
+    box-shadow:var(--shadow-soft);
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s, background .15s, box-shadow .15s;
+    min-height:160px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .card:hover{transform:translateY(-4px);border-color:#d9f1d9;background:#fbfefb;box-shadow:var(--shadow)}
+  .card:active{transform:scale(.99)}
+  .card-emoji{font-size:42px;line-height:1}
+  .card-title{font-weight:800;font-size:20px;margin-top:4px}
+  .card-desc{color:var(--muted);font-size:14px}
+
+  /* time */
+  .hc-wrap{
+    background:linear-gradient(180deg,#fff,#f9fdf9);
+    border:2px solid var(--green-50);
+    border-radius:32px;
+    padding:28px;
+    display:inline-block;
+    box-shadow:var(--shadow);
+    margin:10px 0 18px;
+  }
+  .hc-label{
+    font-size:18px;
+    color:var(--muted);
+    font-weight:600;
+  }
+  .hc-value{
+    display:block;
+    font-size:clamp(38px,9vw,64px);
+    font-weight:900;
+    color:var(--green);
+    letter-spacing:-.02em;
+    margin-top:6px;
+    font-variant-numeric:tabular-nums;
+  }
+  .hc-note{
+    font-size:17px;
+    color:#333;
+    max-width:520px;
+    margin:14px auto 0;
+  }
+  .hc-small{color:var(--muted);font-size:14px;margin-top:8px}
+
+  /* browse */
+  .search{
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
+    position:relative;
+  }
+  .search input{
+    width:100%;
+    padding:20px 24px;
+    font-size:18px;
+    border-radius:999px;
+    border:2px solid #e8e8e8;
+    background:#fff;
+    box-shadow:var(--shadow-soft);
+    outline:none;
+    text-align:center;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .search input:focus{border-color:var(--green);box-shadow:0 0 0 4px var(--green-50)}
+  .search input::placeholder{color:#9aa0a6}
+  .lessons{
+    margin:26px auto 0;
+    max-width:560px;
+    text-align:left;
+  }
+  .lesson{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 18px;
+    background:#fff;
+    border:2px solid #f0f2f0;
+    border-radius:18px;
+    margin-bottom:10px;
+    transition:transform .12s, border-color .12s, background .12s;
+  }
+  .lesson:hover{border-color:#cfeecf;background:#fafffa;transform:translateX(3px)}
+  .lesson-emoji{font-size:24px;flex-shrink:0}
+  .lesson-text{flex:1;font-size:17px;font-weight:600}
+  .lesson-meta{font-size:13px;color:var(--muted);font-weight:500}
+
+  /* free */
+  .free-big{
+    font-size:clamp(26px,5.5vw,38px);
+    font-weight:900;
+    line-height:1.2;
+    letter-spacing:-.01em;
+    margin:0 0 24px;
+  }
+  .free-sub{color:var(--muted);font-size:17px;margin-bottom:30px}
+
+  /* footer */
+  footer{
+    padding:56px 0 80px;
+    text-align:center;
+    color:var(--muted);
+    font-size:14px;
+  }
+  .foot-dot{margin:0 8px;opacity:.5}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>🌱 commons1</h1>
+      <p class="subtitle">free education • read only • tied to the commons</p>
+    </header>
+  </div>
+
+  <nav>
+    <div class="wrap">
+      <div class="nav-inner">
+        <a class="nav-btn" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#home"><span class="nav-emoji">🌱</span><span class="nav-label">Home</span></a>
+        <a class="nav-btn" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#learn"><span class="nav-emoji">📚</span><span class="nav-label">Learn</span></a>
+        <a class="nav-btn" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#time"><span class="nav-emoji">⏱️</span><span class="nav-label">Time</span></a>
+        <a class="nav-btn" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#browse"><span class="nav-emoji">🔍</span><span class="nav-label">Browse</span></a>
+        <a class="nav-btn active" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#free"><span class="nav-emoji">💾</span><span class="nav-label">Free</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <!-- HOME -->
+    <section id="home" class="center">
+      <p class="lead">All education is free and tied to commons0.</p>
+      <a href="https://scontent.xx.fbcdn.net/v/t58.90637-6/460105755_1650818752625066_9079094543858151701_n.jpg/commons-public.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=102&amp;_nc_ohc=nGbIercbzsAQ7kNvwF44GV0&amp;ccb=14-4&amp;oh=00_Af1easj6jLkzNERWrMK1ZOkP5SYLDJoElJbD60n5LopsBw&amp;oe=69E60A93&amp;_nc_sid=4ee932#learn" class="btn-green">Start Learning</a>
+    </section>
+
+    <!-- LEARN -->
+    <section id="learn">
+      <div class="center">
+        <h2 class="section-title">📚 Learn</h2>
+        <p class="section-sub">Tap a card. Nano lessons, 2–5 minutes each.</p>
+      </div>
+      <div class="grid">
+        <div class="card" data-title="Reading">
+          <div class="card-emoji">📖</div>
+          <div class="card-title">Reading</div>
+          <div class="card-desc">Learn to read with commons • 3 min</div>
+        </div>
+        <div class="card" data-title="Math">
+          <div class="card-emoji">🧮</div>
+          <div class="card-title">Math</div>
+          <div class="card-desc">Numbers without fear • 5 min</div>
+        </div>
+        <div class="card" data-title="Garden">
+          <div class="card-emoji">🌱</div>
+          <div class="card-title">Garden</div>
+          <div class="card-desc">Grow food, grow commons • 4 min</div>
+        </div>
+        <div class="card" data-title="Energy">
+          <div class="card-emoji">⚡</div>
+          <div class="card-title">Energy</div>
+          <div class="card-desc">How solar works • 2 min</div>
+        </div>
+        <div class="card" data-title="Time">
+          <div class="card-emoji">🕰️</div>
+          <div class="card-title">Time</div>
+          <div class="card-desc">What HC time means • 3 min</div>
+        </div>
+        <div class="card" data-title="Commons">
+          <div class="card-emoji">🤝</div>
+          <div class="card-title">Commons</div>
+          <div class="card-desc">Share, don't own • 2 min</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIME -->
+    <section id="time" class="center">
+      <h2 class="section-title">⏱️ Time</h2>
+      <p class="section-sub">Invariant time for everyone.</p>
+      <div class="hc-wrap" aria-live="polite">
+        <span class="hc-label">Invariant Time =</span>
+        <span id="hc" class="hc-value">HC 1,042,350</span>
+      </div>
+      <p class="hc-note"><strong>We don't use clocks that stretch.</strong></p>
+      <p class="hc-small">One HC is always the same length, everywhere. No time zones. No daylight saving. Just count up.</p>
+    </section>
+
+    <!-- BROWSE -->
+    <section id="browse">
+      <div class="center">
+        <h2 class="section-title">🔍 Browse</h2>
+        <p class="section-sub">10,000+ free lessons from the commons.</p>
+        <div class="search">
+          <input type="search" placeholder="Search lessons… (placeholder)" aria-label="Search lessons">
+        </div>
+      </div>
+      <div class="lessons">
+        <div class="lesson"><span class="lesson-emoji">🌱</span><div class="lesson-text">How to Plant Beans</div><div class="lesson-meta">4 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">📖</span><div class="lesson-text">The Commons Alphabet</div><div class="lesson-meta">3 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">🧮</span><div class="lesson-text">Add Without Carrying</div><div class="lesson-meta">5 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">⚡</span><div class="lesson-text">Build a Small Solar Light</div><div class="lesson-meta">6 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">🕰️</span><div class="lesson-text">Why Time Slows Down (and ours doesn't)</div><div class="lesson-meta">3 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">🤝</span><div class="lesson-text">Sharing Tools 101</div><div class="lesson-meta">2 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">📖</span><div class="lesson-text">Read a Seed Packet</div><div class="lesson-meta">2 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">🌱</span><div class="lesson-text">Compost in a Bucket</div><div class="lesson-meta">4 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">🧮</span><div class="lesson-text">Fractions with Bread</div><div class="lesson-meta">4 min</div></div>
+        <div class="lesson"><span class="lesson-emoji">⚡</span><div class="lesson-text">Save Energy at Home</div><div class="lesson-meta">3 min</div></div>
+      </div>
+    </section>
+
+    <!-- FREE -->
+    <section id="free" class="center">
+      <h2 class="section-title">💾 Free</h2>
+      <p class="free-big">Everything here is free forever.<br>No login. No paywall. Read only.</p>
+      <p class="free-sub">Copy it. Share it. Print it. It's tied to commons0.</p>
+      <button class="btn-green" id="download">Download commons1</button>
+    </section>
+  </main>
+
+  <footer>
+    commons1.the.garden <span class="foot-dot">•</span> public <span class="foot-dot">•</span> 2026
+  </footer>
+
+<script>
+  // Active nav on scroll
+  const navLinks = document.querySelectorAll('.nav-btn');
+  const sections = [...document.querySelectorAll('section')];
+  const setActive = () => {
+    let current = 'home';
+    const y = window.scrollY + 140;
+    for (const sec of sections) {
+      if (sec.offsetTop <= y) current = sec.id;
+    }
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  };
+  window.addEventListener('scroll', setActive, {passive:true});
+  setActive();
+
+  // HC Invariant Time counter
+  const hcEl = document.getElementById('hc');
+  let hc = 1042317; // start value
+  const updateHC = () => {
+    hc += 1;
+    hcEl.textContent = 'HC ' + hc.toLocaleString();
+  };
+  updateHC();
+  setInterval(updateHC, 1373); // ~1.373s per tick, feels calm and invariant
+
+  // Learn cards – nano lesson placeholder
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const title = card.dataset.title;
+      const emoji = card.querySelector('.card-emoji').textContent;
+      alert(`${emoji} ${title} — nano lesson\n\nThis is a placeholder. In commons1, this opens a 2–5 minute read-only lesson. Free forever.`);
+    });
+  });
+
+  // Download button
+  document.getElementById('download').addEventListener('click', () => {
+    const content = `commons1 — free education
+read only • tied to the commons
+commons1.the.garden • public • 2026
+
+All education is free and tied to commons0.
+Everything here is free forever. No login. No paywall.`;
+    const blob = new Blob([content], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'commons1-free-education.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+</script>
+
+</body></html>

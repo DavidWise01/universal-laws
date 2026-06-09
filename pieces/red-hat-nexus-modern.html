@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEXUS • Enterprise P2P Lattice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+    :root {
+        --primary: #3b82f6;
+        --accent: #6366f1;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --bg: #0f172a;
+        --card: #1e2937;
+        --text: #e2e8f0;
+        --text-muted: #94a3b8;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Inter', system-ui, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .topbar {
+        background: #1e2937;
+        border-bottom: 1px solid #334155;
+        padding: 0 24px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 100;
+    }
+    .logo {
+        font-weight: 700;
+        font-size: 22px;
+        color: white;
+        letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--primary); }
+
+    .main {
+        display: flex;
+        height: calc(100vh - 68px);
+    }
+    .sidebar {
+        width: 260px;
+        background: #1e2937;
+        border-right: 1px solid #334155;
+        padding: 20px 0;
+    }
+    .nav-item {
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .nav-item:hover, .nav-item.active {
+        background: #334155;
+        color: white;
+    }
+
+    .content {
+        flex: 1;
+        padding: 24px;
+        overflow: auto;
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    .card {
+        background: var(--card);
+        border-radius: 12px;
+        border: 1px solid #334155;
+        padding: 20px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .header h2 {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        margin: 16px 0;
+    }
+    .metric-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    #network-canvas {
+        width: 100%;
+        height: 520px;
+        background: #0f172a;
+        border-radius: 12px;
+        border: 1px solid #334155;
+    }
+
+    .bit-grid {
+        display: grid;
+        grid-template-columns: repeat(11, 1fr);
+        gap: 6px;
+        margin-top: 12px;
+    }
+    .bit {
+        padding: 12px 8px;
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        background: #1e2937;
+        border: 2px solid #475569;
+    }
+    .bit.active {
+        background: #6366f1;
+        border-color: #818cf8;
+        color: white;
+    }
+
+    .log {
+        height: 380px;
+        overflow-y: auto;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        background: #0f172a;
+        padding: 12px;
+        border-radius: 8px;
+    }
+    .log-entry { margin: 4px 0; color: #94a3b8; }
+    .log-entry.success { color: var(--success); }
+    .log-entry.warning { color: var(--warning); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="logo">NEXUS <span>Enterprise</span></div>
+    <div style="display:flex; align-items:center; gap:20px; font-size:14px;">
+        <div><strong>Node ID:</strong> <span id="node-id" style="color:#6366f1; font-family:monospace;">0x7FF</span></div>
+        <div style="color:var(--success);"><i class="fas fa-circle"></i> Connected • 47 Peers</div>
+    </div>
+</div>
+
+<div class="main">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="nav-item active"><i class="fas fa-network-wired"></i> Network Lattice</div>
+        <div class="nav-item"><i class="fas fa-route"></i> 11-Bit Routing</div>
+        <div class="nav-item"><i class="fas fa-users"></i> Peer Directory</div>
+        <div class="nav-item"><i class="fas fa-shield-alt"></i> Security</div>
+        <div class="nav-item"><i class="fas fa-chart-bar"></i> Analytics</div>
+        <div class="nav-item"><i class="fas fa-history"></i> Audit Log</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div>
+            <div class="card">
+                <div class="header">
+                    <h2>P2P Network Topology — 11-Bit Space</h2>
+                    <button onclick="randomWalk()" style="padding:8px 16px;">Explore Network</button>
+                </div>
+                <canvas id="network-canvas"></canvas>
+            </div>
+
+            <div class="card" style="margin-top:24px;">
+                <div class="header">
+                    <h2>11-Bit Identity Controller</h2>
+                    <button onclick="goToRoot()" style="background:#6366f1;color:white;">Go to Root (0x7FF)</button>
+                </div>
+                <div id="bit-grid" class="bit-grid"></div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div style="display:flex; flex-direction:column; gap:24px;">
+            <div class="card">
+                <div class="header">
+                    <h2>Node Status</h2>
+                </div>
+                <div class="metric">
+                    <div>
+                        <div style="color:var(--text-muted);font-size:13px;">Current Hamming Weight</div>
+                        <div id="hamming" class="metric-value">11</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="color:var(--text-muted);font-size:13px;">Network Health</div>
+                        <div style="font-size:28px;color:var(--success);">98.4%</div>
+                    </div>
+                </div>
+                <div style="margin-top:12px;">
+                    <div style="background:#334155;height:6px;border-radius:9999px;overflow:hidden;">
+                        <div style="width:98.4%;height:100%;background:var(--success);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="header">
+                    <h2>Live Activity Log</h2>
+                </div>
+                <div id="console" class="log"></div>
+            </div>
+
+            <div class="card">
+                <button onclick="resetNetwork()" style="width:100%;padding:12px;">Reset Simulation</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ================ CORPORATE NEXUS — 11-BIT P2P ================
+let myID = 0x7FF;
+let peers = new Map();
+let connections = [];
+
+const canvas = document.getElementById('network-canvas');
+const ctx = canvas.getContext('2d');
+
+function log(msg, type = '') {
+    const consoleEl = document.getElementById('console');
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    const time = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    entry.innerHTML = `<span style="color:#64748b">[${time}]</span> ${msg}`;
+    consoleEl.appendChild(entry);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+    if (consoleEl.children.length > 80) consoleEl.removeChild(consoleEl.firstChild);
+}
+
+function toBinary(n) {
+    return n.toString(2).padStart(11, '0');
+}
+
+function updateBitGrid() {
+    const grid = document.getElementById('bit-grid');
+    grid.innerHTML = '';
+    const bin = toBinary(myID);
+    let weight = 0;
+    for (let i = 0; i < 11; i++) {
+        const bit = document.createElement('div');
+        bit.className = 'bit';
+        bit.textContent = bin[i];
+        if (bin[i] === '1') {
+            bit.classList.add('active');
+            weight++;
+        }
+        grid.appendChild(bit);
+    }
+    document.getElementById('hamming').textContent = weight;
+    document.getElementById('node-id').textContent = `0x${myID.toString(16).toUpperCase().padStart(3,'0')}`;
+}
+
+function drawNetwork() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight * 0.95;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Connections
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.2)';
+    ctx.lineWidth = 1.5;
+    connections.forEach(c => {
+        const a = peers.get(c.from);
+        const b = peers.get(c.to);
+        if (!a || !b) return;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+    });
+
+    // Nodes
+    peers.forEach((peer, id) => {
+        const isRoot = id === 0x7FF;
+        ctx.fillStyle = isRoot ? '#a855f7' : '#60a5fa';
+        ctx.shadowBlur = isRoot ? 35 : 18;
+        ctx.shadowColor = isRoot ? '#c026d3' : '#60a5fa';
+
+        ctx.beginPath();
+        ctx.arc(peer.x, peer.y, isRoot ? 11 : 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (id === myID) {
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(peer.x, peer.y, 18, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    });
+}
+
+function addPeer() {
+    const id = Math.floor(Math.random() * 2048);
+    if (peers.has(id)) return;
+    peers.set(id, {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height * 0.8 + 50
+    });
+    if (Math.random() > 0.5) connections.push({from: myID, to: id});
+}
+
+function flipBit(bit) {
+    myID = myID ^ (1 << bit);
+    updateBitGrid();
+    drawNetwork();
+    log(`Bit ${bit} flipped. New Node ID: <strong>0x${myID.toString(16).toUpperCase().padStart(3,'0')}</strong>`);
+}
+
+function goToRoot() {
+    myID = 0x7FF;
+    updateBitGrid();
+    drawNetwork();
+    log('Node promoted to <strong>ROOT (0x7FF)</strong> — Full network authority granted', 'success');
+}
+
+function randomWalk() {
+    log('Initiating network exploration...', 'success');
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const bit = Math.floor(Math.random() * 11);
+            flipBit(bit);
+        }, i * 120);
+    }
+}
+
+function resetNetwork() {
+    peers.clear();
+    connections = [];
+    for (let i = 0; i < 48; i++) addPeer();
+    log('Network simulation reset — 48 active peers', 'success');
+    drawNetwork();
+}
+
+function animate() {
+    peers.forEach(p => {
+        p.x += (Math.random() - 0.5) * 0.8;
+        p.y += (Math.random() - 0.5) * 0.6;
+    });
+    drawNetwork();
+    requestAnimationFrame(animate);
+}
+
+function init() {
+    // Populate initial peers
+    for (let i = 0; i < 48; i++) addPeer();
+
+    updateBitGrid();
+    drawNetwork();
+    animate();
+
+    log('NEXUS Enterprise P2P Platform initialized', 'success');
+    log('You are operating as <strong>ROOT NODE 0x7FF</strong>', 'success');
+
+    window.addEventListener('resize', () => {
+        drawNetwork();
+    });
+}
+
+init();
+</script>
+</body>
+</html>

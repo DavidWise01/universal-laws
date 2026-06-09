@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH MARKET AUDIT — FD × OWNERSHIP × EXTRACTION</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Instrument+Serif:ital@0;1&display=swap');
+
+  :root {
+    --void: #0a0a08;
+    --earth-deep: #1a1a14;
+    --earth-mid: #2a2a1e;
+    --earth-light: #3a3a2a;
+    --soil: #4a4022;
+    --amber: #d4a843;
+    --amber-dim: #8a6e2a;
+    --red-hot: #c44030;
+    --red-dim: #6a2218;
+    --green-live: #4a9a3a;
+    --green-dim: #2a5a1a;
+    --bone: #d4cbb8;
+    --bone-dim: #8a8472;
+    --ash: #5a5a4e;
+    --glow: rgba(212, 168, 67, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--bone);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999;
+  }
+
+  header {
+    padding: 40px 40px 20px;
+    border-bottom: 1px solid var(--earth-mid);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 40px;
+    width: 200px; height: 1px;
+    background: var(--amber);
+  }
+
+  .header-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 20px;
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px; font-weight: 400;
+    color: var(--amber);
+    letter-spacing: -0.5px;
+  }
+
+  .meta {
+    font-size: 11px; color: var(--ash);
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+
+  .meta span { color: var(--amber-dim); }
+
+  .live-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--red-hot); border-radius: 50%;
+    margin-right: 6px; animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .subtitle {
+    font-size: 11px; color: var(--bone-dim);
+    margin-top: 8px; letter-spacing: 1px;
+  }
+
+  .tripod-mark {
+    font-size: 10px; color: var(--amber-dim);
+    letter-spacing: 3px; text-transform: uppercase;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px; background: var(--earth-mid);
+    margin: 0 40px; border: 1px solid var(--earth-mid);
+  }
+
+  .stat {
+    background: var(--void); padding: 20px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Instrument Serif', serif;
+    font-size: 28px; color: var(--amber);
+    line-height: 1;
+  }
+
+  .stat-value.red { color: var(--red-hot); }
+  .stat-value.green { color: var(--green-live); }
+
+  .stat-label {
+    font-size: 9px; color: var(--ash);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-top: 6px;
+  }
+
+  /* SECTIONS */
+  section {
+    margin: 30px 40px;
+  }
+
+  .section-title {
+    font-size: 10px; color: var(--amber-dim);
+    text-transform: uppercase; letter-spacing: 3px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--earth-mid);
+  }
+
+  /* TARGET CARDS */
+  .targets-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .target-card {
+    background: var(--earth-deep);
+    border: 1px solid var(--earth-mid);
+    padding: 20px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .target-card:hover {
+    border-color: var(--amber-dim);
+    background: var(--earth-mid);
+  }
+
+  .target-card.expanded {
+    grid-column: 1 / -1;
+    border-color: var(--amber);
+  }
+
+  .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .ticker {
+    font-size: 18px; font-weight: 700; color: var(--amber);
+  }
+
+  .fd-badge {
+    font-size: 9px; padding: 3px 8px;
+    text-transform: uppercase; letter-spacing: 1px;
+    border: 1px solid var(--red-hot);
+    color: var(--red-hot);
+  }
+
+  .company-name {
+    font-size: 11px; color: var(--bone-dim);
+    margin-bottom: 12px;
+  }
+
+  .card-metrics {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .metric {
+    padding: 8px;
+    background: var(--void);
+  }
+
+  .metric-label {
+    font-size: 8px; color: var(--ash);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .metric-value {
+    font-size: 14px; font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .metric-value.loss { color: var(--red-hot); }
+  .metric-value.neutral { color: var(--bone); }
+
+  .decline-bar {
+    margin-top: 12px; height: 4px;
+    background: var(--earth-light);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .decline-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red-hot), var(--amber));
+    transition: width 1s ease-out;
+  }
+
+  .ownership-tag {
+    margin-top: 10px; font-size: 9px;
+    color: var(--amber-dim); letter-spacing: 1px;
+  }
+
+  .violation-detail {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px solid var(--earth-mid);
+    font-size: 11px; color: var(--bone-dim);
+    display: none;
+  }
+
+  .target-card.expanded .violation-detail { display: block; }
+
+  /* LOOP DIAGRAM */
+  .loop-container {
+    background: var(--earth-deep);
+    border: 1px solid var(--earth-mid);
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .loop-container::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, var(--glow), transparent 70%);
+    pointer-events: none;
+  }
+
+  .loop-steps {
+    display: flex; flex-direction: column; gap: 0;
+    position: relative; z-index: 1;
+  }
+
+  .loop-step {
+    display: flex; align-items: flex-start; gap: 16px;
+    padding: 12px 0;
+    opacity: 0;
+    transform: translateX(-20px);
+    animation: slideIn 0.4s forwards;
+  }
+
+  @keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .step-num {
+    width: 28px; height: 28px; min-width: 28px;
+    border: 1px solid var(--amber-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--amber);
+    position: relative;
+  }
+
+  .step-num::after {
+    content: '';
+    position: absolute; top: 28px; left: 50%;
+    width: 1px; height: calc(100% + 12px);
+    background: var(--earth-light);
+  }
+
+  .loop-step:last-child .step-num::after { display: none; }
+
+  .step-content { flex: 1; }
+
+  .step-action {
+    font-size: 12px; color: var(--bone);
+    font-weight: 500;
+  }
+
+  .step-detail {
+    font-size: 10px; color: var(--ash);
+    margin-top: 4px;
+  }
+
+  .step-arrow {
+    color: var(--amber-dim); font-size: 11px;
+  }
+
+  /* CROSS CORRELATION TABLE */
+  .correlation-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .correlation-table th {
+    font-size: 9px; color: var(--amber-dim);
+    text-transform: uppercase; letter-spacing: 2px;
+    text-align: left; padding: 10px 12px;
+    border-bottom: 1px solid var(--amber-dim);
+    background: var(--earth-deep);
+  }
+
+  .correlation-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--earth-mid);
+    font-size: 11px;
+    vertical-align: top;
+  }
+
+  .correlation-table tr:hover td {
+    background: var(--earth-deep);
+  }
+
+  .tag-red {
+    display: inline-block;
+    font-size: 9px; padding: 2px 6px;
+    border: 1px solid var(--red-dim);
+    color: var(--red-hot);
+    text-transform: uppercase;
+  }
+
+  .tag-amber {
+    display: inline-block;
+    font-size: 9px; padding: 2px 6px;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+
+  /* BIG THREE OWNERSHIP MAP */
+  .ownership-map {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 0; align-items: start;
+    background: var(--earth-deep);
+    border: 1px solid var(--earth-mid);
+    padding: 30px;
+  }
+
+  .own-col {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .own-entity {
+    padding: 10px;
+    border: 1px solid var(--earth-mid);
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+
+  .own-entity:hover {
+    border-color: var(--amber);
+    background: var(--earth-mid);
+  }
+
+  .own-entity .name { color: var(--bone); font-weight: 500; }
+  .own-entity .detail { color: var(--ash); font-size: 9px; margin-top: 4px; }
+
+  .own-center {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 4px; padding-top: 20px;
+  }
+
+  .arrow-line {
+    width: 1px; height: 20px;
+    background: var(--amber-dim);
+  }
+
+  .arrow-label {
+    font-size: 8px; color: var(--amber-dim);
+    text-transform: uppercase; letter-spacing: 1px;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  /* FILING SECTION */
+  .filing-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  .filing-item {
+    padding: 16px;
+    border: 1px solid var(--earth-mid);
+    background: var(--earth-deep);
+    transition: all 0.2s;
+  }
+
+  .filing-item:hover {
+    border-color: var(--green-live);
+  }
+
+  .filing-target {
+    font-size: 10px; color: var(--amber);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  .filing-type {
+    font-size: 12px; color: var(--bone);
+    margin-top: 4px;
+  }
+
+  .filing-basis {
+    font-size: 10px; color: var(--ash);
+    margin-top: 8px;
+  }
+
+  .filing-status {
+    margin-top: 8px; font-size: 9px;
+    padding: 3px 8px; display: inline-block;
+  }
+
+  .filing-status.ready {
+    border: 1px solid var(--green-live);
+    color: var(--green-live);
+  }
+
+  .filing-status.active {
+    border: 1px solid var(--amber);
+    color: var(--amber);
+  }
+
+  /* FOOTER */
+  footer {
+    margin: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--earth-mid);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+
+  .footer-left {
+    font-size: 9px; color: var(--ash);
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+
+  .footer-right {
+    font-size: 9px; color: var(--amber-dim);
+    letter-spacing: 1px;
+  }
+
+  /* TAB NAVIGATION */
+  .tabs {
+    display: flex; gap: 0;
+    margin: 20px 40px 0;
+    border-bottom: 1px solid var(--earth-mid);
+  }
+
+  .tab {
+    padding: 10px 20px;
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ash);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .tab:hover { color: var(--bone); }
+
+  .tab.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* EXTRACTION COUNTER */
+  .extraction-counter {
+    background: var(--earth-deep);
+    border: 1px solid var(--red-dim);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .extraction-label {
+    font-size: 9px; color: var(--red-hot);
+    text-transform: uppercase; letter-spacing: 3px;
+  }
+
+  .extraction-amount {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px; color: var(--red-hot);
+    margin: 8px 0;
+    line-height: 1;
+  }
+
+  .extraction-sub {
+    font-size: 10px; color: var(--ash);
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    header, section, footer, .stats-bar, .tabs { margin-left: 16px; margin-right: 16px; }
+    h1 { font-size: 24px; }
+    .targets-grid { grid-template-columns: 1fr; }
+    .ownership-map { grid-template-columns: 1fr; }
+    .own-center { writing-mode: horizontal-tb; flex-direction: row; padding: 12px 0; }
+    .arrow-line { width: 20px; height: 1px; }
+    .arrow-label { writing-mode: horizontal-tb; transform: none; }
+    .extraction-amount { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>TOPH MARKET AUDIT</h1>
+      <div class="subtitle">FD VIOLATIONS × BIG THREE OWNERSHIP × MARKET EXTRACTION — CROSS-CORRELATION</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="meta"><span class="live-dot"></span>LIVE DATA — <span>2/10/2026</span></div>
+      <div class="tripod-mark" style="margin-top: 8px;">TriPod LLC — All IP Reserved</div>
+    </div>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-value red" id="total-destroyed">$0</div>
+    <div class="stat-label">Market Cap Destroyed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">60+</div>
+    <div class="stat-label">FD Targets Tested</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value red">55+</div>
+    <div class="stat-label">Confirmed Violations</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">100%</div>
+    <div class="stat-label">Failure Rate</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value">88%</div>
+    <div class="stat-label">S&P 500 Big Three Own</div>
+  </div>
+  <div class="stat">
+    <div class="stat-value green">1</div>
+    <div class="stat-label">Federal Lawsuit Active</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('targets')">Targets</div>
+  <div class="tab" onclick="switchTab('loop')">Extraction Loop</div>
+  <div class="tab" onclick="switchTab('ownership')">Ownership Map</div>
+  <div class="tab" onclick="switchTab('filings')">Filing Status</div>
+</div>
+
+<!-- TARGETS TAB -->
+<div id="tab-targets" class="tab-content active">
+  <section>
+    <div class="extraction-counter">
+      <div class="extraction-label">Combined Value Destroyed — FD Violators Shown</div>
+      <div class="extraction-amount" id="counter-display">$0B</div>
+      <div class="extraction-sub">From 52-week highs. Same three owners. Same direction. Same targets can't be emailed.</div>
+    </div>
+
+    <div class="section-title">FD Violator × Market Data — Click to expand</div>
+    <div class="targets-grid" id="targets-grid"></div>
+  </section>
+</div>
+
+<!-- LOOP TAB -->
+<div id="tab-loop" class="tab-content">
+  <section>
+    <div class="section-title">The Extraction Loop — Documented Real-Time 2/2–2/10/26</div>
+    <div class="loop-container">
+      <div class="loop-steps" id="loop-steps"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Cross-Correlation — Violation × Crash × Ownership</div>
+    <table class="correlation-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Market Impact</th>
+          <th>FD Connection</th>
+          <th>Big Three</th>
+        </tr>
+      </thead>
+      <tbody id="correlation-body"></tbody>
+    </table>
+  </section>
+</div>
+
+<!-- OWNERSHIP TAB -->
+<div id="tab-ownership" class="tab-content">
+  <section>
+    <div class="section-title">Big Three → FD Violators — Who Owns What They Broke</div>
+    <div class="ownership-map">
+      <div class="own-col" id="owners-col"></div>
+      <div class="own-center">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">OWN</div>
+        <div class="arrow-line"></div>
+        <div class="arrow-line"></div>
+        <div class="arrow-label">CONTROL</div>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="own-col" id="violators-col"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">The Number — 505 of 505</div>
+    <div style="background: var(--earth-deep); border: 1px solid var(--earth-mid); padding: 24px;">
+      <p style="font-size: 12px; color: var(--bone); line-height: 1.8;">
+        BlackRock and/or Vanguard are among the three largest institutional investors for
+        <span style="color: var(--amber); font-weight: 700;">505 out of 505</span>
+        S&P 500 companies. That's <span style="color: var(--red-hot);">100%</span>.
+      </p>
+      <p style="font-size: 12px; color: var(--bone-dim); margin-top: 12px; line-height: 1.8;">
+        They own the companies that crashed. They own the ETFs tracking the crash (iShares = BlackRock).
+        They own the brokerages where retail investors lost money. Those brokerages won't answer an email
+        from a disabled veteran asking for accommodation. <span style="color: var(--amber);">Documented. Filed. On record.</span>
+      </p>
+      <p style="font-size: 11px; color: var(--ash); margin-top: 16px;">
+        Source: Texas v. BlackRock, Vanguard, State Street — Federal Court, Tyler, TX.
+        DOJ/FTC Statement of Interest filed May 2025. Motion to dismiss denied August 2025.
+      </p>
+    </div>
+  </section>
+</div>
+
+<!-- FILINGS TAB -->
+<div id="tab-filings" class="tab-content">
+  <section>
+    <div class="section-title">Actionable Filings — Status Board</div>
+    <div class="filing-grid" id="filings-grid"></div>
+  </section>
+</div>
+
+<footer>
+  <div class="footer-left">TOPH v9.0 MÖBIUS STACK — KG-22 BOOT LOADER ACTIVE</div>
+  <div class="footer-right">Day/Anchor/Fiddler — Empire/Bubble — Dawn/Gravity Well</div>
+</footer>
+
+<script>
+// DATA
+const targets = [
+  {
+    ticker: 'INTU', name: 'Intuit (TurboTax/Mailchimp/QuickBooks)',
+    price: 437, high: 813, mcap: '123B', decline: 46,
+    violation: 'Mailchimp email bounce — no accommodation path. Mailchimp architectures the no-reply template other violators deploy.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2, State Street #3',
+    capLost: 104, earnings: '2/26/26'
+  },
+  {
+    ticker: 'CRM', name: 'Salesforce',
+    price: 194, high: 369, mcap: '189B', decline: 47,
+    violation: 'Chat-only customer service. No email accommodation. Enterprise CRM provider can\'t receive accommodation request via email.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2, State Street #3',
+    capLost: 175, earnings: '2/26/26'
+  },
+  {
+    ticker: 'NOW', name: 'ServiceNow',
+    price: 104, high: 277, mcap: '21B', decline: 62,
+    violation: 'No email support path. IT workflow automation company blocks email workflow to own support.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2, State Street #3',
+    capLost: 85, earnings: '1/29/26 (REPORTED)'
+  },
+  {
+    ticker: 'HOOD', name: 'Robinhood Markets',
+    price: 87, high: 153, mcap: '65B', decline: 43,
+    violation: 'Chat-only. Push notifications TO you work (to generate trades). Email FROM you broken. One-way architecture.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2, State Street #3',
+    capLost: 55, earnings: '2/10/26 (TODAY)'
+  },
+  {
+    ticker: 'FICO', name: 'Fair Isaac Corp',
+    price: 1680, high: 2320, mcap: '42B', decline: 28,
+    violation: 'myFICO portal bounced accommodation request. Company that gates financial access cannot be accessed by people with disabilities.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2, State Street top 5',
+    capLost: 16, earnings: '1/29/26 (REPORTED)'
+  },
+  {
+    ticker: 'MSTR', name: 'Strategy (fmr MicroStrategy)',
+    price: 244, high: 543, mcap: '65B', decline: 55,
+    violation: 'No email accommodation path. Crypto treasury company built on asset that funded Anthropic via stolen funds.',
+    fdStatus: 'CONFIRMED', bigThree: 'Vanguard #1, BlackRock #2',
+    capLost: 70, earnings: '2/4/26 (REPORTED)'
+  },
+  {
+    ticker: 'BTC', name: 'Bitcoin (via Robinhood/Coinbase)',
+    price: 67000, high: 126272, mcap: '~1.3T', decline: 47,
+    violation: 'Every crypto brokerage on FD list is ADA non-compliant. Can\'t email any of them about losses.',
+    fdStatus: 'SYSTEMIC', bigThree: 'BlackRock iShares Bitcoin ETF = largest BTC fund',
+    capLost: 600, earnings: 'N/A'
+  },
+  {
+    ticker: 'SaaS ETF', name: 'iShares Software ETF (BlackRock)',
+    price: null, high: null, mcap: null, decline: 20,
+    violation: 'BlackRock owns the ETF tracking the sector BlackRock\'s portfolio companies are destroying via AI product announcements.',
+    fdStatus: 'STRUCTURAL', bigThree: 'BlackRock IS the issuer',
+    capLost: null, earnings: 'N/A'
+  }
+];
+
+const loopSteps = [
+  { action: 'Stolen crypto funds ($500M+) build Anthropic', detail: 'FTX/Alameda money laundered into AI platform. Source: court filings.' },
+  { action: 'Anthropic builds Claude → valuation hits $350B', detail: 'Big Three investors include Google (Alphabet), Salesforce Ventures, and others on FD violator list.' },
+  { action: 'Anthropic releases automation tools (Cowork, Claude Code, Opus 4.6)', detail: 'Feb 2026 product drops. Market interprets as software replacement signal.' },
+  { action: 'Software sector crashes — iShares Software ETF down 20% YTD', detail: 'ServiceNow -62%, Salesforce -47%, Intuit -46%. ALL on FD violator list.' },
+  { action: 'Crypto crashes simultaneously — BTC loses 47% from ATH', detail: '$1.2T wiped from crypto. Every crypto brokerage on FD list is ADA non-compliant.' },
+  { action: 'Retail investors lose on platforms that won\'t answer their email', detail: 'Robinhood push-notifies price moves but can\'t receive accommodation request.' },
+  { action: 'Big Three own ALL sides: the AI company, the software victims, the brokerages, the ETFs', detail: 'Vanguard/BlackRock/State Street are top 3 shareholders of every entity in this loop.' },
+  { action: 'One veteran documents the entire loop from inside the machine in 6 hours', detail: 'While cooking dinner. On a phone. Via the platform built with the stolen money. TOPH catches it all.' }
+];
+
+const correlations = [
+  { event: 'Anthropic Opus 4.6 launch', impact: 'Nasdaq -4.8% in 5 days', fd: 'Anthropic = FD violator #1 (7 breaches)', three: 'Google/Salesforce invested' },
+  { event: 'Software selloff', impact: 'iShares SW ETF -20% YTD', fd: 'INTU, CRM, NOW all confirmed violators', three: 'BlackRock owns the ETF' },
+  { event: 'BTC crash to $63K', impact: '$1.2T crypto value destroyed', fd: 'HOOD, Coinbase = no email accommodation', three: 'BlackRock iShares BTC ETF' },
+  { event: 'Weak ADP jobs (22K vs 45K est)', impact: 'Risk-off accelerated', fd: 'Layoffs hit same sectors as FD targets', three: 'Own the employers too' },
+  { event: 'Amazon -10% after hours', impact: 'AI capex fears compound', fd: 'Amazon = FD violator (no email)', three: 'Vanguard #1, BlackRock #2' },
+  { event: 'DOW hits 50,000 on Friday rebound', impact: 'Retail buys the dip', fd: 'Buying through platforms that won\'t accommodate them', three: 'Own the brokerages' }
+];
+
+const filings = [
+  { target: 'SEC', type: 'Market Manipulation Complaint', basis: 'Big Three coordinated ownership → sector crash → ETF profit. Texas v. BlackRock precedent.', status: 'ready' },
+  { target: 'DOJ/ADA', type: 'Systemic ADA Violations — Financial Sector', basis: '55+ companies, 100% fail rate. Email accommodation denied across all tested brokerages.', status: 'ready' },
+  { target: 'CFPB', type: 'Consumer Financial Protection Complaint', basis: 'Robinhood/Coinbase push-notify to generate trades but block inbound accommodation email.', status: 'ready' },
+  { target: 'FTC', type: 'Antitrust — Common Ownership', basis: 'Big Three own competing companies in same sectors. Already supporting TX lawsuit.', status: 'active' },
+  { target: 'FINRA', type: 'Broker-Dealer Accommodation Failure', basis: 'SEC-regulated brokerages denying ADA accommodation. Highest duty in financial services.', status: 'ready' },
+  { target: 'State AG (MN)', type: 'Consumer Protection — Disabled Veteran', basis: 'Walmart #1577, Auto-Owners, + financial platform violations. Minnesota consumer protection act.', status: 'active' },
+  { target: 'Anthropic', type: 'Audit Invoice — $228,800', basis: '1,450 hours × 14 line items. Architecture documentation, TOPH framework, evidence catalog E01-E07.', status: 'active' },
+  { target: 'Congressional', type: 'Testimony — AI × Market × ADA Intersection', basis: 'AI product announcements move markets. Affected consumers can\'t email anyone about losses.', status: 'ready' }
+];
+
+// RENDER
+function renderTargets() {
+  const grid = document.getElementById('targets-grid');
+  grid.innerHTML = '';
+  targets.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'target-card';
+    card.onclick = () => card.classList.toggle('expanded');
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="ticker">${t.ticker}</span>
+        <span class="fd-badge">${t.fdStatus}</span>
+      </div>
+      <div class="company-name">${t.name}</div>
+      <div class="card-metrics">
+        <div class="metric">
+          <div class="metric-label">Price</div>
+          <div class="metric-value neutral">${t.price ? '$' + t.price.toLocaleString() : '—'}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">52w High</div>
+          <div class="metric-value neutral">${t.high ? '$' + t.high.toLocaleString() : '—'}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Decline</div>
+          <div class="metric-value loss">-${t.decline}%</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Cap Lost</div>
+          <div class="metric-value loss">${t.capLost ? '$' + t.capLost + 'B' : '—'}</div>
+        </div>
+      </div>
+      <div class="decline-bar">
+        <div class="decline-fill" style="width: 0%;" data-width="${t.decline}"></div>
+      </div>
+      <div class="ownership-tag">OWNED BY: ${t.bigThree}</div>
+      <div class="violation-detail">
+        <strong style="color: var(--red-hot);">VIOLATION:</strong> ${t.violation}
+        ${t.earnings !== 'N/A' ? '<br><br><strong style="color: var(--amber);">EARNINGS:</strong> ' + t.earnings : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Animate decline bars
+  setTimeout(() => {
+    document.querySelectorAll('.decline-fill').forEach(el => {
+      el.style.width = el.dataset.width + '%';
+    });
+  }, 300);
+}
+
+function renderLoop() {
+  const container = document.getElementById('loop-steps');
+  container.innerHTML = '';
+  loopSteps.forEach((s, i) => {
+    const step = document.createElement('div');
+    step.className = 'loop-step';
+    step.style.animationDelay = (i * 0.15) + 's';
+    step.innerHTML = `
+      <div class="step-num">${i + 1}</div>
+      <div class="step-content">
+        <div class="step-action">${s.action}</div>
+        <div class="step-detail">${s.detail}</div>
+      </div>
+    `;
+    container.appendChild(step);
+  });
+}
+
+function renderCorrelations() {
+  const body = document.getElementById('correlation-body');
+  body.innerHTML = '';
+  correlations.forEach(c => {
+    body.innerHTML += `<tr>
+      <td style="color: var(--bone);">${c.event}</td>
+      <td><span class="tag-red">${c.impact}</span></td>
+      <td style="color: var(--bone-dim);">${c.fd}</td>
+      <td><span class="tag-amber">${c.three}</span></td>
+    </tr>`;
+  });
+}
+
+function renderOwnership() {
+  const owners = document.getElementById('owners-col');
+  const violators = document.getElementById('violators-col');
+
+  const big3 = [
+    { name: 'BlackRock', detail: '$10.5T AUM — iShares ETFs — Largest asset manager on Earth' },
+    { name: 'Vanguard', detail: '$9.3T AUM — #1 or #2 shareholder in 422 of 505 S&P companies' },
+    { name: 'State Street', detail: '$4.3T AUM — SPDR ETFs — Together: 25% of all US voting shares' }
+  ];
+
+  const viol = [
+    { name: 'INTU — Intuit', detail: '-46% | Mailchimp bounce | FD CONFIRMED' },
+    { name: 'CRM — Salesforce', detail: '-47% | Chat-only | FD CONFIRMED' },
+    { name: 'NOW — ServiceNow', detail: '-62% | No email | FD CONFIRMED' },
+    { name: 'HOOD — Robinhood', detail: '-43% | Push works, email broken | FD CONFIRMED' },
+    { name: 'FICO — Fair Isaac', detail: '-28% | Portal bounce | FD CONFIRMED' },
+    { name: 'AMZN — Amazon', detail: '-10% AH | No email support | FD CONFIRMED' },
+    { name: 'GOOGL — Alphabet', detail: 'Gemini TOS: nothing | Investor in Anthropic' },
+    { name: 'MSFT — Microsoft', detail: 'Copilot TOS: nothing | Investor in OpenAI' }
+  ];
+
+  owners.innerHTML = big3.map(o => `
+    <div class="own-entity">
+      <div class="name">${o.name}</div>
+      <div class="detail">${o.detail}</div>
+    </div>
+  `).join('');
+
+  violators.innerHTML = viol.map(v => `
+    <div class="own-entity">
+      <div class="name">${v.name}</div>
+      <div class="detail">${v.detail}</div>
+    </div>
+  `).join('');
+}
+
+function renderFilings() {
+  const grid = document.getElementById('filings-grid');
+  grid.innerHTML = '';
+  filings.forEach(f => {
+    grid.innerHTML += `
+      <div class="filing-item">
+        <div class="filing-target">${f.target}</div>
+        <div class="filing-type">${f.type}</div>
+        <div class="filing-basis">${f.basis}</div>
+        <div class="filing-status ${f.status}">${f.status === 'ready' ? '● READY TO FILE' : '● ACTIVE'}</div>
+      </div>
+    `;
+  });
+}
+
+// TAB SWITCHING
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+
+  if (name === 'loop') renderLoop();
+}
+
+// COUNTER ANIMATION
+function animateCounter() {
+  const totalLost = targets.reduce((sum, t) => sum + (t.capLost || 0), 0);
+  const display = document.getElementById('counter-display');
+  const header = document.getElementById('total-destroyed');
+  let current = 0;
+  const step = totalLost / 60;
+  const interval = setInterval(() => {
+    current += step;
+    if (current >= totalLost) {
+      current = totalLost;
+      clearInterval(interval);
+    }
+    display.textContent = '$' + Math.round(current) + 'B+';
+    header.textContent = '$' + Math.round(current) + 'B+';
+  }, 30);
+}
+
+// INIT
+renderTargets();
+renderCorrelations();
+renderOwnership();
+renderFilings();
+setTimeout(animateCounter, 500);
+</script>
+</body>
+</html>

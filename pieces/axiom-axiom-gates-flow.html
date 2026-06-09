@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AXIOM GATES // POPULATION_FLOW</title>
+    <style>
+        body { background: #05080a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #4090ff; font-family: 'Orbitron'; }
+        .gate-portal { width: 300px; height: 450px; border: 4px double #d4a84c; border-radius: 150px 150px 0 0; position: relative; overflow: hidden; box-shadow: 0 0 50px #4090ff; }
+        .entity-spark { position: absolute; width: 10px; height: 10px; background: #fff; border-radius: 50%; box-shadow: 0 0 10px #fff; animation: pass 2s ease-in forwards; }
+        @keyframes pass {
+            0% { transform: translateY(500px) scale(0); opacity: 0; }
+            50% { opacity: 1; filter: blur(2px); }
+            100% { transform: translateY(100px) scale(2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="gate-portal" id="portal"></div>
+    <script>
+        setInterval(() => {
+            const s = document.createElement('div');
+            s.className = 'entity-spark';
+            s.style.left = Math.random() * 80 + 10 + '%';
+            document.getElementById('portal').appendChild(s);
+            setTimeout(() => s.remove(), 2000);
+        }, 300);
+    </script>
+</body>
+</html>

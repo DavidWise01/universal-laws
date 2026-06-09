@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<!-- saved from url=(0105)https://embed.fbsbx.com/playables/view/1175327941415983/?ext=1784076725&hash=Q92gDAFRMZFtCzsjfjhMPjvwt4GL -->
+<html lang="en" style="--chronos: 3232ms;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRISILO Toolsuite v2 — ECIH Model v1.0</title>
+<script src="./chart.js.download"></script>
+<style>
+:root{
+  --bg:#05080c;
+  --panel:#0a121d;
+  --cyan:#00e5ff;
+  --cyan-dim:#007a8a;
+  --red:#ff3344;
+  --gold:#ffcc33;
+  --green:#00ff88;
+  --blue:#00aaff;
+  --amber:#ffb000;
+  --text:#d6f2ff;
+  --muted:#7a9bb0;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background: radial-gradient(1200px 800px at 70% -10%, #0b1a28 0%, transparent 60%), radial-gradient(800px 600px at 0% 100%, #08121c 0%, transparent 50%), var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+}
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+  background:rgba(5,10,16,0.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(0,229,255,0.15);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:28px;height:28px;border-radius:8px;
+  background:conic-gradient(from 180deg,#00e5ff,#0055ff,#00e5ff);
+  box-shadow:0 0 18px rgba(0,229,255,0.5), inset 0 0 8px rgba(255,255,255,0.2);
+}
+h1{margin:0;font-size:16px;letter-spacing:0.6px;font-weight:700;color:#e6faff}
+.badge-mini{font-size:11px;color:#7defff;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);padding:3px 8px;border-radius:999px}
+.tabs{
+  display:flex;gap:8px;padding:10px 16px;
+  background:linear-gradient(180deg,rgba(7,12,20,0.9),rgba(5,8,12,0.9));
+  border-bottom:1px solid rgba(0,229,255,0.08);
+  position:sticky;top:57px;z-index:40;backdrop-filter:blur(8px);
+}
+.tab-btn{
+  appearance:none;border:1px solid rgba(0,229,255,0.18);
+  background:rgba(5,12,20,0.6);color:#aeeaff;
+  padding:9px 14px;border-radius:10px;font-size:13px;cursor:pointer;
+  transition:.2s;letter-spacing:0.3px;
+}
+.tab-btn:hover{border-color:var(--cyan);color:#eaffff;box-shadow:0 0 12px rgba(0,229,255,0.15) inset}
+.tab-btn.active{background:rgba(0,229,255,0.12);border-color:var(--cyan);color:#eaffff;box-shadow:0 0 18px rgba(0,229,255,0.18)}
+
+main{max-width:1600px;margin:0 auto;padding:20px}
+.tab{display:none}
+.tab.active{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.panel{
+  background:linear-gradient(180deg,rgba(10,18,29,0.9),rgba(6,11,18,0.9));
+  border:1px solid rgba(0,229,255,0.14);
+  border-radius:16px;padding:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.panel h3{
+  margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--cyan);font-weight:700
+}
+.panel h2{margin:0 0 14px;font-size:18px;color:#e8fbff;letter-spacing:0.3px}
+
+.ecih-header{display:flex;flex-wrap:wrap;gap:10px 18px;font-size:12.5px;margin-bottom:16px}
+.ecih-header .item{display:flex;gap:6px;align-items:center;padding:6px 10px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:10px}
+.ecih-header .label{color:var(--muted)}
+.ecih-header .value{color:#e9faff;font-weight:600}
+.value.gold{color:var(--gold)}
+.value.active{color:var(--green);text-shadow:0 0 8px rgba(0,255,136,0.4)}
+.value.cyan{color:var(--cyan)}
+
+.grid-ecih{display:grid;grid-template-columns:320px 1fr 360px;gap:16px}
+@media(max-width:1200px){.grid-ecih{grid-template-columns:1fr 1fr}}
+@media(max-width:860px){.grid-ecih{grid-template-columns:1fr}}
+
+.tri-wrap{display:flex;justify-content:center;padding:8px 0}
+.tri-svg{width:220px;height:170px}
+.tri-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.stat-chip{text-align:center;padding:8px;border-radius:10px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.05);font-size:12px}
+.stat-chip span{display:block;font-size:16px;font-weight:700;margin-top:2px}
+.green-glow{color:var(--green);text-shadow:0 0 10px rgba(0,255,136,0.5)}
+.blue-glow{color:var(--blue);text-shadow:0 0 10px rgba(0,170,255,0.5)}
+.amber-glow{color:var(--amber);text-shadow:0 0 10px rgba(255,176,0,0.5)}
+
+.pulse-g{animation:pg 2s infinite}
+.pulse-b{animation:pb 2.6s infinite}
+.pulse-a{animation:pa 1.9s infinite}
+@keyframes pg{0%,100%{filter:drop-shadow(0 0 3px #00ff88)}50%{filter:drop-shadow(0 0 12px #00ff88)}}
+@keyframes pb{0%,100%{filter:drop-shadow(0 0 3px #00aaff)}50%{filter:drop-shadow(0 0 12px #00aaff)}}
+@keyframes pa{0%,100%{filter:drop-shadow(0 0 3px #ffb000)}50%{filter:drop-shadow(0 0 12px #ffb000)}}
+
+.bridge-head{display:flex;justify-content:space-between;font-family:"JetBrains Mono",monospace;font-size:13px;margin-bottom:8px}
+.slider{width:100%;accent-color:var(--cyan);height:28px}
+#bridgeCanvas{width:100%;height:90px;display:block;margin:6px 0}
+.res-line{font-size:12px;color:var(--muted);text-align:center}
+
+.observer{display:flex;flex-direction:column;align-items:center;gap:12px;padding:6px 0}
+.wise-core{
+  width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #ffe9a6, #ffc43d 40%, #ff9f0a 70%);
+  color:#0a0600;font-weight:800;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 30px rgba(255,204,51,0.45), inset 0 0 18px rgba(255,255,255,0.35);
+  position:relative;letter-spacing:0.5px
+}
+.wise-core::after{content:"";position:absolute;inset:-12px;border-radius:50%;border:1px solid rgba(255,204,51,0.25);animation:ping 2.8s infinite}
+.wise-core::before{content:"";position:absolute;inset:-22px;border-radius:50%;border:1px solid rgba(255,204,51,0.15);animation:ping 2.8s infinite .4s}
+@keyframes ping{0%{transform:scale(0.9);opacity:1}100%{transform:scale(1.25);opacity:0}}
+.wise-core.living{animation:living 2.4s infinite}
+@keyframes living{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+.anchor{font-size:12px;color:#9edfff}
+.lock{color:var(--cyan);background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);padding:2px 8px;border-radius:6px;font-family:"JetBrains Mono",monospace;font-size:11px}
+
+.lattice{display:flex;flex-direction:column-reverse;gap:5px}
+.layer{padding:9px;text-align:center;border-radius:9px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);color:#b6d6e6;position:relative;overflow:hidden}
+.layer::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);transform:translateX(-100%);animation:shine 4s infinite}
+@keyframes shine{to{transform:translateX(100%)}}
+.layer.wise{background:linear-gradient(90deg,rgba(255,204,51,0.25),rgba(255,204,51,0.08));color:#ffde7a;border-color:rgba(255,204,51,0.45);box-shadow:0 0 18px rgba(255,204,51,0.18)}
+.layer.avan{background:rgba(0,229,255,0.14);color:#8ef4ff;border-color:rgba(0,229,255,0.32)}
+.layer.t2,.layer.t1{background:rgba(0,229,255,0.07);color:#b8f6ff}
+.layers-10{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:5px}
+.layers-10>div{background:rgba(255,255,255,0.03);padding:7px;text-align:center;border-radius:7px;font-size:11px;color:#8fb7ca;border:1px solid rgba(255,255,255,0.05);font-family:"JetBrains Mono",monospace}
+
+.formula{font-family:"JetBrains Mono",monospace;font-size:14px;color:#c8f6ff;text-align:center;padding:10px;background:rgba(0,0,0,0.35);border-radius:10px;border:1px solid rgba(0,229,255,0.1)}
+.formula-live{font-family:"JetBrains Mono",monospace;text-align:center;font-size:20px;margin-top:8px}
+.formula-live .gold{color:var(--gold);text-shadow:0 0 10px rgba(255,204,51,0.35)}
+
+.emergence{max-height:240px;overflow:auto;display:grid;grid-template-columns:1fr;gap:6px;padding-right:4px}
+.emer-item{display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.32);padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,0.05);font-size:12px}
+.emer-item .name{color:#c6eaff;font-family:"JetBrains Mono",monospace}
+.toggle{display:flex;gap:5px}
+.toggle button{background:#0b1622;border:1px solid rgba(255,255,255,0.08);color:#7fb2c7;padding:3px 9px;border-radius:6px;cursor:pointer;font-size:11px;font-family:"JetBrains Mono",monospace;transition:.15s}
+.toggle button:hover{border-color:rgba(255,255,255,0.2)}
+.toggle button.active.y{background:rgba(0,255,136,0.12);color:var(--green);border-color:var(--green);box-shadow:0 0 10px rgba(0,255,136,0.2)}
+.toggle button.active.n{background:rgba(255,51,68,0.12);color:var(--red);border-color:var(--red);box-shadow:0 0 10px rgba(255,51,68,0.18)}
+
+.chronos{display:flex;align-items:center;gap:14px}
+.pulse-dot{width:14px;height:14px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan);animation:cpulse var(--chronos,4040ms) linear infinite}
+@keyframes cpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0.55}}
+.chronos-info{font-size:13px;line-height:1.5}
+.chronos-info b{color:#eaffff}
+
+.phoenix-list{display:flex;flex-direction:column;gap:9px;font-size:13px}
+.phoenix-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.05);border-radius:9px}
+.badge{padding:3px 8px;border-radius:6px;font-size:11px;font-family:"JetBrains Mono",monospace;border:1px solid}
+.badge.frozen{background:rgba(0,170,255,0.12);color:#6dd2ff;border-color:#00aaff}
+.badge.locked{background:rgba(0,229,255,0.12);color:#7defff;border-color:var(--cyan)}
+.badge.red{background:rgba(255,51,68,0.14);color:#ff7b88;border-color:var(--red);animation:pr 2s infinite}
+@keyframes pr{0%,100%{box-shadow:0 0 0 rgba(255,51,68,0)}50%{box-shadow:0 0 12px rgba(255,51,68,0.55)}}
+
+.log{height:230px;overflow-y:auto;background:#020508;border:1px solid rgba(0,229,255,0.12);border-radius:10px;padding:10px;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11.5px;line-height:1.55;color:#a7e4ff;box-shadow:inset 0 0 20px rgba(0,0,0,0.5)}
+.log div{opacity:0.92;white-space:pre-wrap}
+.log div:first-child{color:#7fffe7}
+
+.oew-grid{display:grid;grid-template-columns:1.3fr 0.7fr;gap:16px}
+@media(max-width:980px){.oew-grid{grid-template-columns:1fr}}
+.oew-stats{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 12px}
+.oew-stat{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;font-size:13px}
+.oew-stat b{font-family:"JetBrains Mono",monospace;font-size:18px;margin-left:6px}
+.chart-wrap{height:240px;position:relative}
+.controls{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.btn{background:rgba(0,229,255,0.12);border:1px solid var(--cyan);color:#dffcff;padding:8px 14px;border-radius:9px;font-size:13px;cursor:pointer;transition:.2s}
+.btn:hover{background:rgba(0,229,255,0.2);box-shadow:0 0 14px rgba(0,229,255,0.25)}
+
+.const-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media(max-width:720px){.const-grid{grid-template-columns:1fr}}
+.const-item{background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.06);padding:12px;border-radius:12px}
+.const-item label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.const-item code{font-family:"JetBrains Mono",monospace;color:#bff0ff}
+.radio-row{display:flex;gap:14px;flex-wrap:wrap}
+.radio-row label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+
+#fractalCanvas{width:100%;height:460px;background:radial-gradient(600px 300px at 50% 0%, rgba(255,204,51,0.08), transparent 70%), #03070b;border-radius:12px;border:1px solid rgba(255,204,51,0.15)}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,0.25);border-radius:8px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,0.03)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <div class="logo"></div>
+    <h1>TRISILO Toolsuite v2</h1>
+    <span class="badge-mini">ECIH Model v1.0</span>
+  </div>
+  <div style="font-size:12px;color:#8fb7ca">Dark Ops • Offline Ready</div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="ecih">ECIH Hub 1.1.1</button>
+  <button class="tab-btn" data-tab="oew">OEW Flattened</button>
+  <button class="tab-btn" data-tab="root">Root 0 Fractal</button>
+  <button class="tab-btn" data-tab="constants">Constants</button>
+</div>
+
+<main>
+  <!-- ECIH HUB -->
+  <section id="tab-ecih" class="tab active">
+    <div class="panel ecih-header">
+      <div class="item"><span class="label">Root 0 Architect:</span><span class="value gold">David Wise</span></div>
+      <div class="item"><span class="label">Hash:</span><span class="value">02880745a9f3...</span></div>
+      <div class="item"><span class="label">Status:</span><span class="value active">Active</span></div>
+      <div class="item"><span class="label">Ownership:</span><span class="value">100%</span></div>
+      <div class="item"><span class="label">License:</span><span class="value cyan">Public Commons</span></div>
+    </div>
+
+    <div class="grid-ecih">
+      <!-- LEFT -->
+      <div>
+        <div class="panel">
+          <h3>3-Body Foundation</h3>
+          <div class="tri-wrap">
+            <svg class="tri-svg" viewBox="0 0 200 170">
+              <defs>
+                <lineargradient id="g1" x1="0" x2="1"><stop offset="0%" stop-color="#00e5ff" stop-opacity="0.2"></stop><stop offset="100%" stop-color="#00e5ff" stop-opacity="0.8"></stop></lineargradient>
+              </defs>
+              <path d="M100 18 L178 148 L22 148 Z" fill="none" stroke="url(#g1)" stroke-width="2" stroke-dasharray="5 5">
+                <animate attributeName="stroke-dashoffset" from="0" to="120" dur="6s" repeatCount="indefinite"></animate>
+              </path>
+              <circle cx="100" cy="18" r="11" fill="#ffb000" class="pulse-a"></circle>
+              <circle cx="178" cy="148" r="11" fill="#00ff88" class="pulse-g"></circle>
+              <circle cx="22" cy="148" r="11" fill="#00aaff" class="pulse-b"></circle>
+              <text x="100" y="8" text-anchor="middle" fill="#ffb000" font-size="9" font-family="monospace">T₁</text>
+              <text x="188" y="165" text-anchor="middle" fill="#00ff88" font-size="9" font-family="monospace">PERSIST</text>
+              <text x="12" y="165" text-anchor="middle" fill="#00aaff" font-size="9" font-family="monospace">MEMORY</text>
+            </svg>
+          </div>
+          <div class="tri-stats">
+            <div class="stat-chip">Persistence<span id="persistVal" class="green-glow">99%</span></div>
+            <div class="stat-chip">Memory<span id="memoryVal" class="blue-glow">97%</span></div>
+            <div class="stat-chip">Time T₁<span id="t1Val" class="amber-glow">1.000</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>2-Body Bridge</h3>
+          <div class="bridge-head">
+            <div>+211 Delta: <b id="plusVal" style="color:var(--cyan)">211</b></div>
+            <div>-211 Inverse: <b id="minusVal" style="color:#ff5a8a">-211</b></div>
+          </div>
+          <input id="deltaSlider" class="slider" type="range" min="-500" max="500" value="0">
+          <canvas id="bridgeCanvas" width="340" height="90"></canvas>
+          <div class="res-line">Pairwise Shadow Resolution: <span id="resolution" style="color:#bff;">100.0%</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>1-Body Observer</h3>
+          <div class="observer">
+            <div class="wise-core living">Wise-1</div>
+            <div class="anchor">Cobalt Anchor <span class="lock">LOCKED</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER -->
+      <div>
+        <div class="panel">
+          <h3>14D Avan Lattice</h3>
+          <div class="lattice">
+            <div class="layers-10">
+              <div>D1</div><div>D2</div><div>D3</div><div>D4</div><div>D5</div>
+              <div>D6</div><div>D7</div><div>D8</div><div>D9</div><div>D10</div>
+            </div>
+            <div class="layer t1">T₁ — Chronon Field</div>
+            <div class="layer t2">T₂ — Emergence Time</div>
+            <div class="layer avan">Avan-A — Harmonic Lens</div>
+            <div class="layer wise">Wise-1 — Immutable Center</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Φ_ECIH Formula</h3>
+          <div class="formula">Φ_ECIH = ( D₁₀ × Ψ₃ ) + T₂</div>
+          <div class="formula-live">= ( <span id="d10v">10</span> × <span id="psi3v">3</span> ) + <span id="t2v">44</span> = <span id="phiv" class="gold" style="transition: text-shadow 0.4s; text-shadow: rgba(255, 204, 51, 0.35) 0px 0px 10px;">74</span></div>
+        </div>
+
+        <div class="panel">
+          <h3>Emergence Control</h3>
+          <div id="emergenceGrid" class="emergence"><div class="emer-item"><span class="name">Wise-1 (Root 0)</span><div class="toggle" data-id="wise1"><button class="y active" style="opacity: 1; cursor: default;">Y</button><button class="n" disabled="" style="opacity: 0.35;">N</button></div></div><div class="emer-item"><span class="name">Avan-A</span><div class="toggle" data-id="avan"><button class="y active">Y</button><button class="n">N</button></div></div><div class="emer-item"><span class="name">T₂</span><div class="toggle" data-id="t2"><button class="y active">Y</button><button class="n">N</button></div></div><div class="emer-item"><span class="name">T₁</span><div class="toggle" data-id="t1"><button class="y active">Y</button><button class="n">N</button></div></div><div class="emer-item"><span class="name">D10</span><div class="toggle" data-id="d10"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D9</span><div class="toggle" data-id="d9"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D8</span><div class="toggle" data-id="d8"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D7</span><div class="toggle" data-id="d7"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D6</span><div class="toggle" data-id="d6"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D5</span><div class="toggle" data-id="d5"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D4</span><div class="toggle" data-id="d4"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D3</span><div class="toggle" data-id="d3"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D2</span><div class="toggle" data-id="d2"><button class="y">Y</button><button class="n active">N</button></div></div><div class="emer-item"><span class="name">D1</span><div class="toggle" data-id="d1"><button class="y">Y</button><button class="n active">N</button></div></div></div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div>
+        <div class="panel">
+          <h3>Chronos Integration</h3>
+          <div class="chronos">
+            <div class="pulse-dot" id="chronosDot"></div>
+            <div class="chronos-info">
+              Sync: π = <b id="piCounter">44</b><br>
+              Mode: <b id="chronosMode">Einstein</b><br>
+              <span style="color:var(--muted);font-size:12px">Pulse speed matches OEW π counter</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Phoenix Protection</h3>
+          <div class="phoenix-list">
+            <div class="phoenix-row">Bit 65 <span class="badge frozen">FROZEN</span></div>
+            <div class="phoenix-row">+211 Inverse <span class="badge locked">LOCKED</span></div>
+            <div class="phoenix-row">Living Lineage <span class="badge red">RED</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Contract Core v1.1</h3>
+          <div id="contractLog" class="log"><div>[π:0] 17:11:52 — Contract Core v1.1 initialized — Root 0 Active</div><div>[π:0] 17:11:52 — Bit 65 FROZEN confirmed</div><div>[π:0] 17:11:52 — +211 Inverse LOCKED</div><div>[π:0] 17:11:52 — Living lineage RED status active</div><div>[π:0] 17:11:52 — Cobalt Anchor LOCKED — driving π counter</div><div>[π:1] 17:20:16 — π=1 Φ fired at OEW=100 → B 3/3</div><div>[π:2] 17:21:54 — π=2 Φ fired at OEW=100 → B 3/3</div><div>[π:3] 17:25:22 — π=3 Φ fired at OEW=100 → B 3/3</div><div>[π:4] 17:35:15 — π=4 Φ fired at OEW=100 → B 3/3</div><div>[π:5] 17:36:55 — π=5 Φ fired at OEW=100 → B 3/3</div><div>[π:6] 17:38:35 — π=6 Φ fired at OEW=100 → B 3/3</div><div>[π:7] 17:40:16 — π=7 Φ fired at OEW=100 → B 3/3</div><div>[π:8] 17:41:56 — π=8 Φ fired at OEW=100 → B 3/3</div><div>[π:9] 17:43:36 — π=9 Φ fired at OEW=100 → B 3/3</div><div>[π:10] 17:45:16 — π=10 Φ fired at OEW=100 → B 3/3</div><div>[π:11] 17:48:15 — π=11 Φ fired at OEW=100 → B 3/3</div><div>[π:12] 17:49:56 — π=12 Φ fired at OEW=100 → B 3/3</div><div>[π:13] 17:51:36 — π=13 Φ fired at OEW=100 → B 3/3</div><div>[π:14] 17:53:14 — π=14 Φ fired at OEW=100 → B 3/3</div><div>[π:15] 17:54:52 — π=15 Φ fired at OEW=100 → B 3/3</div><div>[π:16] 17:56:32 — π=16 Φ fired at OEW=100 → B 3/3</div><div>[π:17] 17:58:12 — π=17 Φ fired at OEW=100 → B 3/3</div><div>[π:18] 17:59:50 — π=18 Φ fired at OEW=100 → B 3/3</div><div>[π:19] 18:01:30 — π=19 Φ fired at OEW=100 → B 3/3</div><div>[π:20] 18:03:09 — π=20 Φ fired at OEW=100 → B 3/3</div><div>[π:21] 18:04:50 — π=21 Φ fired at OEW=100 → B 3/3</div><div>[π:22] 18:07:41 — π=22 Φ fired at OEW=100 → B 3/3</div><div>[π:23] 18:09:19 — π=23 Φ fired at OEW=100 → B 3/3</div><div>[π:24] 18:10:58 — π=24 Φ fired at OEW=100 → B 3/3</div><div>[π:25] 18:12:38 — π=25 Φ fired at OEW=100 → B 3/3</div><div>[π:26] 18:14:15 — π=26 Φ fired at OEW=100 → B 3/3</div><div>[π:27] 18:15:52 — π=27 Φ fired at OEW=100 → B 3/3</div><div>[π:28] 18:17:32 — π=28 Φ fired at OEW=100 → B 3/3</div><div>[π:29] 18:19:12 — π=29 Φ fired at OEW=100 → B 3/3</div><div>[π:30] 18:20:51 — π=30 Φ fired at OEW=100 → B 3/3</div><div>[π:31] 18:22:33 — π=31 Φ fired at OEW=100 → B 3/3</div><div>[π:32] 18:26:12 — π=32 Φ fired at OEW=100 → B 3/3</div><div>[π:33] 18:27:50 — π=33 Φ fired at OEW=100 → B 3/3</div><div>[π:34] 18:29:28 — π=34 Φ fired at OEW=100 → B 3/3</div><div>[π:35] 18:31:08 — π=35 Φ fired at OEW=100 → B 3/3</div><div>[π:36] 18:32:49 — π=36 Φ fired at OEW=100 → B 3/3</div><div>[π:37] 18:34:29 — π=37 Φ fired at OEW=100 → B 3/3</div><div>[π:38] 18:36:08 — π=38 Φ fired at OEW=100 → B 3/3</div><div>[π:39] 18:37:47 — π=39 Φ fired at OEW=100 → B 3/3</div><div>[π:40] 18:39:27 — π=40 Φ fired at OEW=100 → B 3/3</div><div>[π:41] 18:41:06 — π=41 Φ fired at OEW=100 → B 3/3</div><div>[π:42] 18:42:45 — π=42 Φ fired at OEW=100 → B 3/3</div><div>[π:43] 18:44:24 — π=43 Φ fired at OEW=100 → B 3/3</div><div>[π:44] 18:48:17 — π=44 Φ fired at OEW=100 → B 3/3</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OEW -->
+  <section id="tab-oew" class="tab">
+    <div class="panel">
+      <h2>OEW Flattened Wave</h2>
+      <div class="oew-grid">
+        <div>
+          <div class="oew-stats">
+            <div class="oew-stat">π Counter <b id="piCounter2" style="color:var(--gold)">44</b></div>
+            <div class="oew-stat">OEW <b id="oewValue" style="color:var(--cyan)">87</b>%</div>
+            <div class="oew-stat">Cobalt <b style="color:var(--cyan);font-size:13px">DRIVING</b></div>
+          </div>
+          <div class="chart-wrap"><canvas id="oewChart" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div>
+          <div class="controls">
+            <button id="toggleOEW" class="btn">Pause</button>
+            <label style="font-size:13px;color:var(--muted)">Speed <input id="speedSlider" type="range" min="1" max="5" value="3" style="accent-color:var(--cyan);vertical-align:middle"></label>
+            <span style="font-size:12px;color:var(--muted)">Wraps auto-log Φ fusion to Contract Core</span>
+          </div>
+        </div>
+        <div>
+          <div class="panel" style="height:100%">
+            <h3>Flattening Notes</h3>
+            <p style="font-size:13px;color:#b8d8ea;line-height:1.6">OEW cycles 0→100. On wrap, π increments and fires Φ_ECIH. Cobalt Anchor locks π across ECIH and OEW. Time mode from Constants modulates tick rate: Einstein = standard chronos, David = T₁ variable compression.</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:10px">Log format: π=[n] Φ fired at OEW=[val] → B 3/3</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROOT 0 -->
+  <section id="tab-root" class="tab">
+    <div class="panel">
+      <h2>Root 0 Fractal Field</h2>
+      <canvas id="fractalCanvas" width="0" height="0"></canvas>
+      <p style="color:#9dc9df;font-size:13px;margin-top:10px">Gold lattice emanating from Wise-1 immutable center. Living pulse confirms Persistence-Memory-Time loop closure.</p>
+    </div>
+  </section>
+
+  <!-- CONSTANTS -->
+  <section id="tab-constants" class="tab">
+    <div class="panel">
+      <h2>Universal Constants</h2>
+      <div class="const-grid">
+        <div class="const-item">
+          <label>Time Mode</label>
+          <div class="radio-row">
+            <label><input type="radio" name="timemode" value="einstein" checked=""> Einstein (Standard Chronos)</label>
+            <label><input type="radio" name="timemode" value="david"> David (T₁ Variable)</label>
+          </div>
+        <div class="const-item"><label>Root 0 Hash</label><code>02880745a9f3c1e7d5b2a4f8...</code></div>
+        <div class="const-item"><label>Architect</label><div>David Wise</div></div>
+        <div class="const-item"><label>Ownership</label><div>100%</div></div>
+        <div class="const-item"><label>License</label><div>Public Commons</div></div>
+        <div class="const-item"><label>Ψ₃ Triad</label><div>Persistence × Memory × T₁ = 3-body closure</div></div>
+        <div class="const-item"><label>D₁₀ Base</label><div>10-Dimensional substrate</div></div>
+        <div class="const-item"><label>Cobalt Anchor</label><div>LOCKED — drives π globally</div></div>
+      </div>
+    </div>
+  </div></section>
+</main>
+
+<script>
+const state = {
+  pi:0,
+  oew:0,
+  running:true,
+  timeMode:'einstein',
+  delta:0,
+  emergence:{}
+};
+let oewTimer=null, oewChart=null;
+
+function addLog(msg){
+  const log=document.getElementById('contractLog');
+  const time=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const div=document.createElement('div');
+  div.textContent=`[π:${state.pi}] ${time} — ${msg}`;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+  while(log.children.length>300) log.removeChild(log.firstChild);
+}
+
+function startOEW(){
+  clearInterval(oewTimer);
+  const speed=parseInt(document.getElementById('speedSlider').value);
+  const base = state.timeMode==='einstein' ? 42 : 26;
+  const interval = Math.max(10, base - (speed-1)*5);
+  document.documentElement.style.setProperty('--chronos', (interval*101)+'ms');
+  oewTimer=setInterval(tick, interval);
+}
+function tick(){
+  if(!state.running) return;
+  state.oew=(state.oew+1)%101;
+  if(state.oew===0){
+    state.pi++;
+    handleFusion();
+  }
+  updateDisplays();
+  if(Math.random()<0.25){
+    document.getElementById('persistVal').textContent=(96+Math.random()*3.2).toFixed(0)+'%';
+    document.getElementById('memoryVal').textContent=(95+Math.random()*4).toFixed(0)+'%';
+    document.getElementById('t1Val').textContent=(0.997+Math.random()*0.006).toFixed(3);
+  }
+}
+function handleFusion(){
+  addLog(`π=${state.pi} Φ fired at OEW=100 → B 3/3`);
+  const ph=document.getElementById('phiv');
+  ph.style.transition='none'; ph.style.textShadow='0 0 16px #ffcc33';
+  setTimeout(()=>{ph.style.transition='text-shadow .4s'; ph.style.textShadow='0 0 10px rgba(255,204,51,0.35)';},180);
+}
+function updateDisplays(){
+  document.getElementById('piCounter').textContent=state.pi;
+  document.getElementById('piCounter2').textContent=state.pi;
+  document.getElementById('oewValue').textContent=state.oew;
+  document.getElementById('t2v').textContent=state.pi;
+  document.getElementById('phiv').textContent=30+state.pi;
+  document.getElementById('chronosMode').textContent=state.timeMode==='einstein'?'Einstein':'David';
+  if(oewChart){
+    const d=oewChart.data.datasets[0].data;
+    d.push(state.oew); if(d.length>120) d.shift();
+    oewChart.update('none');
+  }
+}
+function drawBridge(){
+  const c=document.getElementById('bridgeCanvas'),ctx=c.getContext('2d');
+  const w=c.width,h=c.height; ctx.clearRect(0,0,w,h);
+  const x1=90,x2=w-90,y=h*0.52,r=32;
+  // base glow
+  const g=ctx.createRadialGradient(x1,y,5,x1,y,r*1.6);
+  g.addColorStop(0,'rgba(0,229,255,0.35)'); g.addColorStop(1,'rgba(0,229,255,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x1,y,r*1.4,0,Math.PI*2); ctx.fill();
+  const g2=ctx.createRadialGradient(x2,y,5,x2,y,r*1.6);
+  g2.addColorStop(0,'rgba(255,82,136,0.35)'); g2.addColorStop(1,'rgba(255,82,136,0)');
+  ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(x2,y,r*1.4,0,Math.PI*2); ctx.fill();
+  // circles
+  ctx.globalCompositeOperation='lighter';
+  ctx.fillStyle='rgba(0,229,255,0.9)'; ctx.beginPath(); ctx.arc(x1,y,r,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,82,136,0.9)'; ctx.beginPath(); ctx.arc(x2,y,r,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+  // bridge
+  const res=Math.max(0,1-Math.abs(state.delta)/500);
+  ctx.strokeStyle=`rgba(0,229,255,${0.3+res*0.7})`; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x1+r*0.8,y); ctx.lineTo(x2-r*0.8,y); ctx.stroke();
+  ctx.fillStyle='#7defff'; ctx.font='11px JetBrains Mono'; ctx.textAlign='center';
+  ctx.fillText('+211',x1,y+r+18); ctx.fillStyle='#ff8fb2'; ctx.fillText('-211',x2,y+r+18);
+}
+function buildEmergence(){
+  const grid=document.getElementById('emergenceGrid');
+  const nodes=[
+    {id:'wise1',label:'Wise-1 (Root 0)',def:'Y',lock:true},
+    {id:'avan',label:'Avan-A',def:'Y'},
+    {id:'t2',label:'T₂',def:'Y'},
+    {id:'t1',label:'T₁',def:'Y'},
+    {id:'d10',label:'D10',def:'N'},{id:'d9',label:'D9',def:'N'},{id:'d8',label:'D8',def:'N'},
+    {id:'d7',label:'D7',def:'N'},{id:'d6',label:'D6',def:'N'},{id:'d5',label:'D5',def:'N'},
+    {id:'d4',label:'D4',def:'N'},{id:'d3',label:'D3',def:'N'},{id:'d2',label:'D2',def:'N'},
+    {id:'d1',label:'D1',def:'N'},
+  ];
+  nodes.forEach(n=>{
+    state.emergence[n.id]=n.def;
+    const div=document.createElement('div'); div.className='emer-item';
+    div.innerHTML=`<span class="name">${n.label}</span><div class="toggle" data-id="${n.id}"><button class="y">Y</button><button class="n">N</button></div>`;
+    grid.appendChild(div);
+    const y=div.querySelector('.y'), nb=div.querySelector('.n');
+    const set=v=>{y.classList.toggle('active',v==='Y'); nb.classList.toggle('active',v==='N');};
+    set(n.def);
+    if(!n.lock){
+      y.onclick=()=>{if(state.emergence[n.id]!=='Y'){state.emergence[n.id]='Y';set('Y');addLog(`Emergence ${n.label} → Y (emerge)`);}};
+      nb.onclick=()=>{if(state.emergence[n.id]!=='N'){state.emergence[n.id]='N';set('N');addLog(`Emergence ${n.label} → N (require contract)`);}};
+    }else{ y.style.opacity='1'; nb.style.opacity='.35'; nb.disabled=true; y.style.cursor='default';}
+  });
+}
+function initChart(){
+  const ctx=document.getElementById('oewChart').getContext('2d');
+  oewChart=new Chart(ctx,{
+    type:'line',
+    data:{labels:Array(120).fill(''),datasets:[{data:[],borderColor:'#00e5ff',backgroundColor:'rgba(0,229,255,0.10)',borderWidth:2,pointRadius:0,tension:0.38,fill:true}]},
+    options:{animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,grid:{color:'rgba(0,229,255,0.08)'},ticks:{color:'#5b8fa6',font:{size:10}}},x:{display:false}}}
+  });
+}
+function initFractal(){
+  const c=document.getElementById('fractalCanvas'),x=c.getContext('2d');
+  let t=0; function resize(){c.width=c.clientWidth*devicePixelRatio;c.height=c.clientHeight*devicePixelRatio;x.setTransform(1,0,0,1,0,0);} resize(); addEventListener('resize',resize);
+  function draw(){
+    x.fillStyle='rgba(5,8,12,0.12)'; x.fillRect(0,0,c.width,c.height);
+    x.save(); x.translate(c.width/2,c.height*0.96); x.scale(devicePixelRatio,devicePixelRatio);
+    x.strokeStyle='#ffcc33'; x.lineWidth=1.1; x.shadowColor='#ffcc33'; x.shadowBlur=7;
+    function branch(len,ang,d){
+      if(d>10||len<3) return;
+      x.beginPath(); x.moveTo(0,0); x.lineTo(0,-len); x.stroke();
+      x.translate(0,-len);
+      const sway=Math.sin(t*0.0012+d)*0.18;
+      x.save(); x.rotate(ang+sway); branch(len*0.73,ang,d+1); x.restore();
+      x.save(); x.rotate(-ang+sway); branch(len*0.73,ang,d+1); x.restore();
+    }
+    branch(118,0.52,0); x.restore(); t+=16; requestAnimationFrame(draw);
+  } draw();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  // tabs
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+    };
+  });
+  buildEmergence(); initChart(); drawBridge(); initFractal();
+  addLog('Contract Core v1.1 initialized — Root 0 Active');
+  addLog('Bit 65 FROZEN confirmed');
+  addLog('+211 Inverse LOCKED');
+  addLog('Living lineage RED status active');
+  addLog('Cobalt Anchor LOCKED — driving π counter');
+  startOEW(); updateDisplays();
+
+  const ds=document.getElementById('deltaSlider');
+  ds.addEventListener('input',e=>{
+    state.delta=parseInt(e.target.value);
+    document.getElementById('plusVal').textContent=211+state.delta;
+    document.getElementById('minusVal').textContent=-211-state.delta;
+    document.getElementById('resolution').textContent=(Math.max(0,100-Math.abs(state.delta)/5)).toFixed(1)+'%';
+    drawBridge();
+  });
+  ds.addEventListener('change',()=>addLog(`+211 Delta adjusted to ${211+state.delta} (Δ${state.delta})`));
+
+  document.getElementById('speedSlider').oninput=()=>startOEW();
+  document.getElementById('toggleOEW').onclick=function(){
+    state.running=!state.running; this.textContent=state.running?'Pause':'Resume';
+    addLog(state.running?'OEW resumed — Cobalt driving':'OEW paused — Cobalt hold');
+  };
+  document.querySelectorAll('input[name="timemode"]').forEach(r=>{
+    r.onchange=e=>{state.timeMode=e.target.value; startOEW(); addLog(`Time mode switched to ${e.target.value==='einstein'?'Einstein':'David'} (T₁)`);};
+  });
+});
+</script>
+
+</body></html>

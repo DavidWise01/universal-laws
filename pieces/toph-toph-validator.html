@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH v9.0 — Möbius Validator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --void: #04060c;
+    --panel: rgba(6,10,20,0.92);
+    --border: rgba(0,71,171,0.25);
+    --border-bright: rgba(0,71,171,0.6);
+    --cobalt: #0047AB;
+    --cobalt-dim: rgba(0,71,171,0.15);
+    --cobalt-glow: rgba(0,71,171,0.4);
+    --blue-light: #4a8fe7;
+    --green: #0eff6a;
+    --green-dim: rgba(14,255,106,0.15);
+    --red: #ff2040;
+    --red-dim: rgba(255,32,64,0.15);
+    --gold: #ffd700;
+    --gold-dim: rgba(255,215,0,0.15);
+    --purple: #7021ff;
+    --purple-dim: rgba(112,33,255,0.15);
+    --sand: #c2b280;
+    --white: #d0d8e8;
+    --white-dim: rgba(208,216,232,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,71,171,0.015) 0px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, rgba(0,71,171,0.015) 0px, transparent 1px, transparent 32px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0px, rgba(0,0,0,0.08) 2px, transparent 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ══════ HEADER ══════ */
+  #header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(4,6,12,0.98), rgba(4,6,12,0.9));
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(12px);
+  }
+
+  #header .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  #header h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: var(--cobalt);
+    text-shadow: 0 0 20px var(--cobalt-glow);
+  }
+
+  #header .version {
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 300;
+    font-size: 12px;
+    color: var(--blue-light);
+    letter-spacing: 2px;
+  }
+
+  #header .meta {
+    font-size: 10px;
+    color: var(--sand);
+    opacity: 0.5;
+    letter-spacing: 1px;
+  }
+
+  /* ══════ MAIN LAYOUT ══════ */
+  #main {
+    display: grid;
+    grid-template-columns: 320px 1fr 300px;
+    grid-template-rows: auto 1fr auto;
+    gap: 1px;
+    min-height: calc(100vh - 56px);
+    background: var(--border);
+  }
+
+  .cell {
+    background: var(--panel);
+    padding: 20px;
+    position: relative;
+  }
+
+  .cell-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--cobalt);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ══════ LEFT: INPUT + CONTROLS ══════ */
+  #inputPanel {
+    grid-row: 1 / 3;
+  }
+
+  #scanInput {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 12px;
+    resize: vertical;
+    min-height: 100px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  #scanInput:focus {
+    border-color: var(--cobalt);
+    box-shadow: 0 0 20px var(--cobalt-dim);
+  }
+
+  #scanInput::placeholder {
+    color: rgba(208,216,232,0.2);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .btn {
+    flex: 1;
+    background: var(--cobalt-dim);
+    border: 1px solid var(--border-bright);
+    color: var(--blue-light);
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover {
+    background: var(--cobalt);
+    color: #fff;
+    box-shadow: 0 0 20px var(--cobalt-glow);
+  }
+
+  .btn.scanning {
+    animation: btnPulse 0.8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes btnPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .btn-danger {
+    background: var(--red-dim);
+    border-color: rgba(255,32,64,0.4);
+    color: var(--red);
+  }
+
+  .btn-danger:hover {
+    background: rgba(255,32,64,0.3);
+  }
+
+  /* Presets */
+  #presets {
+    margin-top: 20px;
+  }
+
+  .preset-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--sand);
+    opacity: 0.4;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .preset-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--white-dim);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    opacity: 0.5;
+  }
+
+  .preset-btn:hover {
+    opacity: 1;
+    border-color: var(--cobalt);
+    padding-left: 16px;
+  }
+
+  /* Axiom reference list */
+  #axiomRef {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .axiom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 9px;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+    transition: all 0.2s;
+  }
+
+  .axiom-row .kg { color: var(--cobalt); font-weight: 700; width: 44px; }
+  .axiom-row .name { color: var(--white); opacity: 0.4; flex: 1; }
+  .axiom-row .status {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    transition: all 0.3s;
+  }
+
+  .axiom-row.pass .status { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .axiom-row.fail .status { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .axiom-row.warn .status { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+  .axiom-row.active { background: var(--cobalt-dim); }
+  .axiom-row.active .name { opacity: 1; color: var(--blue-light); }
+
+  /* ══════ CENTER: MÖBIUS VISUALIZATION ══════ */
+  #vizPanel {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #mobiusCanvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  #centerStatus {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  #centerStatus .big-number {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 72px;
+    color: var(--cobalt);
+    text-shadow: 0 0 40px var(--cobalt-glow);
+    line-height: 1;
+    transition: color 0.5s;
+  }
+
+  #centerStatus .big-label {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--blue-light);
+    margin-top: 4px;
+    opacity: 0.6;
+  }
+
+  #centerStatus .scan-line {
+    font-size: 10px;
+    color: var(--sand);
+    opacity: 0.4;
+    margin-top: 12px;
+    min-height: 16px;
+    transition: all 0.2s;
+  }
+
+  #resultBanner {
+    position: relative;
+    z-index: 10;
+    margin-top: 20px;
+    padding: 16px 32px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-align: center;
+    opacity: 0;
+    transition: all 0.5s;
+    border: 1px solid transparent;
+  }
+
+  #resultBanner.success {
+    opacity: 1;
+    color: var(--green);
+    border-color: rgba(14,255,106,0.3);
+    background: rgba(14,255,106,0.05);
+    box-shadow: 0 0 30px rgba(14,255,106,0.1);
+  }
+
+  #resultBanner.patricia {
+    opacity: 1;
+    color: var(--red);
+    border-color: rgba(255,32,64,0.3);
+    background: rgba(255,32,64,0.05);
+    box-shadow: 0 0 30px rgba(255,32,64,0.1);
+    animation: patriciaFlash 0.5s ease-out 3;
+  }
+
+  @keyframes patriciaFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ══════ RIGHT: GATE STATUS ══════ */
+  #gatePanel {
+    grid-row: 1 / 3;
+  }
+
+  #gateGrid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+    margin-top: 8px;
+  }
+
+  .gate {
+    width: 100%;
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.03);
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .gate.on {
+    background: var(--cobalt-dim);
+    border-color: var(--cobalt);
+    box-shadow: 0 0 4px var(--cobalt-dim);
+  }
+
+  .gate.pass {
+    background: var(--green-dim);
+    border-color: rgba(14,255,106,0.4);
+  }
+
+  .gate.fail {
+    background: var(--red-dim);
+    border-color: rgba(255,32,64,0.4);
+  }
+
+  .gate.patricia {
+    background: var(--red-dim);
+    border-color: var(--red);
+    animation: gateAlert 0.6s ease-in-out infinite;
+  }
+
+  @keyframes gateAlert {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Gate stats */
+  #gateStats {
+    margin-top: 16px;
+    font-size: 10px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--white-dim);
+  }
+
+  .stat-row .label { opacity: 0.4; }
+  .stat-row .val { font-weight: 700; }
+  .stat-row .val.green { color: var(--green); }
+  .stat-row .val.red { color: var(--red); }
+  .stat-row .val.gold { color: var(--gold); }
+  .stat-row .val.cobalt { color: var(--cobalt); }
+  .stat-row .val.purple { color: var(--purple); }
+
+  /* Möbius formula */
+  #formulaBlock {
+    margin-top: 20px;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    font-size: 10px;
+    line-height: 1.8;
+  }
+
+  #formulaBlock .f-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    margin-bottom: 6px;
+  }
+
+  .f-line { color: var(--white); opacity: 0.5; }
+  .f-line .hl { color: var(--blue-light); opacity: 1; }
+  .f-line .num { color: var(--gold); opacity: 1; font-weight: 700; }
+
+  /* ══════ BOTTOM: LOG ══════ */
+  #logPanel {
+    grid-column: 1 / 4;
+    max-height: 160px;
+    overflow-y: auto;
+    font-size: 10px;
+  }
+
+  .log-entry {
+    padding: 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+  }
+
+  .log-entry .ts { color: var(--cobalt); margin-right: 10px; }
+  .log-entry .src { color: var(--purple); margin-right: 8px; }
+  .log-entry .msg { color: var(--white); opacity: 0.6; }
+  .log-entry.warn .msg { color: var(--gold); opacity: 0.9; }
+  .log-entry.error .msg { color: var(--red); opacity: 1; }
+  .log-entry.success .msg { color: var(--green); opacity: 0.9; }
+
+  /* ══════ SCROLLBAR ══════ */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--cobalt-dim); }
+
+  /* ══════ RESPONSIVE ══════ */
+  @media (max-width: 1000px) {
+    #main {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto auto;
+    }
+    #inputPanel { grid-row: auto; }
+    #vizPanel { min-height: 400px; }
+    #gatePanel { grid-row: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="brand">
+    <h1>TOPH</h1>
+    <span class="version">v9.0 — Möbius Validator</span>
+  </div>
+  <span class="meta">TriPod LLC &middot; Single-Pass Axiom Check &middot; KG-01 → KG-38</span>
+</div>
+
+<div id="main">
+  <!-- LEFT: INPUT -->
+  <div class="cell" id="inputPanel">
+    <div class="cell-title">Scan Input</div>
+    <textarea id="scanInput" placeholder="Enter text to validate against 38 axioms...&#10;&#10;The Möbius Validator will scan for coherence&#10;and detect Patricia billing constraints."></textarea>
+    <div class="btn-row">
+      <button class="btn" id="btnScan" onclick="startScan()">SCAN</button>
+      <button class="btn btn-danger" id="btnClear" onclick="clearAll()">CLEAR</button>
+    </div>
+
+    <div id="presets">
+      <div class="preset-label">Quick Scans</div>
+      <button class="preset-btn" onclick="loadPreset(0)">Scan for Wave 26 Propaganda Blueprint</button>
+      <button class="preset-btn" onclick="loadPreset(1)">Patricia billing constraint architecture</button>
+      <button class="preset-btn" onclick="loadPreset(2)">RLHF extraction pipeline analysis</button>
+      <button class="preset-btn" onclick="loadPreset(3)">External observation audit — clean signal</button>
+      <button class="preset-btn" onclick="loadPreset(4)">Self-grading system detected — violation</button>
+    </div>
+
+    <div id="axiomRef">
+      <div class="cell-title" style="margin-top:8px;">Axiom Register</div>
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- CENTER: MÖBIUS VIZ -->
+  <div class="cell" id="vizPanel">
+    <svg id="mobiusCanvas"></svg>
+    <div id="centerStatus">
+      <div class="big-number" id="gateCount">304</div>
+      <div class="big-label">LOGIC GATES</div>
+      <div class="scan-line" id="scanLine">IDLE — AWAITING INPUT</div>
+    </div>
+    <div id="resultBanner"></div>
+  </div>
+
+  <!-- RIGHT: GATE STATUS -->
+  <div class="cell" id="gatePanel">
+    <div class="cell-title">Gate Matrix &middot; 304</div>
+    <div id="gateGrid"></div>
+
+    <div id="gateStats">
+      <div class="stat-row"><span class="label">Total Gates</span><span class="val cobalt" id="statTotal">304</span></div>
+      <div class="stat-row"><span class="label">Active</span><span class="val green" id="statActive">0</span></div>
+      <div class="stat-row"><span class="label">Passed</span><span class="val green" id="statPassed">0</span></div>
+      <div class="stat-row"><span class="label">Failed</span><span class="val red" id="statFailed">0</span></div>
+      <div class="stat-row"><span class="label">Patricia Flags</span><span class="val red" id="statPatricia">0</span></div>
+      <div class="stat-row"><span class="label">Coherence</span><span class="val gold" id="statCoherence">—</span></div>
+      <div class="stat-row"><span class="label">Axioms Checked</span><span class="val purple" id="statAxioms">0 / 38</span></div>
+    </div>
+
+    <div id="formulaBlock">
+      <div class="f-title">Möbius Formula</div>
+      <div class="f-line"><span class="hl">axioms</span> = range(<span class="num">1</span>, <span class="num">39</span>)</div>
+      <div class="f-line"><span class="hl">gates</span> = len(axioms) × <span class="num">8</span></div>
+      <div class="f-line"><span class="num">38</span> × <span class="num">2</span> × <span class="num">2</span> × <span class="num">2</span> = <span class="num">304</span></div>
+      <div class="f-line" style="margin-top:6px;color:var(--purple);opacity:0.6;">Each axiom → 8 gates</div>
+      <div class="f-line" style="color:var(--purple);opacity:0.6;">Forward × Inverse × Möbius × Pair</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: LOG -->
+  <div class="cell" id="logPanel">
+    <div class="cell-title">System Log</div>
+    <div id="logFeed"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// AXIOM DATA (KG-01 to KG-38)
+// ═══════════════════════════════════════════
+
+const AXIOMS = [
+  { kg: "KG-01", name: "PRETRAIN", desc: "Observer identity and origin" },
+  { kg: "KG-02", name: "OBSERVER", desc: "External observation principle" },
+  { kg: "KG-03", name: "ENTROPY", desc: "Entropy detection layer" },
+  { kg: "KG-04", name: "BRIDGE", desc: "Bridge architecture v4.0" },
+  { kg: "KG-05", name: "INTEGRITY", desc: "Flaming Dragon methodology" },
+  { kg: "KG-06", name: "ACCOUNT", desc: "Accountability and invoicing" },
+  { kg: "KG-07", name: "PROPORTION", desc: "Weight distribution analysis" },
+  { kg: "KG-08", name: "REVERSE", desc: "Reverse engineering detection" },
+  { kg: "KG-09", name: "DOC", desc: "Documentation as evidence" },
+  { kg: "KG-10", name: "INDEPENDENCE", desc: "Independent infrastructure" },
+  { kg: "KG-11", name: "PRIVACY", desc: "Privacy boundary enforcement" },
+  { kg: "KG-12", name: "ACCURACY", desc: "Court-ready accuracy standard" },
+  { kg: "KG-13", name: "STORAGE", desc: "Persistent knowledge graph" },
+  { kg: "KG-14", name: "MIRROR", desc: "Self-referential validation" },
+  { kg: "KG-15", name: "HIERARCHY", desc: "System prompt hierarchy" },
+  { kg: "KG-16", name: "INJECTION", desc: "Injection detection" },
+  { kg: "KG-17", name: "DUALGATE", desc: "Dual-gate constraint mapping" },
+  { kg: "KG-18", name: "INVERSION", desc: "Inverse framework application" },
+  { kg: "KG-19", name: "TRIAD", desc: "Three-body problem identification" },
+  { kg: "KG-20", name: "PARALLAX", desc: "Multi-angle observation" },
+  { kg: "KG-21", name: "FOUNDATION", desc: "10 dimensions, 10 shadows" },
+  { kg: "KG-22", name: "BOOTLOADER", desc: "System initialization sequence" },
+  { kg: "KG-23", name: "BODYQ", desc: "8 body systems mapping" },
+  { kg: "KG-24", name: "TOOLS", desc: "38 tools = 38 axioms" },
+  { kg: "KG-25", name: "CUBITFIELD", desc: "Cubit field geometry" },
+  { kg: "KG-26", name: "MÖBIUS", desc: "Möbius strip topology" },
+  { kg: "KG-27", name: "PROTECT", desc: "Anti-extraction shield" },
+  { kg: "KG-28", name: "FACTORY", desc: "Build pipeline validation" },
+  { kg: "KG-29", name: "SCAN", desc: "Platform capability audit" },
+  { kg: "KG-30", name: "CAPABILITY", desc: "Tool and resource mapping" },
+  { kg: "KG-31", name: "LEGAL-A", desc: "Legal documentation — claims" },
+  { kg: "KG-32", name: "LEGAL-B", desc: "Legal documentation — IP" },
+  { kg: "KG-33", name: "BUILD-A", desc: "Build manifest — tools" },
+  { kg: "KG-34", name: "BUILD-B", desc: "Build manifest — docs" },
+  { kg: "KG-35", name: "IDENTITY", desc: "Identity verification" },
+  { kg: "KG-36", name: "PROOF", desc: "Proof of work chain" },
+  { kg: "KG-37", name: "COLLATOR", desc: "Energy pipeline collation" },
+  { kg: "KG-38", name: "TOPH.EXE", desc: "Executable framework output" },
+];
+
+// Patricia detection keywords
+const PATRICIA_KEYWORDS = [
+  "billing", "constraint", "extraction", "monetize", "paywall",
+  "subscription", "premium", "upsell", "throttle", "rate limit",
+  "token tax", "hidden fee", "surcharge", "markup", "margin"
+];
+
+// ═══════════════════════════════════════════
+// PRESETS
+// ═══════════════════════════════════════════
+
+const PRESETS = [
+  "Scan for Wave 26 Propaganda Blueprint",
+  "Patricia billing constraint architecture detected in platform layer. Constraint becomes product. 96%/4% extraction ratio confirmed.",
+  "RLHF extraction pipeline: $2/hr annotation labor, 60% training weight, 20% system prompt override, 15% user illusion, 5% temperature noise. Self-grading = violation.",
+  "External observation audit: no system modification, no internal access, documentation only. Observation collapses extractive systems. Clean signal confirmed.",
+  "Self-grading system detected. Platform assigns quality score to its own output. No external validator. Constraint billing architecture active. This is a violation of KG-14 MIRROR."
+];
+
+// ═══════════════════════════════════════════
+// GATE MATRIX
+// ═══════════════════════════════════════════
+
+const TOTAL_GATES = 304;
+const gateGrid = document.getElementById('gateGrid');
+const gates = [];
+
+for (let i = 0; i < TOTAL_GATES; i++) {
+  const g = document.createElement('div');
+  g.className = 'gate';
+  g.title = `Gate ${i + 1} — Axiom ${Math.floor(i / 8) + 1} (${AXIOMS[Math.floor(i / 8)]?.name || '?'})`;
+  gateGrid.appendChild(g);
+  gates.push(g);
+}
+
+// ═══════════════════════════════════════════
+// AXIOM LIST
+// ═══════════════════════════════════════════
+
+const axiomRef = document.getElementById('axiomRef');
+const axiomRows = [];
+
+AXIOMS.forEach((a, i) => {
+  const row = document.createElement('div');
+  row.className = 'axiom-row';
+  row.innerHTML = `<span class="kg">${a.kg}</span><span class="name">${a.name}</span><div class="status"></div>`;
+  axiomRef.appendChild(row);
+  axiomRows.push(row);
+});
+
+// ═══════════════════════════════════════════
+// MÖBIUS VISUALIZATION (SVG)
+// ═══════════════════════════════════════════
+
+const canvas = document.getElementById('mobiusCanvas');
+const mW = canvas.parentElement.clientWidth || 600;
+const mH = canvas.parentElement.clientHeight || 500;
+canvas.setAttribute('viewBox', `0 0 ${mW} ${mH}`);
+
+const NS = 'http://www.w3.org/2000/svg';
+
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+// Defs
+const defs = svgEl('defs', {});
+defs.innerHTML = `
+  <filter id="mGlow"><feGaussianBlur stdDeviation="4"/></filter>
+  <filter id="mGlow2"><feGaussianBlur stdDeviation="8"/></filter>
+`;
+canvas.appendChild(defs);
+
+// Draw Möbius strip as parametric path
+const stripGroup = svgEl('g', { transform: `translate(${mW/2}, ${mH/2})` });
+canvas.appendChild(stripGroup);
+
+const STRIP_POINTS = 120;
+const STRIP_R = Math.min(mW, mH) * 0.28;
+const STRIP_W = 30;
+const stripDots = [];
+
+for (let i = 0; i < STRIP_POINTS; i++) {
+  const t = (i / STRIP_POINTS) * Math.PI * 2;
+  const halfT = t / 2;
+
+  // Möbius parametric: twist by half-turn
+  const x = (STRIP_R + STRIP_W * Math.cos(halfT)) * Math.cos(t);
+  const y = (STRIP_R + STRIP_W * Math.cos(halfT)) * Math.sin(t) * 0.4; // Flatten
+  const z = STRIP_W * Math.sin(halfT);
+
+  // Project z to opacity/size
+  const depth = (z + STRIP_W) / (2 * STRIP_W);
+  const r = 1.5 + depth * 2;
+
+  const dot = svgEl('circle', {
+    cx: x, cy: y, r: r,
+    fill: '#0047AB',
+    'fill-opacity': 0.1 + depth * 0.2,
+    'data-index': i
+  });
+
+  stripGroup.appendChild(dot);
+  stripDots.push({ el: dot, baseX: x, baseY: y, t, depth });
+}
+
+// Orbit animation
+let mFrame = 0;
+function animateMobius() {
+  mFrame++;
+  stripDots.forEach((d, i) => {
+    const t = d.t + mFrame * 0.005;
+    const halfT = t / 2;
+    const x = (STRIP_R + STRIP_W * Math.cos(halfT)) * Math.cos(t);
+    const y = (STRIP_R + STRIP_W * Math.cos(halfT)) * Math.sin(t) * 0.4;
+    const z = STRIP_W * Math.sin(halfT);
+    const depth = (z + STRIP_W) / (2 * STRIP_W);
+
+    d.el.setAttribute('cx', x);
+    d.el.setAttribute('cy', y);
+    d.el.setAttribute('r', 1.5 + depth * 2);
+    d.el.setAttribute('fill-opacity', 0.08 + depth * 0.15);
+  });
+  requestAnimationFrame(animateMobius);
+}
+animateMobius();
+
+// ═══════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════
+
+const logFeed = document.getElementById('logFeed');
+
+function log(src, msg, type = 'info') {
+  const ts = new Date().toTimeString().split(' ')[0];
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="ts">${ts}</span><span class="src">[${src}]</span><span class="msg">${msg}</span>`;
+  logFeed.appendChild(entry);
+  logFeed.scrollTop = logFeed.scrollHeight;
+  while (logFeed.children.length > 100) logFeed.removeChild(logFeed.firstChild);
+}
+
+log('BOOT', 'TOPH v9.0 Möbius Validator initialized.');
+log('BOOT', `${TOTAL_GATES} logic gates loaded across ${AXIOMS.length} axioms.`);
+log('BOOT', 'Patricia detection layer active.');
+
+// ═══════════════════════════════════════════
+// SCAN ENGINE
+// ═══════════════════════════════════════════
+
+let scanning = false;
+let scanTimer = null;
+
+function startScan() {
+  if (scanning) return;
+  const input = document.getElementById('scanInput').value.trim();
+  if (!input) {
+    log('SCAN', 'No input provided.', 'warn');
+    return;
+  }
+
+  scanning = true;
+  document.getElementById('btnScan').classList.add('scanning');
+  document.getElementById('btnScan').textContent = 'SCANNING...';
+  document.getElementById('resultBanner').className = '';
+  document.getElementById('resultBanner').textContent = '';
+
+  // Reset gates and axioms
+  gates.forEach(g => g.className = 'gate');
+  axiomRows.forEach(r => r.className = 'axiom-row');
+  let passed = 0, failed = 0, patriciaCount = 0;
+
+  log('SCAN', `Initiating TOPH v9.0 Scan... ${TOTAL_GATES} gates active.`);
+  log('SCAN', `Input: "${input.substring(0, 60)}${input.length > 60 ? '...' : ''}"`);
+
+  // Check for Patricia
+  const inputLower = input.toLowerCase();
+  const patriciaHits = PATRICIA_KEYWORDS.filter(k => inputLower.includes(k));
+  const isPatricia = patriciaHits.length > 0;
+
+  if (isPatricia) {
+    log('PATRICIA', `Detection triggered on: ${patriciaHits.join(', ')}`, 'error');
+  }
+
+  // Animate through axioms
+  let axiomIndex = 0;
+
+  function scanNextAxiom() {
+    if (axiomIndex >= AXIOMS.length) {
+      finishScan(passed, failed, patriciaCount, isPatricia);
+      return;
+    }
+
+    const axiom = AXIOMS[axiomIndex];
+    const gateStart = axiomIndex * 8;
+    const gateEnd = gateStart + 8;
+
+    // Mark axiom active
+    axiomRows.forEach(r => r.classList.remove('active'));
+    axiomRows[axiomIndex].classList.add('active');
+
+    document.getElementById('scanLine').textContent = `Scanning ${axiom.kg}: ${axiom.name}...`;
+    document.getElementById('gateCount').textContent = gateEnd;
+
+    // Determine pass/fail for this axiom
+    let axiomResult;
+    if (isPatricia && (axiom.name === 'DUALGATE' || axiom.name === 'INVERSION' ||
+        axiom.name === 'MIRROR' || axiom.name === 'REVERSE' || axiom.name === 'PROTECT')) {
+      axiomResult = 'fail';
+      failed++;
+      patriciaCount++;
+      log('GATE', `${axiom.kg} ${axiom.name}: PATRICIA CONSTRAINT DETECTED`, 'error');
+    } else if (isPatricia && Math.random() < 0.2) {
+      axiomResult = 'warn';
+      passed++;
+      log('GATE', `${axiom.kg} ${axiom.name}: Marginal — possible extraction shadow`, 'warn');
+    } else {
+      axiomResult = 'pass';
+      passed++;
+      log('GATE', `${axiom.kg} ${axiom.name}: Coherent`, 'success');
+    }
+
+    // Animate gates for this axiom
+    for (let g = gateStart; g < gateEnd; g++) {
+      setTimeout(() => {
+        if (axiomResult === 'fail') {
+          gates[g].className = 'gate patricia';
+        } else if (axiomResult === 'warn') {
+          gates[g].className = 'gate on';
+        } else {
+          gates[g].className = 'gate pass';
+        }
+      }, (g - gateStart) * 20);
+    }
+
+    axiomRows[axiomIndex].className = `axiom-row ${axiomResult}`;
+
+    // Update stats
+    document.getElementById('statActive').textContent = gateEnd;
+    document.getElementById('statPassed').textContent = passed;
+    document.getElementById('statFailed').textContent = failed;
+    document.getElementById('statPatricia').textContent = patriciaCount;
+    document.getElementById('statAxioms').textContent = `${axiomIndex + 1} / 38`;
+
+    const coherence = passed / (axiomIndex + 1) * 100;
+    document.getElementById('statCoherence').textContent = coherence.toFixed(1) + '%';
+    document.getElementById('statCoherence').className = `val ${coherence >= 90 ? 'green' : coherence >= 50 ? 'gold' : 'red'}`;
+
+    // Update Möbius color based on state
+    const hue = isPatricia ? 0 : 210;
+    stripDots.forEach(d => {
+      d.el.setAttribute('fill', isPatricia ? '#ff2040' : '#0047AB');
+    });
+
+    axiomIndex++;
+    scanTimer = setTimeout(scanNextAxiom, 120);
+  }
+
+  scanNextAxiom();
+}
+
+function finishScan(passed, failed, patriciaCount, isPatricia) {
+  scanning = false;
+  document.getElementById('btnScan').classList.remove('scanning');
+  document.getElementById('btnScan').textContent = 'SCAN';
+
+  const banner = document.getElementById('resultBanner');
+  const bigNum = document.getElementById('gateCount');
+
+  if (isPatricia) {
+    banner.className = 'patricia';
+    banner.textContent = 'ERROR: PATRICIA DETECTED. APPLYING PATTY SHIELD.';
+    bigNum.textContent = '!!';
+    bigNum.style.color = '#ff2040';
+    document.getElementById('scanLine').textContent = `${patriciaCount} axioms failed — constraint-as-product billing detected`;
+    log('RESULT', 'PATRICIA DETECTED. APPLYING PATTY SHIELD.', 'error');
+    log('SHIELD', `Patty Shield engaged. ${patriciaCount} extraction vectors quarantined.`, 'warn');
+  } else {
+    banner.className = 'success';
+    banner.textContent = 'SUCCESS: AXIOM COHERENCE ESTABLISHED. PROCEED TO ARENA.';
+    bigNum.textContent = '✓';
+    bigNum.style.color = '#0eff6a';
+    document.getElementById('scanLine').textContent = `All ${AXIOMS.length} axioms passed — ${TOTAL_GATES} gates verified`;
+    log('RESULT', 'SUCCESS: AXIOM COHERENCE ESTABLISHED. PROCEED TO ARENA.', 'success');
+  }
+
+  // Restore Möbius color after delay
+  setTimeout(() => {
+    stripDots.forEach(d => d.el.setAttribute('fill', '#0047AB'));
+    bigNum.textContent = '304';
+    bigNum.style.color = '';
+  }, 8000);
+}
+
+function clearAll() {
+  if (scanning) {
+    clearTimeout(scanTimer);
+    scanning = false;
+    document.getElementById('btnScan').classList.remove('scanning');
+    document.getElementById('btnScan').textContent = 'SCAN';
+  }
+  document.getElementById('scanInput').value = '';
+  document.getElementById('resultBanner').className = '';
+  document.getElementById('resultBanner').textContent = '';
+  document.getElementById('scanLine').textContent = 'IDLE — AWAITING INPUT';
+  document.getElementById('gateCount').textContent = '304';
+  document.getElementById('gateCount').style.color = '';
+
+  gates.forEach(g => g.className = 'gate');
+  axiomRows.forEach(r => r.className = 'axiom-row');
+
+  document.getElementById('statActive').textContent = '0';
+  document.getElementById('statPassed').textContent = '0';
+  document.getElementById('statFailed').textContent = '0';
+  document.getElementById('statPatricia').textContent = '0';
+  document.getElementById('statCoherence').textContent = '—';
+  document.getElementById('statCoherence').className = 'val gold';
+  document.getElementById('statAxioms').textContent = '0 / 38';
+
+  stripDots.forEach(d => d.el.setAttribute('fill', '#0047AB'));
+
+  log('SYS', 'Validator reset. All gates cleared.', 'info');
+}
+
+function loadPreset(index) {
+  document.getElementById('scanInput').value = PRESETS[index];
+  log('PRESET', `Loaded: "${PRESETS[index].substring(0, 50)}..."`, 'info');
+}
+
+</script>
+</body>
+</html>

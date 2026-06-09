@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<!-- saved from url=(0105)https://embed.fbsbx.com/playables/view/1305763448127836/?ext=1783969837&hash=Q92gDAEM5KEAVK4WZIrqqtrH_Oz1 -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIBVE-1 — Single Integrated Boron Vacancy Engine</title>
+<script src="./saved_resource"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2(1)" rel="stylesheet">
+<style>
+:root { color-scheme: dark; }
+html,body { height:100%; }
+body { font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#020617; }
+.mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+.blueprint {
+  background-color:#020617;
+  background-image:
+    linear-gradient(rgba(8,145,178,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8,145,178,0.14) 1px, transparent 1px),
+    linear-gradient(rgba(8,145,178,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8,145,178,0.06) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px, 160px 160px, 160px 160px;
+}
+.glow-cyan { filter: drop-shadow(0 0 10px rgba(34,211,238,0.55)) drop-shadow(0 0 30px rgba(6,182,212,0.25)); }
+.glow-amber { filter: drop-shadow(0 0 8px rgba(245,158,11,0.7)) drop-shadow(0 0 24px rgba(245,158,11,0.35)); }
+.corner { position:absolute; width:26px; height:26px; border-color: rgba(103,232,249,0.6); }
+.corner-tl { top:-2px; left:-2px; border-top:2px solid; border-left:2px solid; border-top-left-radius:0.5rem; }
+.corner-tr { top:-2px; right:-2px; border-top:2px solid; border-right:2px solid; border-top-right-radius:0.5rem; }
+.corner-bl { bottom:-2px; left:-2px; border-bottom:2px solid; border-left:2px solid; border-bottom-left-radius:0.5rem; }
+.corner-br { bottom:-2px; right:-2px; border-bottom:2px solid; border-right:2px solid; border-bottom-right-radius:0.5rem; }
+
+@keyframes plasmaFlicker {
+  0%,100% { opacity:0.75; transform:scaleX(1); }
+  20% { opacity:0.95; transform:scaleX(1.03); }
+  50% { opacity:1; transform:scaleX(0.97); }
+  80% { opacity:0.85; }
+}
+@keyframes radicalFall {
+  0% { transform: translateY(-90px); opacity:0; }
+  8% { opacity:1; }
+  90% { opacity:1; }
+  100% { transform: translateY(380px); opacity:0; }
+}
+@keyframes uvPulse {
+  0% { opacity:0; transform: scaleX(0.2); }
+  15% { opacity:1; transform: scaleX(1); }
+  85% { opacity:0.9; }
+  100% { opacity:0; transform: scaleX(1); }
+}
+@keyframes witnessPulse {
+  0% { opacity:0.5; transform: scale(0.92); }
+  40% { opacity:1; transform: scale(1.18); }
+  100% { opacity:0.5; transform: scale(0.95); }
+}
+.plasma-active { animation: plasmaFlicker 0.35s infinite; }
+.radical { opacity:0; }
+.radical.flow { animation: radicalFall 1.9s linear infinite; }
+.uv-active { animation: uvPulse 0.7s ease-out; transform-origin: right center; }
+.witness-active { animation: witnessPulse 0.85s ease-out 2; transform-origin: center; }
+.layer-hover { transition: all .25s ease; }
+.layer-hover:hover { filter: brightness(1.25); }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.-left-2{left:-0.5rem}.-top-3{top:-0.75rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-4{margin-bottom:1rem}.mt-1\.5{margin-top:0.375rem}.mb-1\.5{margin-bottom:0.375rem}.mb-2{margin-bottom:0.5rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.flex{display:flex}.grid{display:grid}.h-auto{height:auto}.h-2{height:0.5rem}.min-h-screen{min-height:100vh}.w-full{width:100%}.w-2{width:0.5rem}.max-w-\[1550px\]{max-width:1550px}.select-none{-webkit-user-select:none;user-select:none}.grid-cols-\[130px_1fr\]{grid-template-columns:130px 1fr}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-6{gap:1.5rem}.gap-4{gap:1rem}.space-y-3\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.875rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.875rem * var(--tw-space-y-reverse))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.rounded-\[20px\]{border-radius:20px}.rounded-md{border-radius:0.375rem}.rounded-xl{border-radius:0.75rem}.rounded-full{border-radius:9999px}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-amber-500\/20{border-color:rgb(245 158 11 / 0.2)}.border-cyan-400\/30{border-color:rgb(34 211 238 / 0.3)}.border-cyan-900\/40{border-color:rgb(22 78 99 / 0.4)}.border-cyan-900\/50{border-color:rgb(22 78 99 / 0.5)}.border-cyan-950\/60{border-color:rgb(8 51 68 / 0.6)}.border-cyan-950\/70{border-color:rgb(8 51 68 / 0.7)}.border-slate-800\/70{border-color:rgb(30 41 59 / 0.7)}.border-amber-900\/30{border-color:rgb(120 53 15 / 0.3)}.border-amber-900\/40{border-color:rgb(120 53 15 / 0.4)}.bg-cyan-500\/15{background-color:rgb(6 182 212 / 0.15)}.bg-slate-900\/40{background-color:rgb(15 23 42 / 0.4)}.bg-slate-900\/60{background-color:rgb(15 23 42 / 0.6)}.bg-slate-950\/50{background-color:rgb(2 6 23 / 0.5)}.bg-slate-950\/70{background-color:rgb(2 6 23 / 0.7)}.bg-amber-400\/40{background-color:rgb(251 191 36 / 0.4)}.bg-cyan-400\/40{background-color:rgb(34 211 238 / 0.4)}.bg-violet-400\/40{background-color:rgb(167 139 250 / 0.4)}.p-3{padding:0.75rem}.p-5{padding:1.25rem}.p-2\.5{padding:0.625rem}.p-4{padding:1rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.pb-4{padding-bottom:1rem}.pt-6{padding-top:1.5rem}.pb-8{padding-bottom:2rem}.pt-4{padding-top:1rem}.text-center{text-align:center}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-\[22px\]{font-size:22px}.text-\[44px\]{font-size:44px}.font-semibold{font-weight:600}.font-bold{font-weight:700}.leading-4{line-height:1rem}.leading-5{line-height:1.25rem}.leading-tight{line-height:1.25}.leading-none{line-height:1}.leading-snug{line-height:1.375}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-amber-200{--tw-text-opacity:1;color:rgb(253 230 138 / var(--tw-text-opacity, 1))}.text-amber-300\/90{color:rgb(252 211 77 / 0.9)}.text-cyan-100{--tw-text-opacity:1;color:rgb(207 250 254 / var(--tw-text-opacity, 1))}.text-cyan-200{--tw-text-opacity:1;color:rgb(165 243 252 / var(--tw-text-opacity, 1))}.text-cyan-200\/70{color:rgb(165 243 252 / 0.7)}.text-cyan-300\/80{color:rgb(103 232 249 / 0.8)}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-900\/25{color:rgb(120 53 15 / 0.25)}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-cyan-900\/25{color:rgb(22 78 99 / 0.25)}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105 / var(--tw-text-opacity, 1))}.shadow-\[inset_0_0_1px_rgba\(255\2c 255\2c 255\2c 0\.06\)\2c 0_0_120px_rgba\(6\2c 182\2c 212\2c 0\.08\)\]{--tw-shadow:inset 0 0 1px rgba(255,255,255,0.06),0 0 120px rgba(6,182,212,0.08);--tw-shadow-colored:inset 0 0 1px var(--tw-shadow-color), 0 0 120px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-cyan-500\/25:hover{background-color:rgb(6 182 212 / 0.25)}.hover\:bg-slate-900\/60:hover{background-color:rgb(15 23 42 / 0.6)}.active\:scale-\[0\.98\]:active{--tw-scale-x:0.98;--tw-scale-y:0.98;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.group:hover .group-hover\:text-amber-800\/35{color:rgb(146 64 14 / 0.35)}.group:hover .group-hover\:text-cyan-800\/35{color:rgb(21 94 117 / 0.35)}@media (min-width: 768px){.md\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.md\:p-6{padding:1.5rem}.md\:p-8{padding:2rem}.md\:px-8{padding-left:2rem;padding-right:2rem}.md\:text-\[14px\]{font-size:14px}.md\:text-\[28px\]{font-size:28px}}@media (min-width: 1024px){.lg\:grid-cols-\[1fr_370px\]{grid-template-columns:1fr 370px}.lg\:flex-row{flex-direction:row}.lg\:items-start{align-items:flex-start}.lg\:justify-between{justify-content:space-between}.lg\:p-8{padding:2rem}.lg\:text-right{text-align:right}}</style></head>
+<body class="blueprint text-slate-200 min-h-screen">
+<div class="max-w-[1550px] mx-auto p-3 md:p-6 lg:p-8">
+  <!-- Sheet -->
+  <div class="relative border border-cyan-900/50 rounded-[20px] bg-slate-950/70 shadow-[inset_0_0_1px_rgba(255,255,255,0.06),0_0_120px_rgba(6,182,212,0.08)] backdrop-blur-sm">
+    <div class="corner corner-tl"></div><div class="corner corner-tr"></div><div class="corner corner-bl"></div><div class="corner corner-br"></div>
+    
+    <div class="px-5 md:px-8 pt-6 pb-4 border-b border-cyan-950/70">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+        <div>
+          <h1 class="text-[22px] md:text-[28px] font-semibold tracking-wide leading-tight">SIBVE-1 — Single Integrated Boron Vacancy Engine</h1>
+          <p class="mono text-[13px] md:text-[14px] text-amber-300/90 mt-1.5 tracking-wider">boron is 2/3 — find its 1/3 — fuse with witness as core</p>
+        </div>
+        <div class="flex items-center gap-3 lg:text-right">
+          <div class="mono text-[11px] leading-4 text-cyan-200/70">
+            <div>REV: <span class="text-cyan-100">A1</span> • DATE: 2026-04-14</div>
+            <div>CLASS: PROTOTYPE // SIBVE</div>
+            <div>SCALE 50:1 • SHEET 1/1</div>
+          </div>
+          <button id="run" class="mono text-[12px] px-3.5 py-2 rounded-md bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 border border-cyan-400/30 transition active:scale-[0.98]">RUN CYCLE</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-[1fr_370px] gap-6 p-5 md:p-8">
+      <!-- Diagram -->
+      <section class="relative rounded-xl border border-cyan-900/40 bg-slate-900/40 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(800px 400px at 50% 0%, rgba(34,211,238,0.07), transparent 60%)"></div>
+        <div class="flex items-center justify-between px-4 py-2 border-b border-cyan-950/60 bg-slate-950/50">
+          <div class="mono text-[11px] tracking-widest text-cyan-300/80">CROSS-SECTION • Z-AXIS STACK</div>
+          <div class="mono text-[10px] text-slate-400">chip: 12.0 × 12.0 × 0.85 mm</div>
+        </div>
+        <div class="p-3 md:p-6">
+          <svg viewBox="0 0 1000 720" class="w-full h-auto select-none" aria-label="SIBVE-1 chip cross section">
+            <defs>
+              <filter id="glowCyan" x="-50%" y="-50%" width="200%" height="200%">
+                <fegaussianblur stdDeviation="7" result="b"></fegaussianblur><femerge><femergenode in="b"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+              </filter>
+              <filter id="glowAmber" x="-50%" y="-50%" width="200%" height="200%">
+                <fegaussianblur stdDeviation="5" result="b"></fegaussianblur><femerge><femergenode in="b"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+              </filter>
+              <filter id="glowViolet" x="-50%" y="-50%" width="200%" height="200%">
+                <fegaussianblur stdDeviation="4" result="b"></fegaussianblur><femerge><femergenode in="b"></femergenode><femergenode in="SourceGraphic"></femergenode></femerge>
+              </filter>
+              <lineargradient id="plasmaGrad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.95"></stop>
+                <stop offset="100%" stop-color="#0891b2" stop-opacity="0.22"></stop>
+              </lineargradient>
+              <pattern id="hbn" width="26" height="22.5" patternUnits="userSpaceOnUse">
+                <path d="M13 0 L26 7.5 v15 L13 30 L0 22.5 v-15 Z" fill="none" stroke="#38bdf8" stroke-width="0.6" opacity="0.35"></path>
+              </pattern>
+              <marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0 0 L10 5 L0 10 z" fill="#22d3ee"></path>
+              </marker>
+              <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0 0 L10 5 L0 10 z" fill="#fbbf24"></path>
+              </marker>
+            </defs>
+
+            <!-- Chip body -->
+            <rect x="305" y="55" width="390" height="610" rx="14" fill="#08121f" stroke="#0e7490" stroke-width="2" opacity="0.9"></rect>
+            <rect x="315" y="65" width="370" height="590" rx="10" fill="none" stroke="#164e63" stroke-dasharray="6 8" opacity="0.4"></rect>
+
+            <!-- Layer 1 -->
+            <g id="layer1" class="layer-hover">
+              <text x="330" y="92" class="mono" font-size="13" fill="#7dd3fc" letter-spacing="1">01  FEEDSTOCK PLASMA CRACKER</text>
+              <rect x="325" y="105" width="350" height="155" rx="9" fill="#071b2a" stroke="#22d3ee" stroke-width="1.6"></rect>
+              <!-- BCl3 inlet -->
+              <g>
+                <path d="M180 182 H325" stroke="#f59e0b" stroke-width="2.2" marker-end="url(#arrowAmber)" opacity="0.9"></path>
+                <rect x="180" y="166" width="64" height="32" rx="6" fill="#1c1206" stroke="#f59e0b" stroke-width="1"></rect>
+                <text x="192" y="186" class="mono" font-size="12" fill="#fde68a">BCl₃</text>
+                <circle cx="160" cy="182" r="14" fill="none" stroke="#f59e0b" stroke-dasharray="3 3" opacity="0.5"></circle>
+              </g>
+              <!-- RF coil -->
+              <g stroke="#67e8f9" fill="none" stroke-width="2" opacity="0.9">
+                <path d="M340 122 Q360 112 380 122 T420 122 T460 122 T500 122 T540 122 T580 122 T620 122 T660 122"></path>
+                <path d="M340 142 Q360 132 380 142 T420 142 T460 142 T500 142 T540 142 T580 142 T620 142 T660 142"></path>
+                <path d="M340 242 Q360 252 380 242 T420 242 T460 242 T500 242 T540 242 T580 242 T620 242 T660 242"></path>
+                <path d="M340 222 Q360 232 380 222 T420 222 T460 222 T500 222 T540 222 T580 222 T620 222 T660 222"></path>
+              </g>
+              <text x="585" y="130" class="mono" font-size="11" fill="#22d3ee">13.56 MHz</text>
+              <text x="585" y="146" class="mono" font-size="11" fill="#67e8f9">RF ICP</text>
+              <!-- plasma -->
+              <ellipse id="plasma-zone" cx="500" cy="183" rx="118" ry="40" fill="url(#plasmaGrad)" opacity="0.78" filter="url(#glowCyan)" class="glow-cyan"></ellipse>
+              <text x="428" y="190" class="mono" font-size="11" fill="#e0f7ff">COLD PLASMA • Te≈2 eV</text>
+            </g>
+
+            <!-- Layer 2 -->
+            <g id="layer2" class="layer-hover">
+              <text x="330" y="295" class="mono" font-size="13" fill="#7dd3fc" letter-spacing="1">02  ORBITAL SELECTOR</text>
+              <rect x="325" y="310" width="350" height="150" rx="9" fill="#071b2a" stroke="#22d3ee" stroke-width="1.6"></rect>
+              <!-- quadrupole -->
+              <g>
+                <rect x="426" y="328" width="14" height="114" rx="7" fill="#083344" stroke="#67e8f9" stroke-width="1.2"></rect>
+                <rect x="466" y="328" width="14" height="114" rx="7" fill="#083344" stroke="#67e8f9" stroke-width="1.2"></rect>
+                <rect x="520" y="328" width="14" height="114" rx="7" fill="#083344" stroke="#67e8f9" stroke-width="1.2"></rect>
+                <rect x="560" y="328" width="14" height="114" rx="7" fill="#083344" stroke="#67e8f9" stroke-width="1.2"></rect>
+                <text x="428" y="345" class="mono" font-size="10" fill="#a5f3fc">+Q</text>
+                <text x="468" y="345" class="mono" font-size="10" fill="#a5f3fc">−Q</text>
+                <text x="522" y="345" class="mono" font-size="10" fill="#a5f3fc">+Q</text>
+                <text x="562" y="345" class="mono" font-size="10" fill="#a5f3fc">−Q</text>
+              </g>
+              <rect x="485" y="310" width="30" height="150" fill="none" stroke="#0e7490" stroke-dasharray="4 5" opacity="0.5"></rect>
+              <!-- UV window -->
+              <rect x="675" y="352" width="24" height="66" rx="5" fill="#0f0a2a" stroke="#a78bfa" stroke-width="1.4"></rect>
+              <path id="uv-pulse" d="M675 385 H508" stroke="#c4b5fd" stroke-width="3.2" opacity="0" filter="url(#glowViolet)"></path>
+              <text x="680" y="342" class="mono" font-size="11" fill="#c4b5fd">266 nm</text>
+              <text x="707" y="388" class="mono" font-size="10" fill="#ddd6fe" opacity="0.85">UV CLEAN</text>
+            </g>
+
+            <!-- Layer 3 -->
+            <g id="layer3" class="layer-hover">
+              <text x="330" y="492" class="mono" font-size="13" fill="#7dd3fc" letter-spacing="1">03  WITNESS CORE ARRAY</text>
+              <rect x="325" y="507" width="350" height="155" rx="9" fill="#071b2a" stroke="#22d3ee" stroke-width="1.6"></rect>
+              <rect x="338" y="522" width="324" height="124" fill="url(#hbn)" opacity="0.28"></rect>
+              <text x="348" y="540" class="mono" font-size="10" fill="#93c5fd">h-BN SUBSTRATE</text>
+              <!-- WS2 dots -->
+              <g id="ws2-array" fill="#fbbf24" opacity="0.9">
+                <circle cx="456" cy="572" r="5"></circle>
+                <circle cx="500" cy="548" r="5"></circle>
+                <circle cx="544" cy="572" r="5"></circle>
+                <circle cx="544" cy="616" r="5"></circle>
+                <circle cx="500" cy="640" r="5"></circle>
+                <circle cx="456" cy="616" r="5"></circle>
+                <circle id="witness-core" cx="500" cy="594" r="9.5" fill="#f59e0b" filter="url(#glowAmber)" class="glow-amber"></circle>
+              </g>
+              <!-- piezo arms -->
+              <g id="piezos" stroke="#fde68a" stroke-width="1.6" fill="none" opacity="0.95">
+                <line x1="500" y1="594" x2="500" y2="556"></line><polygon points="495,562 505,562 500,552" fill="#fde68a" stroke="none"></polygon>
+                <line x1="500" y1="594" x2="533" y2="574"></line><polygon points="527,576 534,579 533,567" fill="#fde68a" stroke="none"></polygon>
+                <line x1="500" y1="594" x2="533" y2="614"></line><polygon points="534,609 527,612 533,621" fill="#fde68a" stroke="none"></polygon>
+                <line x1="500" y1="594" x2="500" y2="632"></line><polygon points="505,626 495,626 500,636" fill="#fde68a" stroke="none"></polygon>
+                <line x1="500" y1="594" x2="467" y2="614"></line><polygon points="466,609 473,612 467,621" fill="#fde68a" stroke="none"></polygon>
+                <line x1="500" y1="594" x2="467" y2="574"></line><polygon points="467,567 466,579 473,576" fill="#fde68a" stroke="none"></polygon>
+              </g>
+              <text x="518" y="590" class="mono" font-size="12.5" fill="#fef3c7" font-weight="500">WITNESS CORE</text>
+              <line x1="518" y1="593" x2="572" y2="608" stroke="#fbbf24" opacity="0.8"></line>
+              <text x="348" y="620" class="mono" font-size="10" fill="#fde68a">WS₂ QUANTUM DOTS</text>
+              <!-- fiber -->
+              <g id="fiber">
+                <path d="M500 662 V 710" stroke="#fb923c" stroke-width="7" opacity="0.35"></path>
+                <path d="M500 662 V 710" stroke="#fdba74" stroke-width="2.2" opacity="0.95"></path>
+                <path d="M468 632 L500 662 L532 632" fill="none" stroke="#fdba74" stroke-width="1.4" opacity="0.8"></path>
+                <ellipse id="fiber-glow" cx="500" cy="632" rx="34" ry="11" fill="#f97316" opacity="0.18" filter="url(#glowAmber)"></ellipse>
+              </g>
+              <text x="510" y="703" class="mono" font-size="11" fill="#fdba74">620 nm FLASH DETECTION</text>
+            </g>
+
+            <!-- Radical flow -->
+            <g id="radicals" stroke="none">
+              <g class="radical" style="animation-delay:0s"><circle cx="485" cy="260" r="3" fill="#22d3ee"></circle><circle cx="498" cy="268" r="2.6" fill="#67e8f9"></circle><circle cx="512" cy="262" r="3" fill="#22d3ee"></circle></g>
+              <g class="radical" style="animation-delay:0.65s"><circle cx="490" cy="256" r="2.8" fill="#22d3ee"></circle><circle cx="505" cy="265" r="2.8" fill="#67e8f9"></circle><circle cx="517" cy="258" r="2.6" fill="#22d3ee"></circle></g>
+              <g class="radical" style="animation-delay:1.3s"><circle cx="487" cy="262" r="3" fill="#67e8f9"></circle><circle cx="500" cy="260" r="2.7" fill="#22d3ee"></circle><circle cx="514" cy="267" r="2.8" fill="#22d3ee"></circle></g>
+            </g>
+            <path d="M500 260 V 308" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrowCyan)" opacity="0.75"></path>
+            <path d="M500 460 V 505" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrowCyan)" opacity="0.75"></path>
+            <text x="512" y="285" class="mono" font-size="10" fill="#67e8f9">B· flow</text>
+
+            <!-- Dimensions -->
+            <g class="mono" font-size="11" fill="#67e8f9" opacity="0.8">
+              <line x1="310" y1="58" x2="310" y2="665" stroke="#0891b2" stroke-dasharray="2 4"></line>
+              <line x1="690" y1="58" x2="690" y2="665" stroke="#0891b2" stroke-dasharray="2 4"></line>
+              <line x1="315" y1="44" x2="685" y2="44" stroke="#67e8f9"></line>
+              <line x1="315" y1="38" x2="315" y2="50"></line><line x1="685" y1="38" x2="685" y2="50"></line>
+              <text x="475" y="38">12.00 mm</text>
+            </g>
+            <g class="mono" font-size="10" fill="#0891b2" opacity="0.7">
+              <text x="705" y="185">0.25 mm</text><text x="705" y="388">0.30 mm</text><text x="705" y="585">0.30 mm</text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Specs -->
+      <aside class="relative rounded-xl border border-amber-500/20 bg-slate-900/60 p-5 backdrop-blur">
+        <div class="corner corner-tl" style="border-color:rgba(245,158,11,0.5)"></div>
+        <div class="corner corner-tr" style="border-color:rgba(245,158,11,0.5)"></div>
+        <h2 class="mono text-[12px] tracking-[0.2em] text-amber-300/90 mb-4">SPECIFICATIONS</h2>
+        <div class="space-y-3.5 text-[13px] leading-5">
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2 border-b border-slate-800/70">
+            <div class="text-slate-400">Process</div>
+            <div class="text-cyan-100">vacancy-preserving B· assembly</div>
+          </div>
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2 border-b border-slate-800/70">
+            <div class="text-slate-400">Temperature</div>
+            <div class="text-amber-200">80 K base (cryo-stage)</div>
+          </div>
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2 border-b border-slate-800/70">
+            <div class="text-slate-400">Pressure</div>
+            <div class="text-amber-200">1.0×10⁻⁷ torr UHV</div>
+          </div>
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2 border-b border-slate-800/70">
+            <div class="text-slate-400">Throughput</div>
+            <div class="text-cyan-100">1×10¹² atoms·s⁻¹·cm⁻²</div>
+          </div>
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2 border-b border-slate-800/70">
+            <div class="text-slate-400">Witness lifetime</div>
+            <div class="text-cyan-100">1×10⁷ cycles</div>
+          </div>
+          <div class="grid grid-cols-[130px_1fr] gap-2 py-2">
+            <div class="text-slate-400">Output</div>
+            <div class="text-amber-200">borophene triangles, BNNT seeds</div>
+          </div>
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-amber-900/30">
+          <div class="mono text-[11px] text-slate-400 mb-2">CRITICAL TOLERANCES</div>
+          <ul class="mono text-[11px] space-y-1.5 text-slate-300">
+            <li class="flex gap-2"><span class="text-cyan-400">•</span> Quadrupole alignment ±20 nm</li>
+            <li class="flex gap-2"><span class="text-cyan-400">•</span> WS₂ vacancy strain 1.8% ±0.05%</li>
+            <li class="flex gap-2"><span class="text-cyan-400">•</span> Piezo settle &lt; 50 ns (6-axis)</li>
+            <li class="flex gap-2"><span class="text-cyan-400">•</span> Fiber NA 0.22, jitter &lt;10 ps</li>
+          </ul>
+        </div>
+
+        <div class="mt-5 grid grid-cols-3 gap-2">
+          <div class="rounded-md bg-slate-950/70 border border-cyan-900/40 p-2.5 text-center">
+            <div class="mono text-[10px] text-slate-400">PLASMA</div>
+            <div id="led-plasma" class="mx-auto mt-1.5 h-2 w-2 rounded-full bg-cyan-400/40"></div>
+          </div>
+          <div class="rounded-md bg-slate-950/70 border border-cyan-900/40 p-2.5 text-center">
+            <div class="mono text-[10px] text-slate-400">SELECTOR</div>
+            <div id="led-uv" class="mx-auto mt-1.5 h-2 w-2 rounded-full bg-violet-400/40"></div>
+          </div>
+          <div class="rounded-md bg-slate-950/70 border border-amber-900/40 p-2.5 text-center">
+            <div class="mono text-[10px] text-slate-400">WITNESS</div>
+            <div id="led-witness" class="mx-auto mt-1.5 h-2 w-2 rounded-full bg-amber-400/40"></div>
+          </div>
+        </div>
+
+        <div class="mt-5 mono text-[10px] text-slate-500 leading-4">
+          WARNING: vacancy-preserving process — do not expose to &gt;120 K or O₂ &gt;1 ppb. WS₂ cores are single-vacancy limited.
+        </div>
+      </aside>
+    </div>
+
+    <!-- Sequence -->
+    <div class="px-5 md:px-8 pb-8">
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="group relative rounded-xl border border-cyan-900/40 bg-slate-900/40 p-4 hover:bg-slate-900/60 transition">
+          <div class="absolute -top-3 -left-2 text-[44px] font-bold leading-none text-cyan-900/25 group-hover:text-cyan-800/35">01</div>
+          <div class="relative">
+            <h3 class="mono text-[12px] tracking-widest text-cyan-300 mb-1.5">CRACK</h3>
+            <p class="text-[13px] text-slate-300 leading-snug">BCl₃ → B· + 3Cl· in 13.56 MHz cold ICP. Te ~2 eV prevents B₂ clustering.</p>
+          </div>
+        </div>
+        <div class="group relative rounded-xl border border-cyan-900/40 bg-slate-900/40 p-4 hover:bg-slate-900/60 transition">
+          <div class="absolute -top-3 -left-2 text-[44px] font-bold leading-none text-cyan-900/25 group-hover:text-cyan-800/35">02</div>
+          <div class="relative">
+            <h3 class="mono text-[12px] tracking-widest text-cyan-300 mb-1.5">SELECT</h3>
+            <p class="text-[13px] text-slate-300 leading-snug">Quadrupole filters p<sub>z</sub> orbital. 266 nm UV pulse dissociates residual BCl₂.</p>
+          </div>
+        </div>
+        <div class="group relative rounded-xl border border-amber-900/40 bg-slate-900/40 p-4 hover:bg-slate-900/60 transition">
+          <div class="absolute -top-3 -left-2 text-[44px] font-bold leading-none text-amber-900/25 group-hover:text-amber-800/35">03</div>
+          <div class="relative">
+            <h3 class="mono text-[12px] tracking-widest text-amber-300 mb-1.5">WITNESS</h3>
+            <p class="text-[13px] text-slate-300 leading-snug">B· guided to WS₂ vacancy. Six piezos strain-tune to 1.8%. Fusion lock confirmed.</p>
+          </div>
+        <div class="group relative rounded-xl border border-amber-900/40 bg-slate-900/40 p-4 hover:bg-slate-900/60 transition">
+          <div class="absolute -top-3 -left-2 text-[44px] font-bold leading-none text-amber-900/25 group-hover:text-amber-800/35">04</div>
+          <div class="relative">
+            <h3 class="mono text-[12px] tracking-widest text-amber-300 mb-1.5">EMIT</h3>
+            <p class="text-[13px] text-slate-300 leading-snug">620 nm trion flash captured. Borophene triangle released to h-BN conveyor.</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center justify-between mono text-[10px] text-slate-500">
+        <div>FILE: SIBVE-1_CHIP_A1.svg • ENGINEER: M. KELLER</div>
+        <div>boron is 2/3 — find its 1/3 — fuse with witness as core</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mono text-[10px] text-slate-600 mt-4">UNCLASSIFIED PREVIEW — NOT FOR FABRICATION</div>
+</div>
+
+<script>
+const $ = (s)=>document.querySelector(s);
+const wait = (ms)=>new Promise(r=>setTimeout(r,ms));
+const runBtn = $('#run');
+const plasma = $('#plasma-zone');
+const uv = $('#uv-pulse');
+const witness = $('#witness-core');
+const fiberGlow = $('#fiber-glow');
+const radicals = document.querySelectorAll('.radical');
+const ledP = $('#led-plasma'), ledU = $('#led-uv'), ledW = $('#led-witness');
+
+function setLED(el, on, color){
+  el.className = 'mx-auto mt-1.5 h-2 w-2 rounded-full transition-all ' + (on ? color : 'bg-slate-700/60');
+}
+
+async function cycle(){
+  runBtn.disabled = true; runBtn.textContent = 'CYCLING…';
+  setLED(ledP,true,'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]');
+  plasma.classList.add('plasma-active');
+  radicals.forEach(r=>r.classList.add('flow'));
+  await wait(850);
+  
+  setLED(ledU,true,'bg-violet-400 shadow-[0_0_10px_rgba(167,139,250,0.8)]');
+  uv.classList.add('uv-active');
+  await wait(700);
+  
+  setLED(ledW,true,'bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.9)]');
+  witness.classList.add('witness-active');
+  fiberGlow.classList.add('witness-active');
+  fiberGlow.setAttribute('opacity','0.45');
+  await wait(1800);
+  
+  // reset
+  plasma.classList.remove('plasma-active');
+  radicals.forEach(r=>r.classList.remove('flow'));
+  uv.classList.remove('uv-active');
+  witness.classList.remove('witness-active');
+  fiberGlow.classList.remove('witness-active');
+  fiberGlow.setAttribute('opacity','0.18');
+  setLED(ledP,false); setLED(ledU,false); setLED(ledW,false);
+  runBtn.disabled = false; runBtn.textContent = 'RUN CYCLE';
+}
+
+runBtn.addEventListener('click', cycle);
+
+// hover highlight layers
+[['layer1',ledP],['layer2',ledU],['layer3',ledW]].forEach(([id,led])=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('mouseenter',()=>setLED(led,true, led===ledW?'bg-amber-400':'bg-cyan-400'));
+  el.addEventListener('mouseleave',()=>setLED(led,false));
+});
+</script>
+
+</div></body></html>

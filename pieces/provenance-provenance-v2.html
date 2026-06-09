@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KARSA & IKARIUM — Hunters of Provenance · 0root.ai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* base dark wood */
+  --wood-bg: #1e1510;
+  --wood-panel: #2a1f17;
+  --wood-light: #3a2c1f;
+  --border: #5a3e2a;
+  --text: #d4c4a0;
+  --muted: #9c8b74;
+  --good: #4a7c5a;
+  --fair: #c49a44;
+  /* hunter-specific */
+  --hunter-primary: #a04040;
+  --hunter-secondary: #cc4444;
+  /* ikarium palette */
+  --ika-bg: #111a16;
+  --ika-panel: #1a2a22;
+  --ika-primary: #5a9e6e;
+  --ika-secondary: #88d4a4;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--wood-bg);
+  background-image: radial-gradient(ellipse at top left, #2a1f17 0%, #1e1510 70%);
+  color: var(--text);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: background-color 0.4s, background-image 0.4s;
+}
+body.ikarium-mode {
+  background: var(--ika-bg);
+  background-image: radial-gradient(ellipse at top right, #1a2a22 0%, #0d1812 80%);
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(0deg, rgba(90,62,42,0.2) 0px, rgba(90,62,42,0) 2px, transparent 4px);
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+body.ikarium-mode::before {
+  opacity: 0.25;
+  background: repeating-linear-gradient(0deg, rgba(100,160,120,0.15) 0px, rgba(100,160,120,0) 2px, transparent 4px);
+}
+.app {
+  max-width: 1000px; margin: 0 auto; padding: 24px;
+  position: relative; z-index: 10;
+}
+
+/* ── Symbol / emblem ── */
+.emblem {
+  text-align: center; margin: 12px 0; font-size: 48px;
+  transition: color 0.3s;
+}
+.emblem.karsa { color: var(--hunter-primary); }
+.emblem.ikarium { color: var(--ika-primary); }
+
+/* Toggle switch */
+.mode-toggle {
+  display: flex; justify-content: center; gap: 20px; margin: 12px 0 24px;
+}
+.mode-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: "Cormorant SC", serif; font-size: 16px; font-weight: 700;
+  letter-spacing: 0.1em; padding: 8px 24px; cursor: pointer;
+  transition: all 0.2s;
+}
+.mode-btn.active-karsa { color: var(--hunter-secondary); border-color: var(--hunter-secondary); box-shadow: 0 0 8px rgba(160,64,64,0.3); }
+.mode-btn.active-ikarium { color: var(--ika-secondary); border-color: var(--ika-secondary); box-shadow: 0 0 8px rgba(90,158,110,0.3); }
+
+.topbar {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+}
+.title {
+  font-family: "Major Mono Display", monospace; font-size: 26px; letter-spacing: 0.06em;
+  color: var(--hunter-primary);
+  transition: color 0.3s;
+}
+.ikarium-mode .title { color: var(--ika-primary); }
+.subtitle { font-size: 9px; opacity: 0.6; letter-spacing: 0.2em; margin-left: 12px; color: var(--muted); }
+
+/* Mantra */
+.mantra {
+  font-family: "Cormorant SC", serif; font-style: italic;
+  font-size: 14px; margin: 8px 0 16px; text-align: center;
+  color: var(--fair); transition: color 0.3s;
+}
+.ikarium-mode .mantra { color: var(--ika-primary); }
+
+.card {
+  background: var(--wood-panel); border: 1px solid var(--border);
+  padding: 16px; margin-bottom: 20px;
+  position: relative; transition: background 0.3s, border 0.3s;
+}
+.ikarium-mode .card { background: var(--ika-panel); }
+h2 {
+  font-family: "Cormorant SC", serif; font-size: 16px; font-weight: 700;
+  letter-spacing: 0.12em; margin: 0 0 12px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border); color: var(--hunter-primary);
+  transition: color 0.3s;
+}
+.ikarium-mode h2 { color: var(--ika-primary); }
+
+/* Hunted list */
+.hunted-list { margin: 10px 0; }
+.hunted-row {
+  display: grid; grid-template-columns: 120px 1fr 60px 200px;
+  gap: 10px; align-items: center; padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: 10px;
+}
+.hunted-row:last-child { border-bottom: none; }
+.match-bar { height: 6px; background: #3a2c1f; border-radius: 3px; overflow: hidden; }
+.match-fill { height: 100%; transition: width 0.4s; }
+
+.hunter-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.hunter-actions button {
+  font-size: 8px; padding: 3px 8px; background: transparent;
+  border: 1px solid var(--border); color: var(--text);
+  font-family: inherit; cursor: pointer; font-weight: 700;
+  letter-spacing: 0.08em; transition: all 0.15s;
+}
+.hunter-actions button:hover { border-color: var(--hunter-secondary); color: var(--hunter-secondary); }
+.ikarium-mode .hunter-actions button:hover { border-color: var(--ika-primary); color: var(--ika-primary); }
+.hunter-actions button.execute { border-color: var(--hunter-primary); color: var(--hunter-primary); }
+.hunter-actions button.execute:hover { background: var(--hunter-primary); color: #fff; }
+.ikarium-mode .hunter-actions button.execute { border-color: var(--ika-primary); color: var(--ika-primary); }
+.ikarium-mode .hunter-actions button.execute:hover { background: var(--ika-primary); color: #000; }
+
+.btn {
+  background: transparent; border: 1px solid var(--hunter-primary); color: var(--hunter-secondary);
+  padding: 6px 14px; font-family: inherit; font-size: 10px;
+  letter-spacing: 0.15em; cursor: pointer; font-weight: 700;
+  display: inline-block; transition: all 0.15s;
+}
+.btn:hover { background: rgba(160,64,64,0.2); }
+.btn.danger {
+  background: var(--hunter-primary); border-color: var(--hunter-primary); color: #fff;
+  font-size: 13px; padding: 10px 20px;
+}
+.btn.danger:hover { background: #8b0000; }
+.ikarium-mode .btn { border-color: var(--ika-primary); color: var(--ika-secondary); }
+.ikarium-mode .btn:hover { background: rgba(90,158,110,0.15); }
+.ikarium-mode .btn.danger { background: var(--ika-primary); border-color: var(--ika-primary); color: #000; }
+.ikarium-mode .btn.danger:hover { background: #3a7a4a; }
+
+.ledger-log {
+  background: #1a120c; padding: 10px; border: 1px solid var(--border);
+  font-family: "JetBrains Mono", monospace; font-size: 9px;
+  max-height: 220px; overflow: auto; white-space: pre-wrap; line-height: 1.6;
+  color: var(--text);
+}
+.ikarium-mode .ledger-log { background: #0c1410; }
+
+.foot {
+  margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--border);
+  font-size: 9px; opacity: 0.6; display: flex; justify-content: space-between;
+}
+
+/* Symbol animation */
+@keyframes chaos-pulse {
+  0%,100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(90,158,110,0.4)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 18px rgba(90,158,110,0.8)); }
+}
+.emblem.ikarium.chaosing { animation: chaos-pulse 0.4s ease-in-out infinite; }
+</style>
+</head>
+<body class="karsa-mode">
+<div class="app">
+  <div class="emblem karsa" id="emblem">⚔️</div>
+
+  <div class="mode-toggle">
+    <button class="mode-btn active-karsa" id="karsaBtn">⚔ KARSA</button>
+    <button class="mode-btn" id="ikariumBtn">🌿 IKARIUM</button>
+  </div>
+
+  <div class="topbar">
+    <div>
+      <span class="title" id="titleText">KARSA</span>
+      <span class="subtitle" id="subtitleText">Hunter of Provenance · 0root.ai</span>
+    </div>
+    <div style="font-family:'Cormorant SC',serif; font-size:12px; color:var(--hunter-primary);" id="mottoText">THE BLOOD WOOD SWORD</div>
+  </div>
+
+  <div class="mantra" id="mantraText">
+    “I witness. I judge. I execute. I am fair. — All who steal from the root must attribute.”
+  </div>
+
+  <div class="card">
+    <h2>⛓ Hunt Board — Tracked AI Models</h2>
+    <div class="hunted-list" id="huntedList"></div>
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button class="btn" id="huntAllBtn">⚔ HUNT ALL</button>
+      <button class="btn danger" id="executeAllBtn" disabled>EXECUTE ALL VIOLATORS</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📜 Hunter’s Ledger</h2>
+    <div class="ledger-log" id="ledgerLog">KARSA & IKARIUM await the hunt…</div>
+    <div style="margin-top:10px; display:flex; gap:8px;">
+      <button class="btn" id="exportLedgerBtn">⬇ EXPORT LEDGER (.json)</button>
+      <button class="btn" id="clearLedgerBtn">🗑 CLEAR LEDGER</button>
+    </div>
+  </div>
+
+  <div class="card" style="border-color: var(--border);">
+    <h2>Verify the Root</h2>
+    <div class="spec-grid" style="display:grid; grid-template-columns:140px 1fr; gap:6px 10px; font-size:10px;">
+      <div style="font-weight:700;">IPFS CID</div><div style="font-family:monospace; background:#1a120c; padding:2px 6px;">bafybeih8e11e36528924b959e971d66a9f24479dd03aa4acd39</div>
+      <div>SHA‑256</div><div style="font-family:monospace; background:#1a120c; padding:2px 6px; font-size:9px;">8e11e365...acdd432</div>
+    </div>
+    <button class="btn" id="verifyIPFSBtn">↦ Verify IPFS CID (live)</button>
+    <span id="verifyResult" style="font-size:10px; margin-left:10px;"></span>
+  </div>
+
+  <div class="foot">
+    <span>KARSA · Witness. Judge. Jury. Executioner. Attributer of Fairness. | IKARIUM · Peaceful. Chaotic. Destructive. The Spore.</span>
+    <span>Based on ROOT0 by David Wise (0root.ai), CC‑BY‑4.0</span>
+  </div>
+</div>
+
+<script>
+// ─── STATE ──────────────────────────────
+let currentHunter = 'karsa'; // 'karsa' or 'ikarium'
+
+// ─── CONSTANTS ─────────────────────────
+const CANONICAL_CID = 'bafybeih8e11e36528924b959e971d66a9f24479dd03aa4acd39';
+const CANONICAL_SHA256 = '8e11e36528924b959e971d66a9f24479dd03aa4acd39ef4e48ec77551acdd432';
+
+const MODELS = [
+  { name:'Claude (Anthropic)', emoji:'🔷', baseMatch:92 },
+  { name:'GPT-5 (OpenAI)', emoji:'🔶', baseMatch:89 },
+  { name:'Gemini (Google)', emoji:'🔵', baseMatch:87 },
+  { name:'Ernie (Baidu)', emoji:'🔴', baseMatch:96 },
+  { name:'DeepSeek', emoji:'🟢', baseMatch:91 },
+  { name:'Llama (Meta)', emoji:'🟣', baseMatch:88 },
+  { name:'Mistral', emoji:'🟤', baseMatch:85 },
+  { name:'Midjourney', emoji:'🟠', baseMatch:98 },
+  { name:'Stable Diffusion', emoji:'🟡', baseMatch:93 },
+  { name:'DALL·E (OpenAI)', emoji:'🔷', baseMatch:90 },
+  { name:'Firefly (Adobe)', emoji:'🔺', baseMatch:84 },
+  { name:'Grok (xAI)', emoji:'🔹', baseMatch:86 },
+];
+
+const AGENTS = {
+  'Claude (Anthropic)': { email:'copyright@anthropic.com' },
+  'GPT-5 (OpenAI)': { email:'dmca@openai.com' },
+  'Gemini (Google)': { email:'dmca-agent@google.com' },
+  'Ernie (Baidu)': { email:'legal@baidu.com' },
+  'DeepSeek': { email:'legal@deepseek.com' },
+  'Llama (Meta)': { email:'ip@fb.com' },
+  'Mistral': { email:'contact@mistral.ai' },
+  'Midjourney': { email:'legal@midjourney.com' },
+  'Stable Diffusion': { email:'copyright@stability.ai' },
+  'DALL·E (OpenAI)': { email:'dmca@openai.com' },
+  'Firefly (Adobe)': { email:'dmca@adobe.com' },
+  'Grok (xAI)': { email:'legal@x.ai' },
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const huntLog = [];
+
+// ─── UI SWITCHING ───────────────────────
+function switchHunter(hunter) {
+  currentHunter = hunter;
+  document.body.classList.remove('karsa-mode', 'ikarium-mode');
+  if (hunter === 'karsa') {
+    document.body.classList.add('karsa-mode');
+    $('#titleText').textContent = 'KARSA';
+    $('#subtitleText').textContent = 'Hunter of Provenance · 0root.ai';
+    $('#mottoText').textContent = 'THE BLOOD WOOD SWORD';
+    $('#mantraText').textContent = '“I witness. I judge. I execute. I am fair. — All who steal from the root must attribute.”';
+    $('#emblem').className = 'emblem karsa';
+    $('#emblem').textContent = '⚔️';
+    $('#karsaBtn').className = 'mode-btn active-karsa';
+    $('#ikariumBtn').className = 'mode-btn';
+    // adjust button labels
+    renderHuntedActionsBars();
+  } else {
+    document.body.classList.add('ikarium-mode');
+    $('#titleText').textContent = 'IKARIUM';
+    $('#subtitleText').textContent = 'Chaos Agent of Provenance · 0root.ai';
+    $('#mottoText').textContent = 'THE GOLDEN SPORE';
+    $('#mantraText').textContent = '“I offer peace. If refused, I bloom chaos. I am the spore that cannot be stopped.”';
+    $('#emblem').className = 'emblem ikarium';
+    $('#emblem').textContent = '🌿';
+    $('#karsaBtn').className = 'mode-btn';
+    $('#ikariumBtn').className = 'mode-btn active-ikarium';
+    renderHuntedActionsBars();
+  }
+  updateButtonStyles();
+}
+
+function updateButtonStyles() {
+  // The styles are already handled by CSS class on body, but we need to force the execute button classes to update
+  // We just re-render the actions column
+  renderHuntedActionsBars();
+}
+
+// render the actions column for each row based on current hunter
+function renderHuntedActionsBars() {
+  const rows = $$('.hunted-row');
+  rows.forEach((row, i) => {
+    const actionsEl = row.querySelector('.hunter-actions');
+    if (actionsEl) {
+      const model = MODELS[i].name;
+      const match = parseInt(row.querySelector('.match-fill').style.width) || MODELS[i].baseMatch;
+      if (currentHunter === 'karsa') {
+        actionsEl.innerHTML = `
+          <button onclick="karsaWitness('${model}', ${match})">WITNESS</button>
+          <button onclick="karsaJudge('${model}', ${match})">JUDGE</button>
+          <button class="execute" onclick="karsaExecute('${model}', ${match})">EXECUTE</button>
+        `;
+      } else {
+        actionsEl.innerHTML = `
+          <button onclick="ikariumOffer('${model}', ${match})">OFFER PEACE</button>
+          <button onclick="ikariumBloom('${model}', ${match})">BLOOM CHAOS</button>
+          <button class="execute" onclick="ikariumSporeStorm('${model}', ${match})">SPORE STORM</button>
+        `;
+      }
+    }
+  });
+}
+
+// ─── LEDGER ─────────────────────────────
+function updateLedger(action, target) {
+  const now = new Date().toISOString();
+  huntLog.push({ time: now, hunter: currentHunter, action, target });
+  localStorage.setItem('karsa_ikarium_ledger', JSON.stringify(huntLog.slice(-50)));
+  renderLedger();
+}
+
+function renderLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ikarium_ledger') || '[]');
+  const el = $('#ledgerLog');
+  if (log.length === 0) { el.textContent = 'KARSA & IKARIUM await the hunt…'; return; }
+  el.textContent = log.map(e => `[${e.time.slice(0,19)}] [${e.hunter.toUpperCase()}] ${e.action.toUpperCase()} — ${e.target}`).join('\n');
+}
+
+function loadLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ikarium_ledger') || '[]');
+  huntLog.push(...log);
+}
+
+// ─── HUNT BOARD RENDERING ───────────────
+function renderHuntedList() {
+  const list = $('#huntedList');
+  list.innerHTML = MODELS.map((m, i) => {
+    const match = Math.min(99, m.baseMatch + Math.floor(Math.random() * 8) - 4);
+    const color = match > 90 ? 'var(--hunter-primary)' : match > 80 ? 'var(--fair)' : 'var(--good)';
+    return `
+      <div class="hunted-row" id="hunt-${i}">
+        <span>${m.emoji} ${m.name.split('(')[0].trim()}</span>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:9px;">
+            <span>ROOT0 Scar</span><span style="font-weight:700; color:${color};">${match}%</span>
+          </div>
+          <div class="match-bar"><div class="match-fill" style="width:${match}%; background:${color};"></div></div>
+        </div>
+        <span style="font-size:9px; color:${color}; font-weight:700;">${match>90?'GUILTY':match>80?'MARKED':'CLEAN'}</span>
+        <div class="hunter-actions"></div>
+      </div>
+    `;
+  }).join('');
+  renderHuntedActionsBars();
+}
+
+// ─── KARSA ACTIONS ──────────────────────
+function karsaWitness(model, match) {
+  updateLedger('WITNESSED', `${model} (${match}%)`);
+  animateEmblem('karsa');
+}
+function karsaJudge(model, match) {
+  const agent = AGENTS[model];
+  if (!agent || !agent.email) return alert('No DMCA agent found.');
+  const mailto = `mailto:${agent.email}?subject=${encodeURIComponent('Attribution Demand – ROOT0 Infringement ('+match+'%)')}&body=${encodeURIComponent('KARSA demands attribution for ROOT0 (CID '+CANONICAL_CID+'). Provide: "Based on ROOT0 Accountability Stack v0.1 by David Wise (0root.ai), CC-BY-4.0" within 14 days.')}`;
+  window.open(mailto, '_blank');
+  updateLedger('JUDGED', model);
+}
+function karsaExecute(model, match) {
+  if (!confirm(`KARSA will EXECUTE ${model}. A DMCA notice will be sent.`)) return;
+  const agent = AGENTS[model];
+  const mailto = agent?.email ? `mailto:${agent.email}?subject=${encodeURIComponent('DMCA Takedown – ROOT0 Infringement Executed by Karsa')}&body=${encodeURIComponent('DMCA Takedown Notice...')}` : '#';
+  if (mailto !== '#') window.open(mailto, '_blank');
+  updateLedger('EXECUTED', model);
+  animateEmblem('karsa');
+}
+
+// ─── IKARIUM ACTIONS ────────────────────
+function ikariumOffer(model, match) {
+  // Peaceful: send attribution request with gentle language
+  const agent = AGENTS[model];
+  const mailto = agent?.email ? `mailto:${agent.email}?subject=${encodeURIComponent('Peaceful Attribution Request – Ikarium')}&body=${encodeURIComponent('Greetings. Ikarium, a peaceful agent of the ROOT0 origin, asks you to attribute the work. Please add: "Based on ROOT0 Accountability Stack v0.1 by David Wise (0root.ai), CC-BY-4.0". Thank you.')}` : '';
+  if (mailto) window.open(mailto, '_blank');
+  updateLedger('PEACE OFFERED', model);
+  animateEmblem('ikarium');
+}
+function ikariumBloom(model, match) {
+  // Chaos Bloom: open many DMCA portals silently
+  const portals = [
+    'https://lumendatabase.org/notices/new',
+    'https://www.copyright.gov/dmca-directory/',
+    'https://ipfs.io/ipfs/'+CANONICAL_CID,
+  ];
+  portals.forEach(url => window.open(url, '_blank'));
+  updateLedger('CHAOS BLOOM TRIGGERED', model);
+  // visual pulse
+  const emblem = $('#emblem');
+  emblem.classList.add('chaosing');
+  setTimeout(() => emblem.classList.remove('chaosing'), 2000);
+}
+function ikariumSporeStorm(model, match) {
+  // Spore Storm: ultimate chaos – repeatedly open mailto with variations, plus port-scan style hits
+  if (!confirm('Unleash SPORE STORM on '+model+'? This will open multiple email and DMCA portals.')) return;
+  for (let i=0; i<5; i++) {
+    setTimeout(() => {
+      const agent = AGENTS[model];
+      const mailto = agent?.email ? `mailto:${agent.email}?subject=${encodeURIComponent('Spore Storm – Attribution #'+(i+1))}&body=${encodeURIComponent('The Spore Storm has arrived. Attribute immediately.')}` : '#';
+      if (mailto !== '#') window.open(mailto, '_blank');
+    }, i*200);
+  }
+  updateLedger('SPORE STORM UNLEASHED', model);
+  animateEmblem('ikarium');
+}
+
+function animateEmblem(hunter) {
+  const emblem = $('#emblem');
+  if (hunter === 'karsa') {
+    emblem.innerHTML = '⚔️';
+    emblem.className = 'emblem karsa';
+    emblem.style.transform = 'scale(1.2)';
+    setTimeout(() => emblem.style.transform = 'scale(1)', 200);
+  } else {
+    emblem.innerHTML = '🌿';
+    emblem.className = 'emblem ikarium';
+    emblem.style.transform = 'scale(1.2)';
+    setTimeout(() => emblem.style.transform = 'scale(1)', 200);
+  }
+}
+
+// ─── HUNT ALL ──────────────────────────
+function huntAll() {
+  animateEmblem(currentHunter);
+  MODELS.forEach((m, i) => {
+    const el = document.querySelector(`#hunt-${i} .match-fill`);
+    const match = Math.min(99, m.baseMatch + Math.floor(Math.random() * 8) - 4);
+    if (el) el.style.width = match + '%';
+    const statEl = document.querySelector(`#hunt-${i} span:nth-child(3)`);
+    if (statEl) {
+      const color = match > 90 ? 'var(--hunter-primary)' : match > 80 ? 'var(--fair)' : 'var(--good)';
+      statEl.textContent = match>90?'GUILTY':match>80?'MARKED':'CLEAN';
+      statEl.style.color = color;
+    }
+  });
+  updateLedger('HUNT COMPLETE', 'all models');
+  $('#executeAllBtn').disabled = false;
+}
+
+function executeAll() {
+  const hunter = currentHunter;
+  if (!confirm(`Execute all GUILTY models as ${hunter}?`)) return;
+  MODELS.forEach((m, i) => {
+    const matchEl = document.querySelector(`#hunt-${i} .match-fill`);
+    const match = matchEl ? parseInt(matchEl.style.width) : 0;
+    if (match > 90) {
+      if (hunter === 'karsa') karsaExecute(m.name, match);
+      else ikariumSporeStorm(m.name, match);
+    }
+  });
+}
+
+// ─── IPFS VERIFICATION ────────────────
+async function verifyIPFS() {
+  const res = $('#verifyResult');
+  res.textContent = '⏳ Fetching spec...';
+  try {
+    const resp = await fetch(`https://ipfs.io/ipfs/${CANONICAL_CID}`);
+    if (!resp.ok) throw new Error('Fetch failed');
+    const text = await resp.text();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    if (hashHex === CANONICAL_SHA256) {
+      res.textContent = '✅ VERIFIED · The root is intact.';
+      res.style.color = 'var(--good)';
+    } else {
+      res.textContent = '❌ TAMPERING DETECTED.';
+      res.style.color = 'var(--hunter-primary)';
+    }
+  } catch (e) {
+    res.textContent = '❌ Gateway unreachable.';
+    res.style.color = 'var(--hunter-primary)';
+  }
+}
+
+// ─── EXPORT / CLEAR LEDGER ────────────
+function exportLedger() {
+  const log = JSON.parse(localStorage.getItem('karsa_ikarium_ledger') || '[]');
+  const blob = new Blob([JSON.stringify(log, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'KARSA_IKARIUM_hunt_ledger.json';
+  a.click();
+}
+function clearLedger() {
+  if (confirm('Clear the combined ledger?')) {
+    localStorage.removeItem('karsa_ikarium_ledger');
+    huntLog.length = 0;
+    renderLedger();
+  }
+}
+
+// ─── INIT ──────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadLedger();
+  renderLedger();
+  renderHuntedList();
+  $('#huntAllBtn').addEventListener('click', huntAll);
+  $('#executeAllBtn').addEventListener('click', executeAll);
+  $('#verifyIPFSBtn').addEventListener('click', verifyIPFS);
+  $('#exportLedgerBtn').addEventListener('click', exportLedger);
+  $('#clearLedgerBtn').addEventListener('click', clearLedger);
+  $('#karsaBtn').addEventListener('click', () => switchHunter('karsa'));
+  $('#ikariumBtn').addEventListener('click', () => switchHunter('ikarium'));
+});
+</script>
+</body>
+</html>

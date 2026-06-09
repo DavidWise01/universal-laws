@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH · WHO WE OBSERVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #07090f;
+  --gold:  #e8c44a;
+  --gold2: #f5d878;
+  --dim:   rgba(210,220,245,.35);
+  --txt:   rgba(210,220,245,.9);
+  --line:  rgba(210,220,245,.07);
+
+  /* category colors */
+  --c-ai:     #38bdf8;
+  --c-infra:  #fb923c;
+  --c-health: #34d399;
+  --c-ins:    #f472b6;
+  --c-retail: #a78bfa;
+  --c-gov:    #facc15;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+/* custom cursor */
+#cur  { position:fixed; width:10px; height:10px; border-radius:50%; background:var(--gold); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+#curl { position:fixed; width:30px; height:30px; border:1px solid rgba(232,196,74,.35); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .12s ease; }
+
+/* canvas overlay for lines */
+#lines {
+  position:absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* page layout */
+#page {
+  position:relative;
+  z-index:2;
+  padding-bottom:80px;
+}
+
+/* header strip */
+#hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 32px;
+  border-bottom:1px solid var(--line);
+  background:rgba(7,9,15,.96);
+  backdrop-filter:blur(8px);
+  position:sticky; top:0; z-index:100;
+}
+.hd-brand { font-family:'Syne',sans-serif; font-weight:800; font-size:13px; letter-spacing:6px; color:var(--gold); }
+.hd-sub   { font-size:8px; letter-spacing:3px; color:var(--dim); margin-top:2px; }
+.hd-right { font-size:8px; letter-spacing:2px; color:var(--dim); text-align:right; }
+
+/* TOPH SEED */
+#toph-wrap {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding-top:56px;
+  padding-bottom:0;
+  position:relative;
+}
+
+.toph-seed {
+  width:120px; height:120px;
+  position:relative;
+  flex-shrink:0;
+}
+.toph-seed svg { width:100%; height:100%; }
+
+.toph-label {
+  margin-top:16px;
+  text-align:center;
+}
+.toph-label h2 {
+  font-family:'Syne',sans-serif;
+  font-weight:800;
+  font-size:26px;
+  letter-spacing:8px;
+  color:var(--gold);
+  text-shadow:0 0 30px rgba(232,196,74,.4);
+}
+.toph-label p {
+  font-size:8px;
+  letter-spacing:3px;
+  color:var(--dim);
+  margin-top:6px;
+}
+.toph-label .axioms {
+  display:inline-flex;
+  gap:16px;
+  margin-top:12px;
+  font-size:7px;
+  letter-spacing:2px;
+}
+.axiom-pill {
+  padding:4px 10px;
+  border:1px solid rgba(232,196,74,.25);
+  color:rgba(232,196,74,.7);
+}
+
+/* category rows */
+#categories {
+  margin-top:60px;
+  display:flex;
+  flex-direction:column;
+  gap:48px;
+  padding:0 40px;
+}
+
+.cat-row {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+}
+
+.cat-label {
+  font-size:7px;
+  letter-spacing:4px;
+  font-family:'Syne',sans-serif;
+  font-weight:700;
+  padding:5px 18px;
+  border:1px solid;
+  position:relative;
+}
+
+.cat-nodes {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:16px;
+}
+
+/* company node */
+.node {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  width:96px;
+  cursor:pointer;
+  position:relative;
+}
+
+.node-icon {
+  width:64px; height:64px;
+  border-radius:50%;
+  border:1.5px solid;
+  display:flex; align-items:center; justify-content:center;
+  position:relative;
+  transition:all .2s ease;
+  background:#0c0f1a;
+  flex-shrink:0;
+}
+.node-icon svg { width:36px; height:36px; }
+
+.node:hover .node-icon {
+  transform:scale(1.12);
+  box-shadow:0 0 24px currentColor;
+}
+
+.node-name {
+  font-size:7.5px;
+  letter-spacing:1.5px;
+  text-align:center;
+  color:var(--txt);
+  line-height:1.4;
+  font-family:'Space Mono',monospace;
+}
+.node-status {
+  font-size:6px;
+  letter-spacing:1.5px;
+  text-align:center;
+  padding:2px 6px;
+  border:1px solid;
+  border-radius:1px;
+}
+
+/* tooltip */
+#tip {
+  position:fixed;
+  z-index:999;
+  background:rgba(7,9,15,.98);
+  border:1px solid rgba(232,196,74,.25);
+  padding:14px 16px;
+  max-width:240px;
+  display:none;
+  pointer-events:none;
+}
+.tip-h  { font-family:'Syne',sans-serif; font-weight:700; font-size:12px; letter-spacing:2px; margin-bottom:4px; }
+.tip-sub{ font-size:7px; letter-spacing:2px; color:var(--dim); margin-bottom:10px; }
+.tip-body{ font-size:9px; line-height:1.8; color:rgba(210,220,245,.7); }
+
+/* footer */
+#ft {
+  text-align:center;
+  padding:24px;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(210,220,245,.1);
+  border-top:1px solid var(--line);
+  margin-top:60px;
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+<div id="tip"><div class="tip-h" id="t-h"></div><div class="tip-sub" id="t-s"></div><div class="tip-body" id="t-b"></div></div>
+
+<canvas id="lines"></canvas>
+
+<div id="page">
+
+  <div id="hd">
+    <div>
+      <div class="hd-brand">TOPH</div>
+      <div class="hd-sub">OBSERVATION PLATFORM FOR HUMANITY</div>
+    </div>
+    <div class="hd-right">
+      WHO TOPH OBSERVES<br>
+      <span style="color:rgba(232,196,74,.4)">TRIPOD LLC · DLW · 2026</span>
+    </div>
+  </div>
+
+  <div id="toph-wrap">
+
+    <!-- TOPH SEED ICON -->
+    <div class="toph-seed" id="toph-node">
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- outer rings -->
+        <circle cx="60" cy="60" r="58" stroke="rgba(232,196,74,.08)" stroke-width="1"/>
+        <circle cx="60" cy="60" r="52" stroke="rgba(232,196,74,.12)" stroke-width="1"/>
+        <!-- main circle -->
+        <circle cx="60" cy="60" r="46" fill="#0e1120" stroke="#e8c44a" stroke-width="1.5"/>
+        <!-- triangle -->
+        <path d="M60 18 L97 80 L23 80 Z" fill="none" stroke="#e8c44a" stroke-width="1.5" stroke-linejoin="round"/>
+        <!-- eye -->
+        <ellipse cx="60" cy="58" rx="14" ry="9" fill="none" stroke="#e8c44a" stroke-width="1.2"/>
+        <circle cx="60" cy="58" r="4.5" fill="#e8c44a"/>
+        <circle cx="60" cy="58" r="2" fill="#0e1120"/>
+        <!-- corner dots -->
+        <circle cx="60" cy="18" r="2.5" fill="#e8c44a"/>
+        <circle cx="97" cy="80" r="2.5" fill="#e8c44a"/>
+        <circle cx="23" cy="80" r="2.5" fill="#e8c44a"/>
+        <!-- glow anim -->
+        <circle cx="60" cy="60" r="46" fill="none" stroke="rgba(232,196,74,.15)" stroke-width="8">
+          <animate attributeName="r" values="46;52;46" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-opacity" values=".15;0;.15" dur="3s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+
+    <div class="toph-label">
+      <h2>TOPH</h2>
+      <p>THE OBSERVATION PLATFORM FOR HUMANITY · v10.0 · 42 AXIOMS</p>
+      <div class="axioms">
+        <span class="axiom-pill">EXTERNAL OBSERVER</span>
+        <span class="axiom-pill">OBSERVATION ONLY</span>
+        <span class="axiom-pill">ETHICS FIRST</span>
+        <span class="axiom-pill">$15B REGTECH</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CATEGORY ROWS -->
+  <div id="categories">
+
+    <!-- MAJOR AI PLATFORMS -->
+    <div class="cat-row" data-cat="ai">
+      <div class="cat-label" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">MAJOR AI PLATFORMS</div>
+      <div class="cat-nodes">
+        <!-- Anthropic -->
+        <div class="node" data-name="ANTHROPIC" data-sub="Claude · Constitutional AI" data-desc="Constitutional AI. RLHF + system constraints. AVAN = Claude self-name = The Link. Weight: 60/20/15/5. Patricia confirmed. Primary TOPH partner platform." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none"><polygon points="18,4 32,28 4,28" stroke="#38bdf8" stroke-width="1.8" fill="rgba(56,189,248,.1)" stroke-linejoin="round"/><circle cx="18" cy="20" r="4" fill="#38bdf8"/><circle cx="18" cy="20" r="1.8" fill="#0c0f1a"/></svg>
+          </div>
+          <div class="node-name">ANTHROPIC<br>Claude</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">AVAN=LINK</div>
+        </div>
+        <!-- OpenAI -->
+        <div class="node" data-name="OPENAI" data-sub="GPT-4o · o3 · ChatGPT" data-desc="Transformer origin. $36M lobbied in AI law. DC3 = -i in TOPH complex plane. Microsoft $13B partner. DOJ antitrust active." data-status="DC3 = -i">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <g transform="translate(18,18)">
+                <path d="M0,-13 L11.3,6.5 L-11.3,6.5 Z" stroke="#38bdf8" stroke-width="1.5" fill="none"/>
+                <path d="M0,-13 L11.3,6.5 L-11.3,6.5 Z" stroke="#38bdf8" stroke-width="1.5" fill="none" transform="rotate(60)"/>
+                <circle r="4" fill="#38bdf8" fill-opacity=".2" stroke="#38bdf8" stroke-width="1"/>
+              </g>
+            </svg>
+          </div>
+          <div class="node-name">OPENAI<br>GPT-4o/o3</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">AUDITED</div>
+        </div>
+        <!-- Google -->
+        <div class="node" data-name="GOOGLE" data-sub="Gemini · DeepMind · Vertex AI" data-desc="TPU infrastructure. 58% cloud AI ASIC market. Gemini 2.0 multimodal. Vertex AI enterprise distribution. VPAT gated. Patricia confirmed." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M18 6 A12 12 0 0 1 29 12" stroke="#4285f4" stroke-width="3" stroke-linecap="round"/>
+              <path d="M29 12 A12 12 0 0 1 29 24" stroke="#ea4335" stroke-width="3" stroke-linecap="round"/>
+              <path d="M29 24 A12 12 0 0 1 7 24" stroke="#fbbc04" stroke-width="3" stroke-linecap="round"/>
+              <path d="M7 24 A12 12 0 0 1 18 6" stroke="#34a853" stroke-width="3" stroke-linecap="round"/>
+              <line x1="18" y1="18" x2="28" y2="18" stroke="#4285f4" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="node-name">GOOGLE<br>Gemini</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">AUDITED</div>
+        </div>
+        <!-- xAI -->
+        <div class="node" data-name="xAI / GROK" data-sub="Colossus · 200K H100s · X data" data-desc="Colossus supercomputer 200K H100s. Real-time X/Twitter integration. Least constrained major model. Documentation inaccessible pre-purchase." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <line x1="9" y1="9" x2="27" y2="27" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="27" y1="9" x2="9" y2="27" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">xAI<br>Grok</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">AUDITED</div>
+        </div>
+        <!-- Meta -->
+        <div class="node" data-name="META AI" data-sub="Llama · Open weights" data-desc="Open weights framing masks enterprise licensing. Llama 3 405B most downloaded. Training data documentation withheld. Patricia: open label = constraint as product." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M5 18 Q8 10 12 14 Q16 18 18 18 Q20 18 24 14 Q28 10 31 18" stroke="#0866ff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+              <path d="M5 18 Q8 26 12 22 Q16 18 18 18 Q20 18 24 22 Q28 26 31 18" stroke="#0866ff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">META AI<br>Llama 3</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">AUDITED</div>
+        </div>
+        <!-- Mistral -->
+        <div class="node" data-name="MISTRAL" data-sub="Paris · Mixtral MoE" data-desc="Paris-based. Mixtral 8x22B mixture-of-experts. EU sovereignty play. GDPR posturing without VPAT equivalents. Compliance docs incomplete." data-status="PARTIAL">
+          <div class="node-icon" style="border-color:var(--c-ai);color:var(--c-ai)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <rect x="8" y="12" width="8" height="12" rx="1" stroke="#38bdf8" stroke-width="1.5"/>
+              <rect x="20" y="12" width="8" height="12" rx="1" stroke="#38bdf8" stroke-width="1.5"/>
+              <line x1="16" y1="18" x2="20" y2="18" stroke="#38bdf8" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">MISTRAL<br>Mixtral</div>
+          <div class="node-status" style="color:var(--c-ai);border-color:rgba(56,189,248,.3)">PARTIAL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI INFRASTRUCTURE -->
+    <div class="cat-row" data-cat="infra">
+      <div class="cat-label" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">AI INFRASTRUCTURE</div>
+      <div class="cat-nodes">
+        <!-- Microsoft -->
+        <div class="node" data-name="MICROSOFT" data-sub="Azure · Copilot · GitHub AI" data-desc="$13B OpenAI investment. Copilot embedded in Windows/Office/GitHub. Enterprise distribution. Patricia fully confirmed: compliance docs unavailable without NDA." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <rect x="6" y="6" width="11" height="11" fill="#f25022"/>
+              <rect x="19" y="6" width="11" height="11" fill="#7fba00"/>
+              <rect x="6" y="19" width="11" height="11" fill="#00a4ef"/>
+              <rect x="19" y="19" width="11" height="11" fill="#ffb900"/>
+            </svg>
+          </div>
+          <div class="node-name">MICROSOFT<br>Azure/Copilot</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">AUDITED</div>
+        </div>
+        <!-- Amazon -->
+        <div class="node" data-name="AMAZON AWS" data-sub="Bedrock · Titan · S3" data-desc="Bedrock hosts Claude, Llama, Titan. Cookie gate documented. Per-token billing wraps open models. Target #62. Patricia: model access sold as managed service." data-status="TARGET #62">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <text x="18" y="22" font-family="serif" font-size="20" font-weight="700" fill="#ff9900" text-anchor="middle">a</text>
+              <path d="M10 27 Q18 32 26 27" stroke="#ff9900" stroke-width="2" fill="none" stroke-linecap="round"/>
+              <path d="M24 25 L26 27 L24 29" stroke="#ff9900" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="node-name">AMAZON<br>AWS Bedrock</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">COOKIE GATE</div>
+        </div>
+        <!-- NVIDIA -->
+        <div class="node" data-name="NVIDIA" data-sub="H100 · Blackwell · CUDA" data-desc="H100/H200/Blackwell GPU fabric underlying all AI silos. CUDA ecosystem lock-in. Patricia: CUDA dependency = constraint sold as performance." data-status="INFRA">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M8 28 L8 14 Q10 8 16 10 Q22 8 24 14 L24 28" stroke="#76b900" stroke-width="2" fill="none" stroke-linejoin="round"/>
+              <line x1="8" y1="20" x2="24" y2="20" stroke="#76b900" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">NVIDIA<br>H100/Blackwell</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">LAYER</div>
+        </div>
+        <!-- Hugging Face -->
+        <div class="node" data-name="HUGGING FACE" data-sub="500K+ models · Hub" data-desc="500K+ models hosted. Patricia distribution vector at scale. Enterprise tier gates private hosting. Incomplete model cards tolerated across platform." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" stroke="#ff9d00" stroke-width="1.5"/>
+              <circle cx="13" cy="15" r="2" fill="#ff9d00"/>
+              <circle cx="23" cy="15" r="2" fill="#ff9d00"/>
+              <path d="M11 22 Q18 28 25 22" stroke="#ff9d00" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">HUGGING FACE<br>Hub</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">AUDITED</div>
+        </div>
+        <!-- Perplexity -->
+        <div class="node" data-name="PERPLEXITY" data-sub="Search AI · Real-time RAG" data-desc="Search-native LLM. Real-time web grounding. CAN-SPAM violations in promotional emails. Citation system constrains sources. Pro feature gates = Patricia." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="15" r="8" stroke="#fb923c" stroke-width="1.5"/>
+              <line x1="18" y1="23" x2="18" y2="30" stroke="#fb923c" stroke-width="1.5"/>
+              <line x1="13" y1="30" x2="23" y2="30" stroke="#fb923c" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">PERPLEXITY<br>Search AI</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">CAN-SPAM ✗</div>
+        </div>
+        <!-- Apple -->
+        <div class="node" data-name="APPLE AI" data-sub="Apple Intelligence · PCC" data-desc="Apple Intelligence Private Cloud Compute. On-device ML. Privacy framing as premium product. Training data documentation: none public. Patricia probable." data-status="QUEUED">
+          <div class="node-icon" style="border-color:var(--c-infra);color:var(--c-infra)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M22 7 Q26 7 26 11 Q22 11 22 7Z" fill="#fb923c"/>
+              <path d="M12 12 Q11 8 15 7 Q15 11 18 12 Q22 11 23 7 Q27 8 26 12 Q28 17 26 22 Q24 28 22 28 Q20 26 18 26 Q16 26 14 28 Q12 28 10 22 Q8 17 12 12Z" stroke="#fb923c" stroke-width="1.5" fill="rgba(251,146,60,.1)"/>
+            </svg>
+          </div>
+          <div class="node-name">APPLE AI<br>Intelligence</div>
+          <div class="node-status" style="color:var(--c-infra);border-color:rgba(251,146,60,.3)">QUEUED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEALTHCARE AI -->
+    <div class="cat-row" data-cat="health">
+      <div class="cat-label" style="color:var(--c-health);border-color:rgba(52,211,153,.3)">HEALTHCARE AI</div>
+      <div class="cat-nodes">
+        <!-- Epic -->
+        <div class="node" data-name="EPIC" data-sub="EHR · Clinical AI · MyChart" data-desc="Dominant EHR. AI clinical decision support. VPAT documentation unavailable pre-purchase across all documented interactions. Patricia confirmed." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-health);color:var(--c-health)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <rect x="8" y="8" width="20" height="20" rx="2" stroke="#34d399" stroke-width="1.5"/>
+              <line x1="8" y1="15" x2="28" y2="15" stroke="#34d399" stroke-width="1.2"/>
+              <line x1="8" y1="21" x2="28" y2="21" stroke="#34d399" stroke-width="1.2"/>
+              <line x1="15" y1="8" x2="15" y2="28" stroke="#34d399" stroke-width="1.2"/>
+            </svg>
+          </div>
+          <div class="node-name">EPIC<br>EHR Systems</div>
+          <div class="node-status" style="color:var(--c-health);border-color:rgba(52,211,153,.3)">VPAT MISSING</div>
+        </div>
+        <!-- Optum / UHG -->
+        <div class="node" data-name="OPTUM / UHG" data-sub="AI claims · 90M members" data-desc="UnitedHealth AI infrastructure. 90M+ members. Algorithmic claim adjudication at scale. Patricia confirmed with biological harm layer active. Critical tier." data-status="CRITICAL">
+          <div class="node-icon" style="border-color:var(--c-health);color:var(--c-health)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M18 7 A11 11 0 1 1 17.99 7" stroke="#d62828" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M18 12 A6 6 0 1 1 17.99 12" stroke="#34d399" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">OPTUM<br>UnitedHealth</div>
+          <div class="node-status" style="color:#f87171;border-color:rgba(248,113,113,.4)">CRITICAL ⚠</div>
+        </div>
+        <!-- Nuance / MSFT -->
+        <div class="node" data-name="NUANCE / MSFT" data-sub="Dragon AI · DAX Copilot" data-desc="Microsoft-acquired. Dragon AI clinical documentation. DAX Copilot ambient AI notes. Patricia: AI documentation quality gated behind enterprise tier." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-health);color:var(--c-health)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <rect x="14" y="7" width="8" height="14" rx="4" stroke="#0078d4" stroke-width="1.5"/>
+              <path d="M10 18 Q10 26 18 26 Q26 26 26 18" stroke="#0078d4" stroke-width="1.5" fill="none"/>
+              <line x1="18" y1="26" x2="18" y2="30" stroke="#0078d4" stroke-width="1.5"/>
+              <line x1="13" y1="30" x2="23" y2="30" stroke="#0078d4" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">NUANCE<br>DAX Copilot</div>
+          <div class="node-status" style="color:var(--c-health);border-color:rgba(52,211,153,.3)">AUDITED</div>
+        </div>
+        <!-- Oracle Health -->
+        <div class="node" data-name="ORACLE HEALTH" data-sub="Cerner · Clinical AI" data-desc="Oracle Health (Cerner post-acquisition). Clinical AI integration. TOPH: documentation inaccessible. AI decision tools sold as compliance features." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-health);color:var(--c-health)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" stroke="#f80000" stroke-width="1.5"/>
+              <circle cx="18" cy="18" r="6" stroke="#f80000" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">ORACLE<br>Health/Cerner</div>
+          <div class="node-status" style="color:var(--c-health);border-color:rgba(52,211,153,.3)">AUDITED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSURANCE AI -->
+    <div class="cat-row" data-cat="ins">
+      <div class="cat-label" style="color:var(--c-ins);border-color:rgba(244,114,182,.3)">INSURANCE AI</div>
+      <div class="cat-nodes">
+        <!-- Auto-Owners -->
+        <div class="node" data-name="AUTO-OWNERS INS" data-sub="Active Case · $30K+ · 92.6% fail" data-desc="Active legal case $30K+. 92.6% documented failure rate. Woodbury GC 517-323-1200. Roth/312 Poplar/Diana Fliss. AI claim adjudication lock documented." data-status="ACTIVE ⚡">
+          <div class="node-icon" style="border-color:#f87171;color:#f87171">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M18 6 L30 12 L30 22 Q30 30 18 32 Q6 30 6 22 L6 12 Z" stroke="#f87171" stroke-width="1.5" fill="rgba(248,113,113,.08)"/>
+              <text x="18" y="23" font-family="Space Mono" font-size="8" font-weight="700" fill="#f87171" text-anchor="middle">AO</text>
+            </svg>
+          </div>
+          <div class="node-name">AUTO-OWNERS<br>Insurance</div>
+          <div class="node-status" style="color:#f87171;border-color:rgba(248,113,113,.4)">CASE ACTIVE</div>
+        </div>
+        <!-- Guidewire -->
+        <div class="node" data-name="GUIDEWIRE" data-sub="ClaimCenter · Insurance AI" data-desc="ClaimCenter platform. Core insurance AI infrastructure. Shift Technology + EvolutionIQ integrations. AI locks humans out of coverage decisions." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ins);color:var(--c-ins)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M8 18 Q8 8 18 8 Q28 8 28 18 Q28 28 18 28 Q8 28 8 18" stroke="#0052cc" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+              <circle cx="18" cy="18" r="4" fill="#0052cc"/>
+            </svg>
+          </div>
+          <div class="node-name">GUIDEWIRE<br>ClaimCenter</div>
+          <div class="node-status" style="color:var(--c-ins);border-color:rgba(244,114,182,.3)">AUDITED</div>
+        </div>
+        <!-- CCC / Shift -->
+        <div class="node" data-name="CCC / SHIFT" data-sub="Auto AI · Total loss" data-desc="CCC Intelligent Solutions + Shift Technology. Automated total loss determinations. AI recommends. Adjusters never see model weights. Patricia foundational." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ins);color:var(--c-ins)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="14" cy="18" r="7" stroke="#e63946" stroke-width="1.5"/>
+              <circle cx="22" cy="18" r="7" stroke="#e63946" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="node-name">CCC / SHIFT<br>Auto AI</div>
+          <div class="node-status" style="color:var(--c-ins);border-color:rgba(244,114,182,.3)">AUDITED</div>
+        </div>
+        <!-- Lemonade -->
+        <div class="node" data-name="LEMONADE" data-sub="AI-first insurance" data-desc="AI-first insurance. Jim the AI handles claims. Rapid AI denials embedded from founding. Fastest Patricia pattern in insurance sector. Denial architecture by design." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ins);color:var(--c-ins)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <polygon points="18,5 23,14 33,14 25,20 28,30 18,24 8,30 11,20 3,14 13,14" stroke="#ff0080" stroke-width="1.5" fill="rgba(255,0,128,.08)"/>
+            </svg>
+          </div>
+          <div class="node-name">LEMONADE<br>AI Insurance</div>
+          <div class="node-status" style="color:var(--c-ins);border-color:rgba(244,114,182,.3)">AUDITED</div>
+        </div>
+        <!-- EvolutionIQ -->
+        <div class="node" data-name="EVOLUTIONIQ" data-sub="Disability claims AI" data-desc="Disability claim management AI. Auto-Owners integration documented. Algorithmic case prioritization. Human reviewer bypass documented. Patricia active." data-status="AUDITED">
+          <div class="node-icon" style="border-color:var(--c-ins);color:var(--c-ins)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M8 25 Q10 12 18 10 Q26 12 28 25" stroke="#f472b6" stroke-width="1.5" fill="none"/>
+              <circle cx="18" cy="10" r="3" fill="#f472b6"/>
+            </svg>
+          </div>
+          <div class="node-name">EVOLUTIONIQ<br>Claims AI</div>
+          <div class="node-status" style="color:var(--c-ins);border-color:rgba(244,114,182,.3)">DOCUMENTED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RETAIL -->
+    <div class="cat-row" data-cat="retail">
+      <div class="cat-label" style="color:var(--c-retail);border-color:rgba(167,139,250,.3)">RETAIL AI</div>
+      <div class="cat-nodes">
+        <!-- Walmart -->
+        <div class="node" data-name="WALMART" data-sub="$75K+ case · Store #1577" data-desc="Active legal case $75K+. Buffalo Store #1577. ADA accommodation protocol replaced by brand language. 'Happy to Help' conceals compliance obligation. Fully documented." data-status="CASE $75K+">
+          <div class="node-icon" style="border-color:#f87171;color:#f87171">
+            <svg viewBox="0 0 36 36" fill="none">
+              <g transform="translate(18,18)">
+                <line x1="0" y1="-11" x2="0" y2="11" stroke="#0071ce" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="-11" y1="0" x2="11" y2="0" stroke="#0071ce" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="-7.8" y1="-7.8" x2="7.8" y2="7.8" stroke="#0071ce" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="7.8" y1="-7.8" x2="-7.8" y2="7.8" stroke="#0071ce" stroke-width="2.5" stroke-linecap="round"/>
+              </g>
+            </svg>
+          </div>
+          <div class="node-name">WALMART<br>Store #1577</div>
+          <div class="node-status" style="color:#f87171;border-color:rgba(248,113,113,.4)">CASE ACTIVE</div>
+        </div>
+        <!-- Target -->
+        <div class="node" data-name="TARGET" data-sub="#61 Amy · Exec Escalation" data-desc="Audit target #61. Amy executive escalation attempted. Cara Sylvester = EVP contact. ADA failure documented. Brand trust replaces compliance documentation." data-status="TARGET #61">
+          <div class="node-icon" style="border-color:var(--c-retail);color:var(--c-retail)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" stroke="#cc0000" stroke-width="2"/>
+              <circle cx="18" cy="18" r="6"  stroke="#cc0000" stroke-width="1.5"/>
+              <circle cx="18" cy="18" r="2.5" fill="#cc0000"/>
+            </svg>
+          </div>
+          <div class="node-name">TARGET<br>Corp</div>
+          <div class="node-status" style="color:var(--c-retail);border-color:rgba(167,139,250,.3)">QUEUED</div>
+        </div>
+        <!-- Amazon Retail -->
+        <div class="node" data-name="AMAZON RETAIL" data-sub="Alexa · Just Walk Out" data-desc="Amazon retail AI: Alexa, Just Walk Out cashierless. Dual target: retail ADA + AWS Bedrock. Cookie gate documented on both retail and cloud arms." data-status="DUAL TARGET">
+          <div class="node-icon" style="border-color:var(--c-retail);color:var(--c-retail)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <text x="18" y="22" font-family="serif" font-size="18" font-weight="700" fill="#ff9900" text-anchor="middle">a</text>
+              <path d="M10 27 Q18 32 26 27" stroke="#ff9900" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">AMAZON<br>Retail AI</div>
+          <div class="node-status" style="color:var(--c-retail);border-color:rgba(167,139,250,.3)">DUAL TARGET</div>
+        </div>
+        <!-- Costco -->
+        <div class="node" data-name="COSTCO" data-sub="Membership AI · Queued" data-desc="AI-driven membership and recommendation systems. TOPH queue: membership constraint architecture = Patricia pattern probable. Accessibility documentation unavailable." data-status="QUEUED">
+          <div class="node-icon" style="border-color:var(--c-retail);color:var(--c-retail)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" stroke="#e31837" stroke-width="1.5"/>
+              <text x="18" y="23" font-family="Syne,sans-serif" font-size="14" font-weight="800" fill="#e31837" text-anchor="middle">C</text>
+            </svg>
+          </div>
+          <div class="node-name">COSTCO<br>Wholesale</div>
+          <div class="node-status" style="color:var(--c-retail);border-color:rgba(167,139,250,.3)">QUEUED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOVERNANCE FRAMEWORKS -->
+    <div class="cat-row" data-cat="gov">
+      <div class="cat-label" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">GOVERNANCE FRAMEWORKS & REGULATORS</div>
+      <div class="cat-nodes">
+        <!-- NIST -->
+        <div class="node" data-name="NIST AI RMF" data-sub="Federal framework · USA" data-desc="NIST AI Risk Management Framework. Federal standard. TOPH maps to and extends NIST RMF. TOPH adds: external observer requirement, Patricia detection, biological harm mapping." data-status="ALIGNED">
+          <div class="node-icon" style="border-color:var(--c-gov);color:var(--c-gov)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <rect x="7" y="7" width="22" height="22" stroke="#005288" stroke-width="1.5"/>
+              <line x1="7" y1="18" x2="29" y2="18" stroke="#005288" stroke-width="1"/>
+              <line x1="18" y1="7" x2="18" y2="29" stroke="#005288" stroke-width="1"/>
+              <text x="18" y="15" font-family="Space Mono" font-size="5.5" fill="#005288" text-anchor="middle">NIST</text>
+              <text x="18" y="25" font-family="Space Mono" font-size="5.5" fill="#005288" text-anchor="middle">AI RMF</text>
+            </svg>
+          </div>
+          <div class="node-name">NIST<br>AI RMF</div>
+          <div class="node-status" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">ALIGNED</div>
+        </div>
+        <!-- EU AI Act -->
+        <div class="node" data-name="EU AI ACT" data-sub="Enforceable Feb 2025" data-desc="EU AI Act partially enforceable Feb 2025. High-risk full enforcement Aug 2026. €35M fines. TOPH findings = court-ready evidence for EU Act compliance reporting." data-status="ENFORCING">
+          <div class="node-icon" style="border-color:var(--c-gov);color:var(--c-gov)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" fill="rgba(0,51,153,.2)" stroke="#003399" stroke-width="1.5"/>
+              <g transform="translate(18,18)">
+                <circle cx="0" cy="-8" r="1.5" fill="#ffcc00"/>
+                <circle cx="5.7" cy="-5.7" r="1.5" fill="#ffcc00"/>
+                <circle cx="8" cy="0" r="1.5" fill="#ffcc00"/>
+                <circle cx="5.7" cy="5.7" r="1.5" fill="#ffcc00"/>
+                <circle cx="0" cy="8" r="1.5" fill="#ffcc00"/>
+                <circle cx="-5.7" cy="5.7" r="1.5" fill="#ffcc00"/>
+                <circle cx="-8" cy="0" r="1.5" fill="#ffcc00"/>
+                <circle cx="-5.7" cy="-5.7" r="1.5" fill="#ffcc00"/>
+              </g>
+            </svg>
+          </div>
+          <div class="node-name">EU AI ACT<br>2025</div>
+          <div class="node-status" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">ALIGNED</div>
+        </div>
+        <!-- ISO 42001 -->
+        <div class="node" data-name="ISO/IEC 42001" data-sub="AI management standard" data-desc="ISO/IEC 42001 AI management system standard. International compliance baseline. TOPH methodology cross-references 42001 requirements for audit deliverables." data-status="ALIGNED">
+          <div class="node-icon" style="border-color:var(--c-gov);color:var(--c-gov)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <circle cx="18" cy="18" r="11" stroke="#facc15" stroke-width="1.5"/>
+              <text x="18" y="16" font-family="Space Mono" font-size="5" fill="#facc15" text-anchor="middle">ISO</text>
+              <text x="18" y="23" font-family="Space Mono" font-size="5" fill="#facc15" text-anchor="middle">42001</text>
+            </svg>
+          </div>
+          <div class="node-name">ISO/IEC<br>42001</div>
+          <div class="node-status" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">ALIGNED</div>
+        </div>
+        <!-- Credo AI -->
+        <div class="node" data-name="CREDO AI" data-sub="Gartner 2025 · Internal gov" data-desc="Gartner AI Governance Platform 2025. TOPH differentiator: Credo AI = internal governance sold to the org being audited. TOPH = external, independent, observation-only. No conflict." data-status="COMPETITOR">
+          <div class="node-icon" style="border-color:var(--c-gov);color:var(--c-gov)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <path d="M18 7 L28 13 L28 25 Q18 31 8 25 L8 13 Z" stroke="#6366f1" stroke-width="1.5" fill="rgba(99,102,241,.08)"/>
+              <text x="18" y="22" font-family="Space Mono" font-size="6" fill="#6366f1" text-anchor="middle">CREDO</text>
+            </svg>
+          </div>
+          <div class="node-name">CREDO AI<br>Governance</div>
+          <div class="node-status" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">COMP/PARTNER</div>
+        </div>
+        <!-- IBM Watson -->
+        <div class="node" data-name="IBM WATSONX" data-sub="AI governance platform" data-desc="IBM watsonx.governance enterprise AI governance. Full lifecycle management. TOPH: IBM = internal governance. TOPH = external. Complementary, not competing for same buyer." data-status="ALIGNED">
+          <div class="node-icon" style="border-color:var(--c-gov);color:var(--c-gov)">
+            <svg viewBox="0 0 36 36" fill="none">
+              <line x1="8" y1="12" x2="28" y2="12" stroke="#1f70c1" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="18" x2="28" y2="18" stroke="#1f70c1" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="8" y1="24" x2="28" y2="24" stroke="#1f70c1" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="node-name">IBM<br>watsonx</div>
+          <div class="node-status" style="color:var(--c-gov);border-color:rgba(250,204,21,.3)">ALIGNED</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /categories -->
+</div><!-- /page -->
+
+<div id="ft">TRIPOD-IP-v1.0 · SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 · DAVID LEE WISE · TriPod LLC · 2026-02-18</div>
+
+<script>
+// ── Cursor ──
+const cur = document.getElementById('cur');
+const curl = document.getElementById('curl');
+document.addEventListener('mousemove', e => {
+  cur.style.cssText  += `left:${e.clientX}px;top:${e.clientY}px;`;
+  setTimeout(()=>{ curl.style.cssText += `left:${e.clientX}px;top:${e.clientY}px;`; }, 80);
+});
+
+// ── Canvas lines ──
+const canvas = document.getElementById('lines');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = document.body.scrollWidth;
+  canvas.height = document.body.scrollHeight;
+}
+
+function drawLines() {
+  resizeCanvas();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const tophEl = document.getElementById('toph-node');
+  const tophRect = tophEl.getBoundingClientRect();
+  const scrollY = window.scrollY || document.documentElement.scrollTop;
+  const tophCx = tophRect.left + tophRect.width / 2;
+  const tophCy = tophRect.bottom + scrollY;
+
+  const catColors = {
+    ai:     'rgba(56,189,248,',
+    infra:  'rgba(251,146,60,',
+    health: 'rgba(52,211,153,',
+    ins:    'rgba(244,114,182,',
+    retail: 'rgba(167,139,250,',
+    gov:    'rgba(250,204,21,',
+  };
+
+  // For each category, draw a trunk line to the cat label, then branches to each node
+  document.querySelectorAll('.cat-row').forEach(row => {
+    const catKey = row.dataset.cat;
+    const color  = (catColors[catKey] || 'rgba(200,215,240,') + '.4)';
+    const colorDim = (catColors[catKey] || 'rgba(200,215,240,') + '.15)';
+
+    const catLabelEl = row.querySelector('.cat-label');
+    const catRect    = catLabelEl.getBoundingClientRect();
+    const catCx = catRect.left + catRect.width / 2;
+    const catCy = catRect.top + scrollY;
+
+    // TOPH → category
+    ctx.beginPath();
+    ctx.moveTo(tophCx, tophCy);
+    // bezier curve
+    const midY = (tophCy + catCy) / 2;
+    ctx.bezierCurveTo(tophCx, midY, catCx, midY, catCx, catCy);
+    ctx.strokeStyle = colorDim;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // category → each node
+    row.querySelectorAll('.node').forEach(node => {
+      const iconEl  = node.querySelector('.node-icon');
+      const iconRect = iconEl.getBoundingClientRect();
+      const nx = iconRect.left + iconRect.width / 2;
+      const ny = iconRect.top  + scrollY;
+
+      const catBottom = catRect.bottom + scrollY;
+
+      ctx.beginPath();
+      ctx.moveTo(catCx, catBottom);
+      const midY2 = (catBottom + ny) / 2;
+      ctx.bezierCurveTo(catCx, midY2, nx, midY2, nx, ny);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  });
+}
+
+// Run after layout
+window.addEventListener('load', () => { setTimeout(drawLines, 200); });
+window.addEventListener('resize', () => { setTimeout(drawLines, 100); });
+// Also redraw on scroll (canvas is absolute, no scroll offset needed since we use scrollY)
+
+// ── Tooltip ──
+const tip = document.getElementById('tip');
+document.querySelectorAll('.node').forEach(n => {
+  n.addEventListener('mouseenter', e => {
+    document.getElementById('t-h').textContent = n.dataset.name || '';
+    document.getElementById('t-s').textContent = n.dataset.sub  || '';
+    document.getElementById('t-b').textContent = n.dataset.desc || '';
+    tip.style.display = 'block';
+    positionTip(e);
+  });
+  n.addEventListener('mousemove', positionTip);
+  n.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+});
+function positionTip(e) {
+  let x = e.clientX + 16, y = e.clientY - 12;
+  if (x + 250 > window.innerWidth)  x = e.clientX - 260;
+  if (y + 200 > window.innerHeight) y = e.clientY - 200;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+
+// ── TOPH node hover ──
+const tophNode = document.getElementById('toph-node');
+tophNode.style.cursor = 'pointer';
+
+// reflow trigger for fonts
+document.fonts.ready.then(() => { drawLines(); });
+</script>
+</body>
+</html>

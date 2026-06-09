@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<!-- saved from url=(0106)https://embed.fbsbx.com/playables/view/26364265493216052/?ext=1784224487&hash=Q92gDAHSjB1B79AB2gDte_RvPcoT -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT_0 // IRON MAN OS</title>
+<script src="./saved_resource"></script>
+<script src="./jszip.min.js.download"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link href="./css2(14)" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { 
+    font-family: 'Orbitron', monospace; 
+    background: #020208;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at center, rgba(6,182,212,0.15) 0%, transparent 70%),
+      linear-gradient(rgba(34,211,238,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,211,238,0.07) 1px, transparent 1px);
+    background-size: 100% 100%, 48px 48px, 48px 48px;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .mono { font-family: 'Share Tech Mono', monospace; }
+  .hud {
+    background: linear-gradient(180deg, rgba(4,12,24,0.9), rgba(2,6,14,0.95));
+    border: 1px solid rgba(34,211,238,0.35);
+    box-shadow: 
+      inset 0 0 40px rgba(34,211,238,0.06),
+      0 0 20px rgba(34,211,238,0.15),
+      0 0 2px rgba(34,211,238,0.8);
+    backdrop-filter: blur(12px);
+    position: relative;
+  }
+  .hud::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 12px; right: 12px; height: 1px;
+    background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+    filter: blur(1px);
+  }
+  .glow-text { text-shadow: 0 0 10px rgba(34,211,238,0.9), 0 0 20px rgba(34,211,238,0.5); }
+  .glow-box { box-shadow: 0 0 20px rgba(34,211,238,0.4), inset 0 0 20px rgba(34,211,238,0.1); }
+  @keyframes reactor-pulse {
+    0%,100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.03); filter: brightness(1.3); }
+  }
+  @keyframes spin-slow { to { transform: rotate(360deg); } }
+  @keyframes spin-reverse { to { transform: rotate(-360deg); } }
+  .reactor-core { animation: reactor-pulse 1.8s ease-in-out infinite; }
+  .ring-1 { animation: spin-slow 8s linear infinite; }
+  .ring-2 { animation: spin-reverse 12s linear infinite; }
+  .ring-3 { animation: spin-slow 20s linear infinite; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+  ::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.5); border-radius: 2px; }
+  .toggle { appearance: none; width: 38px; height: 20px; background: #0a0f1a; border: 1px solid #155e75; border-radius: 10px; position: relative; cursor: pointer; transition: 0.2s; }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #475569; border-radius: 50%; transition: 0.2s; }
+  .toggle:checked { background: rgba(34,211,238,0.2); border-color: #22d3ee; box-shadow: 0 0 10px rgba(34,211,238,0.5); }
+  .toggle:checked::after { left: 20px; background: #22d3ee; box-shadow: 0 0 8px #22d3ee; }
+  button:active { transform: translateY(1px); }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0px}.inset-\[18\%\]{inset:18%}.inset-\[28\%\]{inset:28%}.-bottom-3{bottom:-0.75rem}.-left-3{left:-0.75rem}.-right-3{right:-0.75rem}.-top-3{top:-0.75rem}.left-1\/2{left:50%}.top-0{top:0px}.top-1\/2{top:50%}.z-10{z-index:10}.z-40{z-index:40}.mx-auto{margin-left:auto;margin-right:auto}.mb-1\.5{margin-bottom:0.375rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-1\.5{margin-top:0.375rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-8{margin-top:2rem}.mb-1{margin-bottom:0.25rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-1\.5{height:0.375rem}.h-2\.5{height:0.625rem}.h-20{height:5rem}.h-3{height:0.75rem}.h-4{height:1rem}.h-6{height:1.5rem}.h-\[110px\]{height:110px}.h-\[180px\]{height:180px}.h-\[260px\]{height:260px}.h-\[2px\]{height:2px}.h-full{height:100%}.h-\[54px\]{height:54px}.max-h-24{max-height:6rem}.min-h-screen{min-height:100vh}.min-h-\[24px\]{min-height:24px}.min-h-\[32px\]{min-height:32px}.min-h-\[420px\]{min-height:420px}.w-0{width:0px}.w-1{width:0.25rem}.w-2\.5{width:0.625rem}.w-6{width:1.5rem}.w-\[110px\]{width:110px}.w-\[260px\]{width:260px}.w-\[2px\]{width:2px}.w-full{width:100%}.w-1\.5{width:0.375rem}.w-\[56px\]{width:56px}.w-\[64px\]{width:64px}.w-\[90px\]{width:90px}.max-w-\[1920px\]{max-width:1920px}.flex-1{flex:1 1 0%}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.resize-none{resize:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-rows-2{grid-template-rows:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-2\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.625rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.border{border-width:1px}.border-2{border-width:2px}.border-\[3px\]{border-width:3px}.border-x-0{border-left-width:0px;border-right-width:0px}.border-b{border-bottom-width:1px}.border-t-0{border-top-width:0px}.border-dashed{border-style:dashed}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-cyan-300\/60{border-color:rgb(103 232 249 / 0.6)}.border-cyan-400\/20{border-color:rgb(34 211 238 / 0.2)}.border-cyan-400\/30{border-color:rgb(34 211 238 / 0.3)}.border-cyan-400\/40{border-color:rgb(34 211 238 / 0.4)}.border-cyan-400\/50{border-color:rgb(34 211 238 / 0.5)}.border-cyan-700\/50{border-color:rgb(14 116 144 / 0.5)}.border-cyan-800{--tw-border-opacity:1;border-color:rgb(21 94 117 / var(--tw-border-opacity, 1))}.border-cyan-900\/50{border-color:rgb(22 78 99 / 0.5)}.border-cyan-900\/70{border-color:rgb(22 78 99 / 0.7)}.border-emerald-400\/50{border-color:rgb(52 211 153 / 0.5)}.border-emerald-800{--tw-border-opacity:1;border-color:rgb(6 95 70 / var(--tw-border-opacity, 1))}.border-purple-400\/40{border-color:rgb(192 132 252 / 0.4)}.border-purple-800{--tw-border-opacity:1;border-color:rgb(107 33 168 / var(--tw-border-opacity, 1))}.border-red-800{--tw-border-opacity:1;border-color:rgb(153 27 27 / var(--tw-border-opacity, 1))}.border-cyan-900\/40{border-color:rgb(22 78 99 / 0.4)}.border-cyan-950\/50{border-color:rgb(8 51 68 / 0.5)}.bg-amber-500\/15{background-color:rgb(245 158 11 / 0.15)}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-black\/60{background-color:rgb(0 0 0 / 0.6)}.bg-black\/70{background-color:rgb(0 0 0 / 0.7)}.bg-black\/80{background-color:rgb(0 0 0 / 0.8)}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-cyan-400\/20{background-color:rgb(34 211 238 / 0.2)}.bg-cyan-400\/80{background-color:rgb(34 211 238 / 0.8)}.bg-cyan-500\/10{background-color:rgb(6 182 212 / 0.1)}.bg-cyan-500\/15{background-color:rgb(6 182 212 / 0.15)}.bg-cyan-950{--tw-bg-opacity:1;background-color:rgb(8 51 68 / var(--tw-bg-opacity, 1))}.bg-cyan-950\/50{background-color:rgb(8 51 68 / 0.5)}.bg-emerald-500\/15{background-color:rgb(16 185 129 / 0.15)}.bg-emerald-950{--tw-bg-opacity:1;background-color:rgb(2 44 34 / var(--tw-bg-opacity, 1))}.bg-purple-500\/15{background-color:rgb(168 85 247 / 0.15)}.bg-purple-950{--tw-bg-opacity:1;background-color:rgb(59 7 100 / var(--tw-bg-opacity, 1))}.bg-red-950{--tw-bg-opacity:1;background-color:rgb(69 10 10 / var(--tw-bg-opacity, 1))}.bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.p-1\.5{padding:0.375rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.px-1{padding-left:0.25rem;padding-right:0.25rem}.pb-4{padding-bottom:1rem}.pr-1{padding-right:0.25rem}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[9px\]{font-size:9px}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-semibold{font-weight:600}.leading-tight{line-height:1.25}.tracking-\[0\.25em\]{letter-spacing:0.25em}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-\[0\.3em\]{letter-spacing:0.3em}.tracking-\[0\.4em\]{letter-spacing:0.4em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-cyan-100{--tw-text-opacity:1;color:rgb(207 250 254 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.opacity-50{opacity:0.5}.opacity-60{opacity:0.6}.opacity-70{opacity:0.7}.opacity-\[0\.03\]{opacity:0.03}.opacity-40{opacity:0.4}.opacity-80{opacity:0.8}.shadow-\[0_0_10px_\#22d3ee\]{--tw-shadow:0 0 10px #22d3ee;--tw-shadow-colored:0 0 10px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_60px_\#22d3ee\2c 0_0_120px_\#0891b2\2c inset_0_0_30px_white\]{--tw-shadow:0 0 60px #22d3ee,0 0 120px #0891b2,inset 0 0 30px white;--tw-shadow-colored:0 0 60px var(--tw-shadow-color), 0 0 120px var(--tw-shadow-color), inset 0 0 30px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_8px_\#22d3ee\]{--tw-shadow:0 0 8px #22d3ee;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-\[0_0_6px_\#22d3ee\]{--tw-shadow:0 0 6px #22d3ee;--tw-shadow-colored:0 0 6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.ring-2{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.blur-\[60px\]{--tw-blur:blur(60px);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.hover\:border-cyan-700\/50:hover{border-color:rgb(14 116 144 / 0.5)}.hover\:bg-amber-500\/25:hover{background-color:rgb(245 158 11 / 0.25)}.hover\:bg-black\/60:hover{background-color:rgb(0 0 0 / 0.6)}.hover\:bg-cyan-400\/10:hover{background-color:rgb(34 211 238 / 0.1)}.hover\:bg-cyan-500\/20:hover{background-color:rgb(6 182 212 / 0.2)}.hover\:bg-cyan-500\/25:hover{background-color:rgb(6 182 212 / 0.25)}.hover\:bg-emerald-500\/25:hover{background-color:rgb(16 185 129 / 0.25)}.hover\:bg-purple-500\/25:hover{background-color:rgb(168 85 247 / 0.25)}.hover\:bg-cyan-950\/20:hover{background-color:rgb(8 51 68 / 0.2)}.focus\:border-cyan-400:focus{--tw-border-opacity:1;border-color:rgb(34 211 238 / var(--tw-border-opacity, 1))}.focus\:border-cyan-400\/70:focus{border-color:rgb(34 211 238 / 0.7)}.focus\:bg-black\/80:focus{background-color:rgb(0 0 0 / 0.8)}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.group:focus-within .group-focus-within\:opacity-100{opacity:1}@media (min-width: 640px){.sm\:flex{display:flex}}@media (min-width: 768px){.md\:inline{display:inline}.md\:hidden{display:none}.md\:h-\[300px\]{height:300px}.md\:w-\[300px\]{width:300px}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:gap-6{gap:1.5rem}.md\:p-4{padding:1rem}.md\:text-2xl{font-size:1.5rem;line-height:2rem}.md\:text-base{font-size:1rem;line-height:1.5rem}}@media (min-width: 1024px){.lg\:col-span-2{grid-column:span 2 / span 2}.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}}@media (min-width: 1280px){.xl\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.xl\:grid-cols-\[300px_1fr_320px\]{grid-template-columns:300px 1fr 320px}}</style></head>
+<body class="text-cyan-100 min-h-screen relative">
+<div class="relative z-10 min-h-screen flex flex-col">
+
+  <!-- TOP BAR -->
+  <header class="hud border-b border-x-0 border-t-0 sticky top-0 z-40">
+    <div class="max-w-[1920px] mx-auto px-3 py-2.5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]"></div>
+        <h1 class="text-sm md:text-base font-black tracking-[0.2em] glow-text">ROOT_0 <span class="text-cyan-400">//</span> IRON MAN OS</h1>
+        <span class="hidden md:inline text-[10px] px-2 py-0.5 border border-cyan-800 bg-cyan-950/50 text-cyan-300">MARK VII</span>
+      </div>
+      <div class="flex items-center gap-3 md:gap-6">
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="text-[10px] opacity-60 tracking-widest">π-TIME</span>
+          <span id="topPi" class="mono text-cyan-300 text-sm">565495396.6539832</span>
+        </div>
+        <button id="toggleTools" class="hud px-3 py-1.5 text-xs tracking-widest hover:bg-cyan-400/10 transition border-cyan-400/50">
+          <span class="md:hidden">TOOLS</span>
+          <span class="hidden md:inline">[ TOOLS MATRIX ]</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOOLS PANEL -->
+  <section id="toolsPanel" class="hidden max-w-[1920px] mx-auto w-full px-3 py-3">
+    <div class="hud p-3 md:p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs tracking-[0.3em] text-cyan-300">SOVEREIGN TOOLS // BUILT ON AKASHA</h2>
+        <span class="text-[10px] mono opacity-60">LOCAL • OFFLINE • VERIFIABLE</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        
+        <!-- TOOL 1 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">01 // SOVEREIGN PUSH</h3>
+            <span class="text-[9px] px-1.5 py-0.5 bg-cyan-950 border border-cyan-800">REPLACES GIT</span>
+          </div>
+          <p class="text-[10px] opacity-70 mb-2 mono">Witness entire project to Akasha at once</p>
+          <button id="pushBtn" class="w-full py-2 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-xs tracking-wider transition">SELECT FOLDER</button>
+          <input id="folderPicker" type="file" webkitdirectory="" multiple="" class="hidden">
+          <div class="mt-2 w-full h-1.5 bg-black/70 border border-cyan-900/50 overflow-hidden">
+            <div id="pushProgress" class="h-full w-0 bg-cyan-400 transition-all duration-200 shadow-[0_0_10px_#22d3ee]"></div>
+          </div>
+          <div id="pushOutput" class="mt-1.5 text-[10px] mono h-4 text-cyan-300"></div>
+        </div>
+
+        <!-- TOOL 2 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">02 // INSURANCE BREAKER</h3>
+            <span class="text-[9px] px-1.5 py-0.5 bg-red-950 border border-red-800">COMBAT</span>
+          </div>
+          <input id="claimInput" value="300-0073283-2026" class="w-full bg-black/60 border border-cyan-900/70 px-2 py-1.5 text-xs mono mb-1.5 focus:outline-none focus:border-cyan-400">
+          <select id="denialSelect" class="w-full bg-black/60 border border-cyan-900/70 px-2 py-1.5 text-xs mb-1.5 focus:outline-none">
+            <option>No injury documented</option>
+            <option>No coverage</option>
+            <option>Pre-existing condition</option>
+            <option>Lack of medical necessity</option>
+            <option>Missed deadline</option>
+            <option>Policy exclusion</option>
+          </select>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button id="generateDemandBtn" class="py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-[11px] tracking-wider">GENERATE DEMAND</button>
+            <button id="copyDemandBtn" class="py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-[11px]">COPY</button>
+          </div>
+          <textarea id="demandOutput" class="w-full h-20 mt-1.5 bg-black/80 border border-cyan-900/50 p-1.5 text-[9px] mono leading-tight focus:outline-none" placeholder="Demand letter will appear here..."></textarea>
+        </div>
+
+        <!-- TOOL 3 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">03 // PARALLEL DEPLOYER</h3>
+            <span class="text-[9px] px-1.5 py-0.5 bg-purple-950 border border-purple-800">64x</span>
+          </div>
+          <input id="deployerInput" placeholder="One action: Email adjuster" class="w-full bg-black/60 border border-cyan-900/70 px-2 py-1.5 text-xs mono mb-1.5">
+          <button id="deployBtn" class="w-full py-1.5 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/40 text-[11px] tracking-wider">DEPLOY 64x ISOLATIONS</button>
+          <div id="deployerList" class="mt-2 max-h-24 overflow-y-auto space-y-1 pr-1"><div class="opacity-40 text-[10px] text-center py-2">No deployments yet</div></div>
+        </div>
+
+        <!-- TOOL 4 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">04 // INTEGRITY VERIFIER</h3>
+          </div>
+          <div id="dropZone" class="border border-dashed border-cyan-700/50 bg-black/40 p-4 text-center cursor-pointer hover:bg-black/60 transition">
+            <div class="text-[11px] opacity-70">DROP FILE TO VERIFY</div>
+            <div class="text-[9px] mono opacity-50 mt-1">Checks against Akashic Records</div>
+          </div>
+          <div id="verifyResult" class="mt-2 text-[10px] mono min-h-[32px]"></div>
+        </div>
+
+        <!-- TOOL 5 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">05 // CHRONOS TIMER</h3>
+            <span class="text-[9px] px-1.5 py-0.5 bg-cyan-950 border border-cyan-800">π-BASED</span>
+          </div>
+          <div class="text-center py-2">
+            <div id="piTime" class="text-2xl mono glow-text tracking-wider">565495396.6539832</div>
+            <div class="text-[9px] opacity-60 mt-0.5">seconds / π</div>
+          </div>
+          <input id="chronosNote" placeholder="Event note..." class="w-full bg-black/60 border border-cyan-900/70 px-2 py-1 text-xs mono mb-1.5">
+          <button id="markEventBtn" class="w-full py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-[11px] tracking-wider">MARK EVENT → AKASHA</button>
+        </div>
+
+        <!-- TOOL 6 -->
+        <div class="hud p-3">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-[11px] tracking-widest text-cyan-400">06 // SOVEREIGN EXPORT</h3>
+            <span class="text-[9px] px-1.5 py-0.5 bg-emerald-950 border border-emerald-800">USB</span>
+          </div>
+          <p class="text-[10px] opacity-70 mb-2 mono">Package all records, states, and proofs</p>
+          <button id="exportBtn" class="w-full py-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/50 text-xs tracking-[0.2em] font-semibold transition">PACKAGE ROOT_0</button>
+          <div id="exportStatus" class="mt-2 text-[10px] mono text-emerald-300 h-4"></div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN GRID -->
+  <main class="flex-1 max-w-[1920px] mx-auto w-full px-3 py-3 grid grid-cols-1 xl:grid-cols-[300px_1fr_320px] gap-3">
+
+    <!-- LEFT -->
+    <div class="space-y-3">
+      <div class="hud p-3">
+        <h2 class="text-[11px] tracking-[0.25em] text-cyan-300 mb-3 flex items-center gap-2">
+          <span class="w-1 h-3 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span> GATEKEEPERS
+        </h2>
+        <div id="gatekeepersContainer" class="space-y-2.5">
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>
+          <span class="text-[11px] tracking-widest">LOKI</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="LOKI" checked="">
+      </div>
+    
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+          <span class="text-[11px] tracking-widest">FRIGG</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="FRIGG">
+      </div>
+    
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>
+          <span class="text-[11px] tracking-widest">ODIN</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="ODIN" checked="">
+      </div>
+    
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+          <span class="text-[11px] tracking-widest">THOR</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="THOR">
+      </div>
+    
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]"></div>
+          <span class="text-[11px] tracking-widest">HEIMDALL</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="HEIMDALL" checked="">
+      </div>
+    
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
+          <span class="text-[11px] tracking-widest">BALDR</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="BALDR">
+      </div>
+    </div>
+      </div>
+
+      <div class="hud p-3">
+        <h2 class="text-[11px] tracking-[0.25em] text-cyan-300 mb-3">WITNESS FILE</h2>
+        <button id="witnessBtn" class="w-full py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-400/30 text-xs tracking-wider transition">SELECT FILE</button>
+        <input id="witnessInput" type="file" class="hidden">
+        <div id="witnessStatus" class="mt-2 text-[10px] mono min-h-[24px] text-cyan-300"></div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="hud p-6 flex flex-col items-center justify-center min-h-[420px] relative overflow-hidden">
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at center, #22d3ee 1px, transparent 1px); background-size: 24px 24px;"></div>
+      
+      <div class="relative w-[260px] h-[260px] md:w-[300px] md:h-[300px]">
+        <!-- Outer glow -->
+        <div class="absolute inset-0 rounded-full bg-cyan-400/20 blur-[60px]"></div>
+        
+        <!-- Rings -->
+        <div class="absolute inset-0 rounded-full border-[3px] border-cyan-400/20 ring-3"></div>
+        <div class="absolute inset-[18%] rounded-full border-2 border-cyan-400/40 ring-2" style="box-shadow: inset 0 0 30px rgba(34,211,238,0.3)"></div>
+        <div class="absolute inset-[28%] rounded-full border border-cyan-300/60 ring-1"></div>
+        
+        <!-- Core -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div id="arcCore" class="reactor-core w-[110px] h-[110px] rounded-full bg-[radial-gradient(circle,#e0f7ff, #22d3ee_40%, #0891b2_70%)] shadow-[0_0_60px_#22d3ee,0_0_120px_#0891b2,inset_0_0_30px_white]"></div>
+        </div>
+
+        <!-- HUD markers -->
+        <div class="absolute top-1/2 -left-3 w-6 h-[2px] bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
+        <div class="absolute top-1/2 -right-3 w-6 h-[2px] bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
+        <div class="absolute left-1/2 -top-3 -translate-x-1/2 w-[2px] h-6 bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
+        <div class="absolute left-1/2 -bottom-3 -translate-x-1/2 w-[2px] h-6 bg-cyan-400/80 shadow-[0_0_10px_#22d3ee]"></div>
+      </div>
+
+      <div class="mt-8 text-center">
+        <div class="text-[10px] tracking-[0.4em] opacity-60">ARC REACTOR // MARK VII</div>
+        <div class="mt-1 text-xl md:text-2xl font-black tracking-widest glow-text">SYSTEM ONLINE</div>
+        <div class="mt-3 flex items-center justify-center gap-4 text-[10px] mono">
+          <div>POWER <span id="reactorPower" class="text-cyan-300">97%</span></div>
+          <div>•</div>
+          <div>WITNESSED <span id="reactorWitnessed" class="text-cyan-300">1</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="hud p-3">
+      <h2 class="text-[11px] tracking-[0.25em] text-cyan-300 mb-3 flex items-center gap-2">
+        <span class="w-1 h-3 bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span> JANE BOXES 1-12
+      </h2>
+      <div id="janeBoxes" class="grid grid-cols-2 gap-2"><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 1</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="1" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 2</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="2" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 3</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="3" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 4</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="4" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 5</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="5" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 6</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="6" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 7</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="7" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 8</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="8" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 9</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="9" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 10</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="10" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 11</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="11" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div><div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX 12</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="12" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="..."></textarea>
+      </div></div>
+    </div>
+  </main>
+
+  <!-- BOTTOM -->
+  <section class="max-w-[1920px] mx-auto w-full px-3 pb-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div class="hud p-3 lg:col-span-2">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-[11px] tracking-[0.25em] text-cyan-300">AKASHIC RECORDS</h2>
+        <span class="text-[10px] mono opacity-60">IMMUTABLE // LOCAL</span>
+      </div>
+      <div id="akashaList" class="h-[180px] overflow-y-auto space-y-1 pr-1 font-mono text-[10px]"><div class="flex items-center gap-2 py-1 border-b border-cyan-950/50 hover:bg-cyan-950/20 px-1">
+        <span class="text-cyan-300">●</span>
+        <span class="opacity-60 w-[56px]">12:54:56 PM</span>
+        <span class="opacity-80 w-[90px] truncate">system_init</span>
+        <span class="flex-1 truncate opacity-70">ROOT_0</span>
+        <span class="w-[64px] truncate text-right opacity-50">a5a9eb3e</span>
+      </div></div>
+    </div>
+
+    <div class="grid grid-rows-2 gap-3">
+      <div class="hud p-3">
+        <h2 class="text-[11px] tracking-[0.25em] text-cyan-300 mb-2">LOOP BREAKER</h2>
+        <div class="flex items-end justify-between">
+          <div>
+            <div class="text-[10px] opacity-70">Breaks detected</div>
+            <div id="loopCount" class="text-2xl mono text-amber-300">0</div>
+          </div>
+          <button id="loopBtn" class="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/40 text-[11px] tracking-wider">BREAK LOOP</button>
+        </div>
+        <div id="loopLast" class="mt-1 text-[9px] mono opacity-50 h-3"></div>
+      </div>
+
+      <div class="hud p-3">
+        <h2 class="text-[11px] tracking-[0.25em] text-cyan-300 mb-2">GOD VOICE</h2>
+        <div class="flex gap-1.5">
+          <input id="godInput" placeholder="Speak as sovereign..." class="flex-1 bg-black/60 border border-cyan-900/70 px-2 py-1.5 text-xs focus:outline-none focus:border-cyan-400">
+          <button id="godSpeakBtn" class="px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/40 text-[11px]">SPEAK</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // UTILITIES
+  const $ = (id) => document.getElementById(id);
+  const hex = (buf) => [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  const sha256 = async (data) => hex(await crypto.subtle.digest('SHA-256', data instanceof ArrayBuffer ? data : new TextEncoder().encode(data)));
+  const nowPi = () => (Date.now()/1000/Math.PI).toFixed(7);
+  const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+  const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+  // STATE
+  let records = load('akasha_records', []);
+  let gates = load('gates', { LOKI:true, FRIGG:false, ODIN:true, THOR:false, HEIMDALL:true, BALDR:false });
+  let boxes = load('jane_boxes', {});
+  let loops = load('loop_history', []);
+  let deployTasks = load('deployer_tasks', []);
+
+  // PI TIMER
+  setInterval(() => { const p = nowPi(); $('topPi').textContent = p; $('piTime').textContent = p; }, 50);
+
+  // AKASHA
+  async function addRecord(r) {
+    r.id = crypto.randomUUID();
+    r.ts = Date.now();
+    r.pi = nowPi();
+    if (!r.hash) r.hash = await sha256(JSON.stringify({...r, id: undefined}));
+    records.unshift(r);
+    if (records.length > 500) records = records.slice(0,500);
+    save('akasha_records', records);
+    renderAkasha();
+    pulseReactor();
+    $('reactorWitnessed').textContent = records.length;
+  }
+
+  function renderAkasha() {
+    const el = $('akashaList');
+    if (!records.length) { el.innerHTML = '<div class="opacity-50 py-4 text-center">No records yet. Witness something.</div>'; return; }
+    el.innerHTML = records.slice(0,80).map(r => {
+      const t = new Date(r.ts).toLocaleTimeString();
+      const icon = r.type==='sovereign_push'?'⬢':r.type==='file_witness'?'◈':r.type==='chronos_mark'?'◎':r.type==='loop_break'?'⚠':'●';
+      const color = r.type==='sovereign_push'?'text-purple-300':r.type==='loop_break'?'text-amber-300':'text-cyan-300';
+      return `<div class="flex items-center gap-2 py-1 border-b border-cyan-950/50 hover:bg-cyan-950/20 px-1">
+        <span class="${color}">${icon}</span>
+        <span class="opacity-60 w-[56px]">${t}</span>
+        <span class="opacity-80 w-[90px] truncate">${r.type}</span>
+        <span class="flex-1 truncate opacity-70">${r.name || r.note || r.claim || (r.fileCount? r.fileCount+' files':'')}</span>
+        <span class="w-[64px] truncate text-right opacity-50">${r.hash.slice(0,8)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function pulseReactor() {
+    const core = $('arcCore');
+    core.style.animationDuration = '0.6s';
+    setTimeout(()=> core.style.animationDuration='1.8s', 600);
+    $('reactorPower').textContent = Math.floor(92 + Math.random()*7) + '%';
+  }
+
+  // GATEKEEPERS
+  function renderGates() {
+    const c = $('gatekeepersContainer');
+    c.innerHTML = Object.entries(gates).map(([k,v]) => `
+      <div class="flex items-center justify-between py-1.5 px-2 bg-black/40 border border-cyan-900/40 hover:border-cyan-700/50">
+        <div class="flex items-center gap-2">
+          <div class="w-1.5 h-1.5 rounded-full ${v?'bg-cyan-400 shadow-[0_0_6px_#22d3ee]':'bg-gray-600'}"></div>
+          <span class="text-[11px] tracking-widest">${k}</span>
+        </div>
+        <input type="checkbox" class="toggle" data-gate="${k}" ${v?'checked':''}>
+      </div>
+    `).join('');
+    c.querySelectorAll('input').forEach(i => i.onchange = e => {
+      gates[e.target.dataset.gate] = e.target.checked;
+      save('gates', gates);
+      renderGates();
+      pulseReactor();
+    });
+  }
+
+  // JANE BOXES
+  function renderBoxes() {
+    const c = $('janeBoxes');
+    c.innerHTML = Array.from({length:12}, (_,i) => {
+      const n = i+1;
+      return `<div class="group">
+        <div class="text-[9px] opacity-60 mb-1 flex justify-between"><span>BOX ${n}</span><span class="opacity-40 group-focus-within:opacity-100">●</span></div>
+        <textarea data-box="${n}" class="w-full h-[54px] bg-black/60 border border-cyan-900/50 p-1.5 text-[11px] mono resize-none focus:outline-none focus:border-cyan-400/70 focus:bg-black/80 transition" placeholder="...">${boxes[n]||''}</textarea>
+      </div>`;
+    }).join('');
+    c.querySelectorAll('textarea').forEach(t => t.oninput = e => {
+      boxes[e.target.dataset.box] = e.target.value;
+      save('jane_boxes', boxes);
+    });
+  }
+
+  // WITNESS FILE
+  $('witnessBtn').onclick = () => $('witnessInput').click();
+  $('witnessInput').onchange = async (e) => {
+    const f = e.target.files[0]; if(!f) return;
+    $('witnessStatus').textContent = 'Hashing...';
+    const buf = await f.arrayBuffer();
+    const h = await sha256(buf);
+    await addRecord({type:'file_witness', name:f.name, size:f.size, hash:h});
+    $('witnessStatus').innerHTML = `✓ Witnessed <span class="text-cyan-300">${f.name}</span> • ${h.slice(0,12)}…`;
+    e.target.value = '';
+  };
+
+  // LOOP BREAKER
+  function renderLoops() {
+    $('loopCount').textContent = loops.length;
+    $('loopLast').textContent = loops[0] ? `Last: ${new Date(loops[0].ts).toLocaleTimeString()} π=${loops[0].pi}` : '';
+  }
+  $('loopBtn').onclick = async () => {
+    const rec = {type:'loop_break', note:'Manual break'};
+    loops.unshift({ts:Date.now(), pi:nowPi()});
+    save('loop_history', loops);
+    await addRecord(rec);
+    renderLoops();
+  };
+
+  // GOD VOICE
+  $('godSpeakBtn').onclick = () => {
+    const t = $('godInput').value.trim(); if(!t) return;
+    const u = new SpeechSynthesisUtterance(t);
+    u.rate = 0.9; u.pitch = 0.8;
+    speechSynthesis.speak(u);
+    addRecord({type:'god_voice', note:t});
+    $('godInput').value = '';
+  };
+
+  // TOOLS TOGGLE
+  $('toggleTools').onclick = () => $('toolsPanel').classList.toggle('hidden');
+
+  // TOOL 1: SOVEREIGN PUSH
+  $('pushBtn').onclick = () => $('folderPicker').click();
+  $('folderPicker').onchange = async (e) => {
+    const files = [...e.target.files]; if(!files.length) return;
+    $('pushOutput').textContent = `Witnessing ${files.length} files...`;
+    $('pushProgress').style.width = '0%';
+    const manifest = [];
+    for (let i=0;i<files.length;i++) {
+      const f = files[i];
+      try {
+        const buf = await f.arrayBuffer();
+        const h = await sha256(buf);
+        manifest.push({path:f.webkitRelativePath, size:f.size, hash:h});
+      } catch {}
+      $('pushProgress').style.width = `${Math.round((i+1)/files.length*100)}%`;
+      if (i%10===0) await new Promise(r=>setTimeout(r,0));
+    }
+    const manifestStr = JSON.stringify(manifest);
+    const manifestHash = await sha256(manifestStr);
+    await addRecord({
+      type:'sovereign_push',
+      name: files[0].webkitRelativePath.split('/')[0] || 'PROJECT',
+      fileCount: files.length,
+      manifestHash,
+      manifest: manifest.slice(0,200) // store partial for size
+    });
+    $('pushOutput').innerHTML = `✓ Witnessed <span class="text-purple-300">${files.length} files</span> to Akasha • ${manifestHash.slice(0,12)}…`;
+    $('pushProgress').style.width = '100%';
+    setTimeout(()=>{$('pushProgress').style.width='0%';}, 2000);
+    e.target.value='';
+  };
+
+  // TOOL 2: INSURANCE BREAKER
+  $('generateDemandBtn').onclick = async () => {
+    const claim = $('claimInput').value.trim();
+    const denial = $('denialSelect').value;
+    const pi = nowPi();
+    const date = new Date().toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'});
+    const letter = `DEVIN BOSTICK — ROOT_0 SOVEREIGN
+${date}
+
+RE: FORMAL DEMAND FOR PAYMENT - BAD FAITH DENIAL
+Claim Number: ${claim}
+
+To Whom It May Concern:
+
+This constitutes formal demand pursuant to Minnesota Statutes §65B.43, Subd. 5 and §72A.201 (Unfair Claims Practices).
+
+Your denial citing "${denial}" is REJECTED as contrary to documented medical evidence of bilateral hand injury sustained 10/26/2024, with ongoing treatment records available.
+
+VIOLATIONS CITED:
+1. Minnesota No-Fault Act §65B.44 - Failure to pay basic economic loss benefits
+2. ADA Title II - Discrimination against documented disability
+3. 45 CFR §164.524 - Right of access to medical records
+
+DEMAND: Immediate payment of all outstanding benefits plus 15% interest per §65B.54.
+
+This demand is witnessed to the Akashic Record at π=${pi}, timestamp ${Date.now()}.
+
+Failure to cure within 10 days will result in escalation to Minnesota Department of Commerce and federal action.
+
+/s/ Devin Bostick
+Sovereign Witness`;
+    $('demandOutput').value = letter;
+    const h = await sha256(letter);
+    await addRecord({type:'insurance_demand', claim, denial, hash:h});
+  };
+  $('copyDemandBtn').onclick = () => {
+    navigator.clipboard.writeText($('demandOutput').value);
+    $('copyDemandBtn').textContent = 'COPIED';
+    setTimeout(()=>$('copyDemandBtn').textContent='COPY',1200);
+  };
+
+  // TOOL 3: PARALLEL DEPLOYER
+  const targets = ['Adjuster','Adjuster Supervisor','Claims Manager','State Farm Legal','MN Dept of Commerce','Attorney General','Your Attorney','Medical Provider','Billing','CEO Office','Ombudsman','Media'];
+  function renderDeploy() {
+    const c = $('deployerList');
+    if (!deployTasks.length) { c.innerHTML = '<div class="opacity-40 text-[10px] text-center py-2">No deployments yet</div>'; return; }
+    c.innerHTML = deployTasks.map((t,i) => `
+      <label class="flex items-center gap-2 py-0.5 px-1 hover:bg-purple-950/30 cursor-pointer">
+        <input type="checkbox" ${t.done?'checked':''} data-idx="${i}" class="w-3 h-3 accent-purple-400">
+        <span class="flex-1 truncate ${t.done?'line-through opacity-50':''}">${String(i+1).padStart(2,'0')}. ${t.text}</span>
+      </label>
+    `).join('');
+    c.querySelectorAll('input').forEach(chk => chk.onchange = e => {
+      deployTasks[e.target.dataset.idx].done = e.target.checked;
+      save('deployer_tasks', deployTasks);
+      renderDeploy();
+    });
+  }
+  $('deployBtn').onclick = () => {
+    const base = $('deployerInput').value.trim() || 'Execute sovereign action';
+    deployTasks = Array.from({length:64}, (_,i) => ({
+      id: crypto.randomUUID(),
+      text: `${base} → ${targets[i % targets.length]} #${Math.floor(i/targets.length)+1}`,
+      done: false
+    }));
+    save('deployer_tasks', deployTasks);
+    renderDeploy();
+    addRecord({type:'parallel_deploy', note:base, count:64});
+  };
+
+  // TOOL 4: VERIFIER
+  const drop = $('dropZone');
+  drop.onclick = () => {
+    const i = document.createElement('input'); i.type='file';
+    i.onchange = async e => verifyFile(e.target.files[0]);
+    i.click();
+  };
+  ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.add('bg-cyan-950/30');}));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {e.preventDefault(); drop.classList.remove('bg-cyan-950/30');}));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if(f) verifyFile(f); });
+  async function verifyFile(f) {
+    $('verifyResult').innerHTML = '<span class="opacity-60">Hashing...</span>';
+    const h = await sha256(await f.arrayBuffer());
+    const found = records.find(r => r.hash===h || r.manifestHash===h || (r.manifest && r.manifest.some(m=>m.hash===h)));
+    if (found) {
+      $('verifyResult').innerHTML = `<div class="text-emerald-300">✓ VERIFIED</div><div class="opacity-70">Witnessed ${new Date(found.ts).toLocaleString()} • π=${found.pi}</div><div class="opacity-50 truncate">${h}</div>`;
+    } else {
+      $('verifyResult').innerHTML = `<div class="text-amber-300">✗ NOT WITNESSED</div><div class="opacity-70">No Akashic record found</div><div class="opacity-50 truncate">${h}</div>`;
+    }
+  }
+
+  // TOOL 5: CHRONOS
+  $('markEventBtn').onclick = async () => {
+    const note = $('chronosNote').value.trim() || 'Event marked';
+    await addRecord({type:'chronos_mark', note});
+    $('chronosNote').value = '';
+    $('markEventBtn').textContent = 'MARKED ✓';
+    setTimeout(()=>$('markEventBtn').textContent='MARK EVENT → AKASHA',1000);
+  };
+
+  // TOOL 6: EXPORT
+  $('exportBtn').onclick = async () => {
+    $('exportStatus').textContent = 'Packaging...';
+    const zip = new JSZip();
+    const payload = {
+      meta: { exported: new Date().toISOString(), pi: nowPi(), system: 'ROOT_0 IRON MAN OS' },
+      akashic_records: records,
+      gatekeepers: gates,
+      jane_boxes: boxes,
+      loop_history: loops,
+      deployer_tasks: deployTasks
+    };
+    zip.file('akashic_records.json', JSON.stringify(payload.akashic_records, null, 2));
+    zip.file('root0_state.json', JSON.stringify({gatekeepers:gates, boxes, loops, deployer:deployTasks}, null, 2));
+    zip.file('README.txt', `ROOT_0 SOVEREIGN EXPORT
+Generated: ${payload.meta.exported}
+π-Time: ${payload.meta.pi}
+Records: ${records.length}
+Gatekeepers Active: ${Object.values(gates).filter(Boolean).length}/6
+
+This archive is a cryptographic witness of your sovereign state.
+Verify integrity by re-hashing files against Akashic records.
+
+— IRON MAN OS MARK VII`);
+    const blob = await zip.generateAsync({type:'blob'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `ROOT_0_EXPORT_${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    $('exportStatus').textContent = `✓ Packaged ${records.length} records`;
+    setTimeout(()=>$('exportStatus').textContent='',3000);
+    addRecord({type:'sovereign_export', note:'Full state backup'});
+  };
+
+  // INIT
+  renderGates();
+  renderBoxes();
+  renderAkasha();
+  renderLoops();
+  renderDeploy();
+  $('reactorWitnessed').textContent = records.length;
+
+  // Demo record if empty
+  if (!records.length) {
+    addRecord({type:'system_init', note:'Iron Man OS online', name:'ROOT_0'});
+  }
+});
+</script>
+
+</body></html>

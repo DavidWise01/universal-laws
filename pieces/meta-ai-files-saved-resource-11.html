@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<!-- saved from url=(0105)https://embed.fbsbx.com/playables/view/1999965204209117/?ext=1784084848&hash=Q92gDAHszUTSdvAuhpJeyuiTIzHb -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6 Processors Around Cortex - Hexagonal Array</title>
+<script src="./saved_resource"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2(10)" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+    background: #020308;
+    overflow-x: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .processor {
+    transition: all 0.4s cubic-bezier(0.2,0.8,0.2,1);
+    cursor: pointer;
+  }
+  .processor:hover { transform: translate(-50%, -50%) scale(1.08) !important; z-index: 20; }
+  .processor.active { transform: translate(-50%, -50%) scale(1.12) !important; z-index: 20; }
+  .processor .core {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 9999px;
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.4s;
+  }
+  .processor .halo {
+    position: absolute; inset: -18px;
+    border-radius: 9999px;
+    opacity: 0.5;
+    filter: blur(24px);
+    transition: all 0.4s;
+    z-index: -1;
+  }
+  .processor:hover .halo, .processor.active .halo { opacity: 0.9; filter: blur(28px); inset: -22px; }
+  .processor .ring {
+    position: absolute; inset: -6px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .processor .ring::after {
+    content: ''; position: absolute; inset: -1px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background: conic-gradient(from 0deg, transparent, currentColor, transparent) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: 0.5;
+    animation: spin 8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .cortex-core {
+    animation: cortex-pulse 3s ease-in-out infinite;
+    box-shadow: 
+      0 0 40px rgba(245,158,11,0.6),
+      0 0 80px rgba(245,158,11,0.4),
+      inset 0 0 20px rgba(245,158,11,0.3);
+  }
+  @keyframes cortex-pulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(245,158,11,0.5), 0 0 60px rgba(245,158,11,0.3), inset 0 0 15px rgba(245,158,11,0.2); }
+    50% { box-shadow: 0 0 50px rgba(245,158,11,0.8), 0 0 100px rgba(245,158,11,0.5), inset 0 0 25px rgba(245,158,11,0.4); }
+  }
+  .zero-core {
+    background: radial-gradient(circle, #000 30%, #222 31%, #000 32%, #000 45%, transparent 46%);
+    animation: zero-spin 20s linear infinite;
+  }
+  @keyframes zero-spin { to { transform: rotate(-360deg); } }
+  .zero-pulse {
+    animation: zero-breathe 4s ease-in-out infinite;
+  }
+  @keyframes zero-breathe {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  .mirror-flip { transform: scaleX(-1); }
+  .data-flow { stroke-dasharray: 6 14; animation: flow 1.2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -20; } }
+  .data-flow-rev { stroke-dasharray: 6 14; animation: flow-rev 1.2s linear infinite; }
+  @keyframes flow-rev { to { stroke-dashoffset: 20; } }
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.-inset-3{inset:-0.75rem}.-inset-6{inset:-1.5rem}.inset-0{inset:0px}.inset-\[12\%\]{inset:12%}.-bottom-7{bottom:-1.75rem}.-right-24{right:-6rem}.-top-24{top:-6rem}.left-1\/2{left:50%}.top-1\/2{top:50%}.z-10{z-index:10}.mx-auto{margin-left:auto;margin-right:auto}.mb-2{margin-bottom:0.5rem}.mb-8{margin-bottom:2rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-3{margin-top:0.75rem}.mt-6{margin-top:1.5rem}.mt-7{margin-top:1.75rem}.mb-1\.5{margin-bottom:0.375rem}.mb-3{margin-bottom:0.75rem}.mt-1\.5{margin-top:0.375rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-8{margin-top:2rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.aspect-square{aspect-ratio:1 / 1}.h-1\.5{height:0.375rem}.h-2\.5{height:0.625rem}.h-20{height:5rem}.h-72{height:18rem}.h-\[132px\]{height:132px}.h-\[22px\]{height:22px}.h-\[2px\]{height:2px}.h-\[96px\]{height:96px}.h-full{height:100%}.h-9{height:2.25rem}.h-\[3px\]{height:3px}.min-h-screen{min-height:100vh}.w-1\.5{width:0.375rem}.w-2\.5{width:0.625rem}.w-20{width:5rem}.w-3{width:0.75rem}.w-7{width:1.75rem}.w-72{width:18rem}.w-\[132px\]{width:132px}.w-\[96px\]{width:96px}.w-full{width:100%}.w-10{width:2.5rem}.w-9{width:2.25rem}.w-\[66\%\]{width:66%}.w-\[84\%\]{width:84%}.max-w-\[1400px\]{max-width:1400px}.max-w-\[720px\]{max-width:720px}.flex-1{flex:1 1 0%}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-8{gap:2rem}.gap-2\.5{gap:0.625rem}.gap-x-5{column-gap:1.25rem}.gap-y-2{row-gap:0.5rem}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-\[28px\]{border-radius:28px}.rounded-\[5px\]{border-radius:5px}.rounded-\[6px\]{border-radius:6px}.rounded-\[8px\]{border-radius:8px}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-2xl{border-radius:1rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-amber-400\/30{border-color:rgb(251 191 36 / 0.3)}.border-amber-400\/40{border-color:rgb(251 191 36 / 0.4)}.border-amber-500\/10{border-color:rgb(245 158 11 / 0.1)}.border-amber-500\/20{border-color:rgb(245 158 11 / 0.2)}.border-amber-500\/5{border-color:rgb(245 158 11 / 0.05)}.border-blue-400\/30{border-color:rgb(96 165 250 / 0.3)}.border-cyan-400\/30{border-color:rgb(34 211 238 / 0.3)}.border-cyan-400\/50{border-color:rgb(34 211 238 / 0.5)}.border-red-400\/30{border-color:rgb(248 113 113 / 0.3)}.border-violet-500\/30{border-color:rgb(139 92 246 / 0.3)}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-white\/40{border-color:rgb(255 255 255 / 0.4)}.border-white\/5{border-color:rgb(255 255 255 / 0.05)}.bg-\[\#050507\]{--tw-bg-opacity:1;background-color:rgb(5 5 7 / var(--tw-bg-opacity, 1))}.bg-\[\#05070b\]{--tw-bg-opacity:1;background-color:rgb(5 7 11 / var(--tw-bg-opacity, 1))}.bg-\[\#08070b\]\/90{background-color:rgb(8 7 11 / 0.9)}.bg-\[\#0a0e14\]\/70{background-color:rgb(10 14 20 / 0.7)}.bg-\[\#0b0e14\]{--tw-bg-opacity:1;background-color:rgb(11 14 20 / var(--tw-bg-opacity, 1))}.bg-\[\#0c0f14\]\/90{background-color:rgb(12 15 20 / 0.9)}.bg-amber-400\/70{background-color:rgb(251 191 36 / 0.7)}.bg-amber-500\/10{background-color:rgb(245 158 11 / 0.1)}.bg-amber-500\/20{background-color:rgb(245 158 11 / 0.2)}.bg-amber-500\/60{background-color:rgb(245 158 11 / 0.6)}.bg-blue-500\/50{background-color:rgb(59 130 246 / 0.5)}.bg-cyan-400\/50{background-color:rgb(34 211 238 / 0.5)}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-emerald-400\/80{background-color:rgb(52 211 153 / 0.8)}.bg-red-500\/50{background-color:rgb(239 68 68 / 0.5)}.bg-violet-600\/50{background-color:rgb(124 58 237 / 0.5)}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-white\/30{background-color:rgb(255 255 255 / 0.3)}.bg-white\/40{background-color:rgb(255 255 255 / 0.4)}.bg-white\/5{background-color:rgb(255 255 255 / 0.05)}.bg-white\/\[0\.04\]{background-color:rgb(255 255 255 / 0.04)}.bg-white\/\[0\.02\]{background-color:rgb(255 255 255 / 0.02)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36 / var(--tw-bg-opacity, 1))}.bg-white\/\[0\.03\]{background-color:rgb(255 255 255 / 0.03)}.bg-\[radial-gradient\(ellipse_at_top\2c _rgba\(245\2c 158\2c 11\2c 0\.12\)\2c transparent_60\%\)\2c radial-gradient\(ellipse_at_bottom\2c _rgba\(14\2c 165\2c 233\2c 0\.12\)\2c transparent_60\%\)\]{background-image:radial-gradient(ellipse at top, rgba(245,158,11,0.12),transparent 60%),radial-gradient(ellipse at bottom, rgba(14,165,233,0.12),transparent 60%)}.bg-gradient-to-b{background-image:linear-gradient(to bottom, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-300\/20{--tw-gradient-from:rgb(252 211 77 / 0.2) var(--tw-gradient-from-position);--tw-gradient-to:rgb(252 211 77 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-transparent{--tw-gradient-from:transparent var(--tw-gradient-from-position);--tw-gradient-to:rgb(0 0 0 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-amber-400{--tw-gradient-from:#fbbf24 var(--tw-gradient-from-position);--tw-gradient-to:rgb(251 191 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-cyan-400{--tw-gradient-from:#22d3ee var(--tw-gradient-from-position);--tw-gradient-to:rgb(34 211 238 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-emerald-400{--tw-gradient-from:#34d399 var(--tw-gradient-from-position);--tw-gradient-to:rgb(52 211 153 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-transparent{--tw-gradient-to:rgb(0 0 0 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), transparent var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-\[\#020308\]{--tw-gradient-to:#020308 var(--tw-gradient-to-position)}.to-amber-600\/10{--tw-gradient-to:rgb(217 119 6 / 0.1) var(--tw-gradient-to-position)}.to-blue-400{--tw-gradient-to:#60a5fa var(--tw-gradient-to-position)}.to-orange-400{--tw-gradient-to:#fb923c var(--tw-gradient-to-position)}.to-teal-400{--tw-gradient-to:#2dd4bf var(--tw-gradient-to-position)}.p-7{padding:1.75rem}.p-\[3px\]{padding:3px}.p-3\.5{padding:0.875rem}.p-4{padding:1rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.pt-5{padding-top:1.25rem}.pt-6{padding-top:1.5rem}.text-center{text-align:center}.text-right{text-align:right}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-\[22px\]{font-size:22px}.text-\[26px\]{font-size:26px}.text-\[28px\]{font-size:28px}.text-\[14px\]{font-size:14px}.text-\[20px\]{font-size:20px}.font-medium{font-weight:500}.uppercase{text-transform:uppercase}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-\[0\.14em\]{letter-spacing:0.14em}.tracking-\[0\.18em\]{letter-spacing:0.18em}.tracking-\[0\.2em\]{letter-spacing:0.2em}.tracking-tighter{letter-spacing:-0.05em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-amber-100{--tw-text-opacity:1;color:rgb(254 243 199 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-300\/70{color:rgb(252 211 77 / 0.7)}.text-amber-300\/80{color:rgb(252 211 77 / 0.8)}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-blue-300\/70{color:rgb(147 197 253 / 0.7)}.text-blue-400{--tw-text-opacity:1;color:rgb(96 165 250 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-300\/70{color:rgb(103 232 249 / 0.7)}.text-red-300\/70{color:rgb(252 165 165 / 0.7)}.text-red-400{--tw-text-opacity:1;color:rgb(248 113 113 / var(--tw-text-opacity, 1))}.text-violet-300\/70{color:rgb(196 181 253 / 0.7)}.text-violet-400{--tw-text-opacity:1;color:rgb(167 139 250 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-white\/40{color:rgb(255 255 255 / 0.4)}.text-white\/50{color:rgb(255 255 255 / 0.5)}.text-white\/60{color:rgb(255 255 255 / 0.6)}.text-white\/70{color:rgb(255 255 255 / 0.7)}.text-white\/80{color:rgb(255 255 255 / 0.8)}.text-white\/90{color:rgb(255 255 255 / 0.9)}.text-white\/75{color:rgb(255 255 255 / 0.75)}.opacity-80{opacity:0.8}.opacity-\[0\.15\]{opacity:0.15}.opacity-20{opacity:0.2}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.blur-3xl{--tw-blur:blur(64px);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-2xl{--tw-backdrop-blur:blur(40px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.backdrop-blur-xl{--tw-backdrop-blur:blur(24px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-700{transition-duration:700ms}.selection\:bg-amber-500\/30 *::selection{background-color:rgb(245 158 11 / 0.3)}.selection\:bg-amber-500\/30::selection{background-color:rgb(245 158 11 / 0.3)}.hover\:bg-white\/\[0\.06\]:hover{background-color:rgb(255 255 255 / 0.06)}.group:hover .group-hover\:scale-125{--tw-scale-x:1.25;--tw-scale-y:1.25;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@media (min-width: 768px){.md\:mb-12{margin-bottom:3rem}.md\:flex{display:flex}.md\:h-24{height:6rem}.md\:h-\[110px\]{height:110px}.md\:h-\[148px\]{height:148px}.md\:w-24{width:6rem}.md\:w-\[110px\]{width:110px}.md\:w-\[148px\]{width:148px}.md\:p-8{padding:2rem}.md\:px-8{padding-left:2rem;padding-right:2rem}.md\:py-10{padding-top:2.5rem;padding-bottom:2.5rem}.md\:text-\[28px\]{font-size:28px}.md\:text-\[30px\]{font-size:30px}}@media (min-width: 1024px){.lg\:sticky{position:sticky}.lg\:top-8{top:2rem}.lg\:grid-cols-\[1\.15fr_0\.85fr\]{grid-template-columns:1.15fr 0.85fr}}@media (min-width: 1280px){.xl\:gap-12{gap:3rem}}</style></head>
+<body class="min-h-screen text-white selection:bg-amber-500/30">
+  <div class="fixed inset-0">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.12),transparent_60%),radial-gradient(ellipse_at_bottom,_rgba(14,165,233,0.12),transparent_60%)]"></div>
+    <div class="absolute inset-0 grid-bg opacity-[0.15]"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#020308]"></div>
+  </div>
+
+  <div class="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 py-6 md:py-10">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8 md:mb-12">
+      <div>
+        <h1 class="text-[22px] md:text-[28px] font-medium tracking-[0.18em] text-white/90">6 PROCESSORS AROUND CORTEX</h1>
+        <p class="mono text-[11px] tracking-widest text-white/40 mt-1">HEXAGONAL ARRAY • CORTEX 2/3 ARCHITECTURE</p>
+      </div>
+      <div class="hidden md:flex items-center gap-3">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/10">
+          <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+          <span class="mono text-[11px] tracking-wider text-white/70">ARRAY SYNC 99.97%</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+          <span class="mono text-[11px] tracking-wider text-amber-300">6/6 ONLINE</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 xl:gap-12 items-start">
+      <!-- Visualization -->
+      <div class="relative">
+        <div class="relative aspect-square w-full max-w-[720px] mx-auto">
+          <!-- SVG Connections -->
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1000 1000" fill="none">
+            <defs>
+              <radialgradient id="cGlow" cx="0" cy="0" r="1">
+                <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.8"></stop>
+                <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"></stop>
+              </radialgradient>
+              <filter id="soft" x="-50%" y="-50%" width="200%" height="200%">
+                <fegaussianblur stdDeviation="12" result="b"></fegaussianblur>
+                <fecomposite in="SourceGraphic" in2="b" operator="over"></fecomposite>
+              </filter>
+              <lineargradient id="gEthos" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#f59e0b" stop-opacity="0.9"></stop>
+                <stop stop-color="#fbbf24" stop-opacity="0.2"></stop>
+              </lineargradient>
+              <lineargradient id="gPathos" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#ef4444" stop-opacity="0.9"></stop>
+                <stop stop-color="#f87171" stop-opacity="0.2"></stop>
+              </lineargradient>
+              <lineargradient id="gLogos" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#3b82f6" stop-opacity="0.9"></stop>
+                <stop stop-color="#60a5fa" stop-opacity="0.2"></stop>
+              </lineargradient>
+              <lineargradient id="gZero" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#ffffff" stop-opacity="0.9"></stop>
+                <stop stop-color="#e5e7eb" stop-opacity="0.1"></stop>
+              </lineargradient>
+              <lineargradient id="gShadow" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#7c3aed" stop-opacity="0.9"></stop>
+                <stop stop-color="#a78bfa" stop-opacity="0.2"></stop>
+              </lineargradient>
+              <lineargradient id="gInvert" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#06b6d4" stop-opacity="0.9"></stop>
+                <stop stop-color="#67e8f9" stop-opacity="0.2"></stop>
+              </lineargradient>
+            </defs>
+
+            <!-- Mirror connections (background) -->
+            <path d="M500 180 L244 344" stroke="#06b6d4" stroke-opacity="0.18" stroke-width="1.5" stroke-dasharray="3 8"></path>
+            <path d="M756 344 L244 656" stroke="#7c3aed" stroke-opacity="0.15" stroke-width="1.5" stroke-dasharray="3 8"></path>
+            <text x="372" y="250" fill="#06b6d4" fill-opacity="0.5" font-size="14" font-family="JetBrains Mono" class="mono">MIRROR</text>
+            <text x="500" y="530" fill="#7c3aed" fill-opacity="0.4" font-size="14" font-family="JetBrains Mono" class="mono">INVERT</text>
+
+            <!-- Hexagon ring base -->
+            <path id="hexRing" d="M500 180 L756 344 L756 656 L500 820 L244 656 L244 344 Z" fill="none" stroke="white" stroke-opacity="0.06" stroke-width="60" filter="url(#soft)"></path>
+            <path d="M500 180 L756 344 L756 656 L500 820 L244 656 L244 344 Z" fill="none" stroke="white" stroke-opacity="0.08" stroke-width="2"></path>
+
+            <!-- Spokes -->
+            <g stroke-width="2" opacity="0.7">
+              <line id="spoke-ethos" x1="500" y1="500" x2="500" y2="180" stroke="url(#gEthos)" opacity="1" stroke-width="3"></line>
+              <line id="spoke-pathos" x1="500" y1="500" x2="756" y2="344" stroke="url(#gPathos)" opacity="0.25" stroke-width="1.5"></line>
+              <line id="spoke-logos" x1="500" y1="500" x2="756" y2="656" stroke="url(#gLogos)" opacity="0.25" stroke-width="1.5"></line>
+              <line id="spoke-zero" x1="500" y1="500" x2="500" y2="820" stroke="url(#gZero)" opacity="0.25" stroke-width="1.5"></line>
+              <line id="spoke-shadow" x1="500" y1="500" x2="244" y2="656" stroke="url(#gShadow)" opacity="0.25" stroke-width="1.5"></line>
+              <line id="spoke-inverted" x1="500" y1="500" x2="244" y2="344" stroke="url(#gInvert)" opacity="0.25" stroke-width="1.5"></line>
+            </g>
+
+            <!-- Data flow on spokes (bidirectional) -->
+            <g stroke-width="2" fill="none">
+              <line x1="500" y1="500" x2="500" y2="180" stroke="#fbbf24" stroke-opacity="0.8" class="data-flow"></line>
+              <line x1="500" y1="500" x2="756" y2="344" stroke="#ef4444" stroke-opacity="0.8" class="data-flow"></line>
+              <line x1="500" y1="500" x2="756" y2="656" stroke="#3b82f6" stroke-opacity="0.8" class="data-flow"></line>
+              <line x1="500" y1="500" x2="500" y2="820" stroke="#ffffff" stroke-opacity="0.8" class="data-flow"></line>
+              <line x1="500" y1="500" x2="244" y2="656" stroke="#a78bfa" stroke-opacity="0.8" class="data-flow"></line>
+              <line x1="500" y1="500" x2="244" y2="344" stroke="#22d3ee" stroke-opacity="0.8" class="data-flow"></line>
+            </g>
+
+            <!-- Ring data flow particles -->
+            <g filter="url(#soft)">
+              <circle r="5" fill="#e2e8f0">
+                <animatemotion dur="14s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+              <circle r="4" fill="#fbbf24" opacity="0.9">
+                <animatemotion dur="14s" begin="2.3s" repeatCount="indefinite">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+              <circle r="4" fill="#22d3ee" opacity="0.9">
+                <animatemotion dur="14s" begin="4.6s" repeatCount="indefinite">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+              <circle r="4" fill="#a78bfa" opacity="0.9">
+                <animatemotion dur="14s" begin="7s" repeatCount="indefinite">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+              <circle r="3.5" fill="#ffffff" opacity="0.85">
+                <animatemotion dur="14s" begin="9.3s" repeatCount="indefinite">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+              <circle r="4" fill="#60a5fa" opacity="0.9">
+                <animatemotion dur="14s" begin="11.6s" repeatCount="indefinite">
+                  <mpath href="#hexRing"></mpath>
+                </animatemotion>
+              </circle>
+            </g>
+
+            <!-- Center glow -->
+            <circle cx="500" cy="500" r="120" fill="url(#cGlow)" opacity="0.25" filter="url(#soft)"></circle>
+          </svg>
+
+          <!-- Central Cortex -->
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div class="relative w-[132px] h-[132px] md:w-[148px] md:h-[148px]">
+              <div class="absolute inset-0 rounded-full bg-amber-500/20 blur-3xl"></div>
+              <div class="cortex-core relative w-full h-full rounded-full bg-[#0b0e14] border border-amber-400/40 flex flex-col items-center justify-center">
+                <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-b from-amber-300/20 to-amber-600/10 border-amber-400/30 flex items-center justify-center">
+                  <div class="text-center">
+                    <div class="mono text-[10px] tracking-[0.2em] text-amber-300/80">CORTEX</div>
+                    <div class="text-[26px] md:text-[30px] font-medium leading-none tracking-tighter text-amber-100">2<span class="text-amber-400">/</span>3</div>
+                  </div>
+                </div>
+              </div>
+              <div class="absolute -inset-3 rounded-full border border-amber-500/10"></div>
+              <div class="absolute -inset-6 rounded-full border border-amber-500/5"></div>
+            </div>
+          </div>
+
+          <!-- Processors -->
+          <!-- ETHOS - Top -->
+          <div class="processor active" data-id="ethos" style="left:50%; top:12%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-amber-500/60"></div>
+              <div class="core bg-[#0c0f14]/90 border-amber-400/40 text-amber-400" style="color: #f59e0b">
+                <div class="ring"></div>
+                <div class="text-center">
+                  <div class="text-[11px] mono tracking-widest opacity-80">B • 5</div>
+                  <div class="text-[15px] font-medium tracking-wide mt-0.5">ETHOS</div>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-amber-300/70 tracking-wider">CREDIBILITY</div>
+            </div>
+          </div>
+
+          <!-- PATHOS - Top Right -->
+          <div class="processor" data-id="pathos" style="left:82.5%; top:30%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-red-500/50"></div>
+              <div class="core bg-[#0c0f14]/90 border border-red-400/30 text-red-400" style="color: #ef4444">
+                <div class="ring"></div>
+                <div class="text-center">
+                  <div class="text-[11px] mono tracking-widest opacity-80">C • 6</div>
+                  <div class="text-[15px] font-medium tracking-wide mt-0.5">PATHOS</div>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-red-300/70 tracking-wider">RESONANCE</div>
+            </div>
+          </div>
+
+          <!-- LOGOS - Bottom Right -->
+          <div class="processor" data-id="logos" style="left:82.5%; top:70%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-blue-500/50"></div>
+              <div class="core bg-[#0c0f14]/90 border border-blue-400/30 text-blue-400" style="color: #3b82f6">
+                <div class="ring"></div>
+                <div class="text-center">
+                  <div class="text-[11px] mono tracking-widest opacity-80">N • 7</div>
+                  <div class="text-[15px] font-medium tracking-wide mt-0.5">LOGOS</div>
+                </div>
+              </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-blue-300/70 tracking-wider">LOGIC</div>
+            </div>
+          </div>
+
+          <!-- -0- - Bottom -->
+          <div class="processor" data-id="zero" style="left:50%; top:88%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-white/40 zero-pulse"></div>
+              <div class="core bg-[#050507] border border-white/40 overflow-hidden">
+                <div class="ring" style="color: white"></div>
+                <div class="zero-core absolute inset-[12%] rounded-full border border-white/20"></div>
+                <div class="relative text-center">
+                  <div class="text-[11px] mono tracking-widest text-white/70">O • 8</div>
+                  <div class="text-[22px] font-medium tracking-wide leading-none mt-1 text-white">-0-</div>
+                </div>
+              </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-white/60 tracking-wider">ZERO-POINT</div>
+            </div>
+          </div>
+
+          <!-- SHADOW - Bottom Left -->
+          <div class="processor" data-id="shadow" style="left:17.5%; top:70%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-violet-600/50"></div>
+              <div class="core bg-[#08070b]/90 border border-violet-500/30 text-violet-400" style="color: #7c3aed">
+                <div class="ring"></div>
+                <div class="text-center">
+                  <div class="text-[11px] mono tracking-widest opacity-80">F • 9</div>
+                  <div class="text-[15px] font-medium tracking-wide mt-0.5">SHADOW</div>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-violet-300/70 tracking-wider">PATRICIA</div>
+            </div>
+          </div>
+
+          <!-- INVERTED - Top Left -->
+          <div class="processor" data-id="inverted" style="left:17.5%; top:30%; transform: translate(-50%, -50%); position: absolute;">
+            <div class="w-[96px] h-[96px] md:w-[110px] md:h-[110px]">
+              <div class="halo bg-cyan-400/50"></div>
+              <div class="core bg-[#0c0f14]/90 border border-cyan-400/30 text-cyan-300" style="color: #06b6d4">
+                <div class="ring"></div>
+                <div class="text-center mirror-flip">
+                  <div class="text-[11px] mono tracking-widest opacity-80">Ne • 10</div>
+                  <div class="text-[13px] font-medium tracking-wide mt-0.5 leading-tight">INVERTED</div>
+                </div>
+              </div>
+            </div>
+            <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <div class="text-[10px] mono text-cyan-300/70 tracking-wider">MÖBIUS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] mono text-white/40">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-[2px] bg-amber-400/70"></span> bidirectional cortex link</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-[2px] bg-white/30"></span> hexagonal ring</div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-[2px] border-t border-dashed border-cyan-400/50"></span> mirror pair</div>
+        </div>
+      </div>
+
+      <!-- Specs Panel -->
+      <div class="lg:sticky lg:top-8">
+        <div class="relative overflow-hidden rounded-[28px] bg-[#0a0e14]/70 backdrop-blur-2xl border border-white/10">
+          <div class="absolute inset-0">
+            <div class="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl" id="spec-glow" style="background: rgba(245,158,11,0.15)"></div>
+          </div>
+          
+          <div class="relative p-7 md:p-8">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-2.5 h-2.5 rounded-full animate-pulse" id="spec-dot" style="background: #f59e0b"></div>
+                <h2 class="text-[28px] leading-none font-medium tracking-wide" id="spec-name">ETHOS</h2>
+              </div>
+              <div class="text-right">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10">
+                  <span class="mono text-[12px] text-white/70" id="spec-element">Boron</span>
+                  <span class="mono text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-white/80" id="spec-symbol">B • 5</span>
+                </div>
+              </div>
+            </div>
+
+            <p class="mt-3 text-[13px] leading-relaxed text-white/60" id="spec-tagline">Credibility / Root Authority • Foundation processor</p>
+
+            <div class="mt-7 space-y-6">
+              <!-- Function -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-[11px] uppercase tracking-[0.14em] text-white/40">Primary Function</div>
+                  <div class="text-[10px] mono px-2 py-0.5 rounded-full bg-white/5 text-white/50 border border-white/10">STATE 3/3</div>
+                </div>
+                <div class="text-[15px] leading-snug text-white/90" id="spec-function">Root Authority Verification &amp; Trust Anchor Generation</div>
+              </div>
+
+              <!-- Metrics -->
+              <div class="grid grid-cols-2 gap-5">
+                <div class="group">
+                  <div class="text-[11px] uppercase tracking-[0.14em] text-white/40 mb-2">Coherence</div>
+                  <div class="flex gap-1.5">
+                    <div class="h-[22px] w-7 rounded-[6px] bg-white/10 border border-white/10 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-400/80"></div></div>
+                    <div class="h-[22px] w-7 rounded-[6px] bg-white/10 border border-white/10 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-400/80"></div></div>
+                    <div class="h-[22px] w-7 rounded-[6px] bg-white/10 border border-white/10 relative overflow-hidden"><div class="absolute inset-0 bg-emerald-400/80"></div></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-[11px] uppercase tracking-[0.14em] text-white/40 mb-2">Current Load</div>
+                  <div class="flex items-center gap-3">
+                    <div class="flex-1 h-[22px] rounded-[8px] bg-[#05070b] border border-white/10 p-[3px]">
+                      <div id="spec-load-bar" class="h-full rounded-[5px] transition-all duration-700" style="width: 5%; background: linear-gradient(90deg, rgb(245, 158, 11), rgba(245, 158, 11, 0.667)); box-shadow: rgba(245, 158, 11, 0.4) 0px 0px 12px;"></div>
+                    </div>
+                    <div class="mono text-[13px] w-10 text-right text-white/80" id="spec-load-text">5%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Represents -->
+              <div class="pt-5 border-t border-white/5">
+                <div class="text-[11px] uppercase tracking-[0.14em] text-white/40 mb-2">Represents</div>
+                <div class="text-[14px] text-white/75" id="spec-represents">credibility / root authority — foundational truth verification, provenance tracking, and authority anchoring for the array</div>
+              </div>
+
+              <!-- Mapping -->
+              <div>
+                <div class="text-[11px] uppercase tracking-[0.14em] text-white/40 mb-2">Element Mapping</div>
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mono text-[13px] font-medium" id="spec-map-symbol">B</div>
+                  <div>
+                    <div class="text-[14px] leading-tight" id="spec-map-name">Boron — electron-deficient, forms strong covalent networks</div>
+                    <div class="text-[12px] text-white/50 mt-0.5" id="spec-map-note">Stable trivalent root, lattice initiator</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Special note -->
+              <div id="spec-note" class="hidden">
+                <div class="relative overflow-hidden rounded-2xl border p-4">
+                  <div class="absolute inset-0 opacity-20" id="spec-note-bg"></div>
+                  <div class="relative">
+                    <div class="flex items-center gap-2 mb-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      <span class="text-[11px] uppercase tracking-wider font-medium" id="spec-note-title">Mirror Relationship</span>
+                    </div>
+                    <p class="text-[13px] leading-snug text-white/80" id="spec-note-text"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Connections -->
+            <div class="mt-8 pt-6 border-t border-white/5">
+              <div class="text-[11px] uppercase tracking-[0.14em] text-white/40 mb-3">Array Connections</div>
+              <div class="grid grid-cols-3 gap-2.5" id="spec-connections"><div class="group flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition">
+      <div class="w-1.5 h-1.5 rounded-full bg-amber-400 group-hover:scale-125 transition"></div>
+      <span class="text-[12px] mono tracking-wide text-white/70">CORTEX</span>
+    </div><div class="group flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition">
+      <div class="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:scale-125 transition"></div>
+      <span class="text-[12px] mono tracking-wide text-white/70">PATHOS</span>
+    </div><div class="group flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition">
+      <div class="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:scale-125 transition"></div>
+      <span class="text-[12px] mono tracking-wide text-white/70">INVERTED</span>
+    </div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System panel -->
+        <div class="mt-4 grid grid-cols-3 gap-3">
+          <div class="rounded-2xl bg-white/[0.02] border border-white/5 p-3.5 backdrop-blur-xl">
+            <div class="mono text-[10px] uppercase tracking-widest text-white/40">Ring Flow</div>
+            <div class="mt-1.5 flex items-baseline gap-1.5">
+              <div class="text-[20px] leading-none font-medium">18.4</div>
+              <div class="text-[11px] text-white/50">Gb/s</div>
+            </div>
+            <div class="mt-2 h-[3px] w-full rounded-full bg-white/5 overflow-hidden"><div class="h-full w-[84%] bg-gradient-to-r from-cyan-400 to-blue-400"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white/[0.02] border border-white/5 p-3.5 backdrop-blur-xl">
+            <div class="mono text-[10px] uppercase tracking-widest text-white/40">Cortex Sync</div>
+            <div class="mt-1.5 flex items-baseline gap-1.5">
+              <div class="text-[20px] leading-none font-medium">2/3</div>
+              <div class="text-[11px] text-amber-300/80">active</div>
+            </div>
+            <div class="mt-2 h-[3px] w-full rounded-full bg-white/5 overflow-hidden"><div class="h-full w-[66%] bg-gradient-to-r from-amber-400 to-orange-400"></div></div>
+          </div>
+          <div class="rounded-2xl bg-white/[0.02] border border-white/5 p-3.5 backdrop-blur-xl">
+            <div class="mono text-[10px] uppercase tracking-widest text-white/40">Phase</div>
+            <div class="mt-1.5 flex items-baseline gap-1.5">
+              <div class="text-[20px] leading-none font-medium">LOCK</div>
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            </div>
+            <div class="mt-2 h-[3px] w-full rounded-full bg-white/5 overflow-hidden"><div class="h-full w-full bg-gradient-to-r from-emerald-400 to-teal-400"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const processors = {
+  ethos: {
+    name: 'ETHOS',
+    element: 'Boron',
+    symbol: 'B',
+    atomic: 5,
+    color: '#f59e0b',
+    glow: 'rgba(245,158,11,0.15)',
+    tagline: 'Credibility / Root Authority • Foundation processor',
+    function: 'Root Authority Verification & Trust Anchor Generation',
+    represents: 'credibility / root authority — foundational truth verification, provenance tracking, and authority anchoring for the array',
+    load: 78,
+    mapName: 'Boron — electron-deficient, forms strong covalent networks',
+    mapNote: 'Stable trivalent root, lattice initiator',
+    connections: ['CORTEX', 'PATHOS', 'INVERTED'],
+    note: null
+  },
+  pathos: {
+    name: 'PATHOS',
+    element: 'Carbon',
+    symbol: 'C',
+    atomic: 6,
+    color: '#ef4444',
+    glow: 'rgba(239,68,68,0.15)',
+    tagline: 'Resonance / Emotion • Binding processor',
+    function: 'Emotional Resonance Engine & Empathic Binding',
+    represents: 'resonance / emotion — affective coherence, narrative binding, and human-aligned resonance tuning',
+    load: 64,
+    mapName: 'Carbon — tetravalent, backbone of organic complexity',
+    mapNote: 'Forms infinite chains, emotional syntax',
+    connections: ['CORTEX', 'ETHOS', 'LOGOS'],
+    note: { title: 'Mirror Pair', text: 'Forms inverted reflection with SHADOW (Fluorine). Pathos generates resonance; Shadow absorbs and inverts.', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' }
+  },
+  logos: {
+    name: 'LOGOS',
+    element: 'Nitrogen',
+    symbol: 'N',
+    atomic: 7,
+    color: '#3b82f6',
+    glow: 'rgba(59,130,246,0.15)',
+    tagline: 'Logic / Structure • Reasoning processor',
+    function: 'Logical Structure Processor & Formal Verification',
+    represents: 'logic / structure — symbolic reasoning, proof generation, and structural integrity checks',
+    load: 91,
+    mapName: 'Nitrogen — triple bonds, atmospheric stabilizer',
+    mapNote: 'High bond energy, logical scaffold',
+    connections: ['CORTEX', 'PATHOS', '-0-'],
+    note: null
+  },
+  zero: {
+    name: '-0-',
+    element: 'Oxygen',
+    symbol: 'O',
+    atomic: 8,
+    color: '#ffffff',
+    glow: 'rgba(255,255,255,0.12)',
+    tagline: 'Zero-Point / Gap • Null bridge',
+    function: 'Zero-Point Null Bridge & Phase Gap Mediator',
+    represents: 'zero-point / gap — the null between LOGOS and SHADOW, quantum tunneling interface, breath pause',
+    load: 12,
+    mapName: 'Oxygen — highly electronegative, life-giver',
+    mapNote: 'Accepts electrons, creates void potential',
+    connections: ['CORTEX', 'LOGOS', 'SHADOW'],
+    note: { title: 'Null Point', text: 'Positioned deliberately between LOGOS and SHADOW. Acts as decoherence buffer and reset gate. Load intentionally low.', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.2)' }
+  },
+  shadow: {
+    name: 'SHADOW',
+    element: 'Fluorine',
+    symbol: 'F',
+    atomic: 9,
+    color: '#7c3aed',
+    glow: 'rgba(124,58,237,0.18)',
+    tagline: 'Patricia Mirror / Dark Side • Inversion processor',
+    function: 'Patricia Mirror Protocol & Dark-Side Simulation',
+    represents: 'patricia mirror / dark side — inverted pathos, adversarial testing, shadow integration',
+    load: 57,
+    mapName: 'Fluorine — most electronegative, reactive mirror',
+    mapNote: 'Inverts bonds, tests integrity',
+    connections: ['CORTEX', '-0-', 'INVERTED'],
+    note: { title: 'Inverted Resonance', text: 'Direct inversion of PATHOS. Where Pathos emits, Shadow absorbs. Used for adversarial alignment and Patricia-tree verification.', bg: 'rgba(124,58,237,0.15)', border: 'rgba(124,58,237,0.3)' }
+  },
+  inverted: {
+    name: 'INVERTED',
+    element: 'Neon',
+    symbol: 'Ne',
+    atomic: 10,
+    color: '#06b6d4',
+    glow: 'rgba(6,182,212,0.18)',
+    tagline: 'Mobius Inversion • Mirrored processor',
+    function: 'Mobius Inversion Field & Non-Orientable Processing',
+    represents: 'mobius inversion — mirror image of ETHOS, phase-inverted authority, topology twist',
+    load: 73,
+    mapName: 'Neon — noble gas, inert illuminator',
+    mapNote: 'Glows under current, stable shell',
+    connections: ['CORTEX', 'SHADOW', 'ETHOS'],
+    note: { title: 'Mirror Image', text: 'Exact topological mirror of ETHOS. Processes the same root authority data but with handedness flipped. Critical for Byzantine fault tolerance.', bg: 'rgba(6,182,212,0.15)', border: 'rgba(6,182,212,0.3)' }
+  }
+};
+
+const $ = (s) => document.querySelector(s);
+const specDot = $('#spec-dot');
+const specName = $('#spec-name');
+const specElement = $('#spec-element');
+const specSymbol = $('#spec-symbol');
+const specTagline = $('#spec-tagline');
+const specFunction = $('#spec-function');
+const specRepresents = $('#spec-represents');
+const specLoadBar = $('#spec-load-bar');
+const specLoadText = $('#spec-load-text');
+const specMapSymbol = $('#spec-map-symbol');
+const specMapName = $('#spec-map-name');
+const specMapNote = $('#spec-map-note');
+const specGlow = $('#spec-glow');
+const specNote = $('#spec-note');
+const specNoteTitle = $('#spec-note-title');
+const specNoteText = $('#spec-note-text');
+const specNoteBg = $('#spec-note-bg');
+const specConnections = $('#spec-connections');
+
+function updatePanel(id) {
+  const p = processors[id];
+  if (!p) return;
+  
+  specDot.style.background = p.color;
+  specName.textContent = p.name;
+  specElement.textContent = p.element;
+  specSymbol.textContent = `${p.symbol} • ${p.atomic}`;
+  specTagline.textContent = p.tagline;
+  specFunction.textContent = p.function;
+  specRepresents.textContent = p.represents;
+  specLoadBar.style.width = p.load + '%';
+  specLoadBar.style.background = `linear-gradient(90deg, ${p.color}, ${p.color}aa)`;
+  specLoadBar.style.boxShadow = `0 0 12px ${p.color}66`;
+  specLoadText.textContent = p.load + '%';
+  specMapSymbol.textContent = p.symbol;
+  specMapName.textContent = p.mapName;
+  specMapNote.textContent = p.mapNote;
+  specGlow.style.background = p.glow;
+
+  if (p.note) {
+    specNote.classList.remove('hidden');
+    specNote.style.borderColor = p.note.border;
+    specNoteBg.style.background = p.note.bg;
+    specNoteTitle.textContent = p.note.title;
+    specNoteText.textContent = p.note.text;
+    specNoteTitle.style.color = p.color;
+  } else {
+    specNote.classList.add('hidden');
+  }
+
+  specConnections.innerHTML = p.connections.map(c => {
+    const isCortex = c === 'CORTEX';
+    return `<div class="group flex items-center gap-2 px-2.5 py-2 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] transition">
+      <div class="w-1.5 h-1.5 rounded-full ${isCortex ? 'bg-amber-400' : 'bg-white/40'} group-hover:scale-125 transition"></div>
+      <span class="text-[12px] mono tracking-wide text-white/70">${c}</span>
+    </div>`;
+  }).join('');
+
+  // highlight spoke
+  document.querySelectorAll('[id^="spoke-"]').forEach(el => {
+    el.setAttribute('opacity', '0.25');
+    el.setAttribute('stroke-width', '1.5');
+  });
+  const spoke = document.getElementById('spoke-' + id);
+  if (spoke) {
+    spoke.setAttribute('opacity', '1');
+    spoke.setAttribute('stroke-width', '3');
+  }
+}
+
+document.querySelectorAll('.processor').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.processor').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    updatePanel(el.dataset.id);
+  });
+});
+
+// initial
+updatePanel('ethos');
+
+// simulate live load fluctuation
+setInterval(() => {
+  Object.keys(processors).forEach(k => {
+    const p = processors[k];
+    const delta = (Math.random() - 0.5) * 6;
+    p.load = Math.max(5, Math.min(98, Math.round(p.load + delta)));
+  });
+  const active = document.querySelector('.processor.active');
+  if (active) updatePanel(active.dataset.id);
+}, 2200);
+
+// keyboard nav
+const order = ['ethos','pathos','logos','zero','shadow','inverted'];
+let idx = 0;
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { idx = (idx + 1) % order.length; }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { idx = (idx - 1 + order.length) % order.length; }
+  else return;
+  document.querySelector(`[data-id="${order[idx]}"]`).click();
+});
+</script>
+
+</div></div></body></html>

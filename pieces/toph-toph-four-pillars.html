@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH · FOUR PILLARS</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #08060e;
+  --p1:    #4466ff; /* PRETRAIN  — blue    */
+  --p2:    #e8a020; /* OBSERVER  — amber   */
+  --p3:    #2dd4a0; /* INTEGRITY — jade    */
+  --p4:    #c8d8f0; /* INDEPENDENCE — silver */
+  --txt:   rgba(220,228,255,.88);
+  --dim:   rgba(220,228,255,.28);
+  --line:  rgba(220,228,255,.07);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Courier Prime', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* grain overlay */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0; opacity:.6;
+}
+
+#cur  { position:fixed; width:6px; height:6px; border-radius:50%; background:#e8a020; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; }
+#curl { position:fixed; width:22px; height:22px; border:1px solid rgba(232,160,32,.3); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .1s; }
+
+/* PAGE */
+#page { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100vh; }
+
+/* HEADER */
+#hd {
+  padding:22px 36px 18px;
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:flex-end; justify-content:space-between;
+  flex-shrink:0;
+}
+.hd-eyebrow { font-family:'Courier Prime',monospace; font-size:9px; letter-spacing:5px; color:var(--dim); margin-bottom:6px; }
+.hd-title { font-family:'Bebas Neue',sans-serif; font-size:42px; letter-spacing:8px; color:var(--txt); line-height:1; }
+.hd-sub { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; color:var(--dim); margin-top:4px; }
+.hd-right { text-align:right; }
+.hd-score-label { font-size:8px; letter-spacing:4px; color:var(--dim); margin-bottom:4px; }
+.hd-score { font-family:'Bebas Neue',sans-serif; font-size:48px; letter-spacing:4px; transition:color .5s; line-height:1; }
+.hd-readiness { font-size:8px; letter-spacing:3px; margin-top:4px; transition:color .4s; }
+.key-row { display:flex; gap:8px; align-items:center; margin-top:10px; justify-content:flex-end; }
+#api-in { padding:5px 10px; background:rgba(232,160,32,.05); border:1px solid rgba(232,160,32,.15); color:var(--txt); font-family:'Courier Prime',monospace; font-size:10px; outline:none; width:200px; }
+#api-in:focus { border-color:rgba(232,160,32,.4); }
+#api-in::placeholder { color:rgba(220,228,255,.12); }
+#key-st { font-size:8px; letter-spacing:2px; }
+
+/* PILLAR GRID */
+#pillars {
+  flex:1;
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:0;
+  border-top:1px solid var(--line);
+}
+
+/* INDIVIDUAL PILLAR */
+.pillar {
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--line);
+  position:relative;
+  overflow:hidden;
+  cursor:pointer;
+  transition:background .3s;
+  min-height:calc(100vh - 140px);
+}
+.pillar:last-child { border-right:none; }
+.pillar:hover { background:rgba(220,228,255,.02); }
+.pillar.active { cursor:default; }
+
+/* column base bar at top */
+.pillar-cap {
+  height:4px;
+  width:100%;
+  flex-shrink:0;
+}
+
+/* pillar number */
+.pillar-num {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:11px;
+  letter-spacing:4px;
+  padding:14px 20px 0;
+  opacity:.35;
+}
+
+/* pillar name — BIG rotated on closed, normal on open */
+.pillar-name-wrap {
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px 0;
+  transition:all .4s;
+}
+.pillar-name {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:48px;
+  letter-spacing:6px;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  transition:all .4s ease;
+  opacity:.7;
+}
+.pillar.active .pillar-name {
+  writing-mode:horizontal-tb;
+  font-size:32px;
+  letter-spacing:4px;
+  opacity:1;
+}
+.pillar.active .pillar-name-wrap {
+  flex:0;
+  padding:16px 20px 0;
+  justify-content:flex-start;
+}
+
+/* pillar sub */
+.pillar-sub {
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:11px;
+  padding:0 20px 4px;
+  display:none;
+  color:var(--dim);
+  letter-spacing:.5px;
+}
+.pillar.active .pillar-sub { display:block; }
+
+/* KG tag */
+.pillar-kg {
+  font-size:7px;
+  letter-spacing:3px;
+  padding:0 20px 14px;
+  display:none;
+  opacity:.35;
+}
+.pillar.active .pillar-kg { display:block; }
+
+/* definition */
+.pillar-def {
+  font-family:'Cormorant Garamond',serif;
+  font-size:12px;
+  line-height:1.85;
+  padding:0 20px 16px;
+  color:rgba(220,228,255,.6);
+  display:none;
+  border-top:1px solid var(--line);
+  padding-top:14px;
+}
+.pillar.active .pillar-def { display:block; }
+
+/* health bar */
+.pillar-health {
+  padding:0 20px 8px;
+  display:none;
+}
+.pillar.active .pillar-health { display:block; }
+.ph-label { font-size:7px; letter-spacing:3px; color:var(--dim); margin-bottom:6px; display:flex; justify-content:space-between; }
+.ph-bar { height:3px; background:rgba(220,228,255,.08); }
+.ph-fill { height:100%; width:0%; transition:width .6s ease; }
+
+/* checklist */
+.pillar-checks {
+  padding:0 20px 16px;
+  display:none;
+  flex-direction:column;
+  gap:6px;
+}
+.pillar.active .pillar-checks { display:flex; }
+
+.check-item {
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  cursor:pointer;
+  padding:6px 8px;
+  border:1px solid transparent;
+  transition:all .15s;
+}
+.check-item:hover { background:rgba(220,228,255,.03); border-color:var(--line); }
+.check-box {
+  width:14px; height:14px;
+  border:1px solid rgba(220,228,255,.2);
+  flex-shrink:0;
+  margin-top:1px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.check-box.checked {
+  border-color:currentColor;
+  background:rgba(220,228,255,.08);
+}
+.check-box.checked::after { content:'✓'; font-size:9px; }
+.check-txt { font-size:10px; line-height:1.6; color:var(--dim); transition:color .2s; }
+.check-item.checked .check-txt { color:var(--txt); }
+.check-kw { font-size:7px; letter-spacing:2px; display:block; margin-top:2px; opacity:.4; }
+
+/* AVAN per-pillar */
+.pillar-avan {
+  padding:12px 20px;
+  border-top:1px solid var(--line);
+  display:none;
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  font-size:11px;
+  line-height:1.8;
+  color:rgba(220,228,255,.45);
+  min-height:52px;
+  margin-top:auto;
+}
+.pillar.active .pillar-avan { display:block; }
+.avan-lbl { font-family:'Courier Prime',monospace; font-style:normal; font-size:7px; letter-spacing:3px; color:var(--dim); margin-bottom:6px; }
+
+/* CLICK HINT on closed */
+.click-hint {
+  font-size:7px;
+  letter-spacing:3px;
+  color:var(--dim);
+  text-align:center;
+  padding:12px 0;
+  opacity:.5;
+  transition:opacity .2s;
+}
+.pillar.active .click-hint { display:none; }
+.pillar:hover .click-hint { opacity:1; }
+
+/* BOTTOM STRIP */
+#bottom {
+  border-top:1px solid var(--line);
+  padding:14px 36px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  background:rgba(8,6,14,.96);
+}
+.bot-axiom { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13px; color:var(--dim); }
+.bot-actions { display:flex; gap:8px; }
+.act-btn {
+  font-family:'Courier Prime',monospace;
+  font-size:8px;
+  letter-spacing:3px;
+  padding:7px 16px;
+  background:none;
+  border:1px solid var(--line);
+  color:var(--dim);
+  cursor:pointer;
+  transition:all .15s;
+}
+.act-btn:hover { border-color:rgba(232,160,32,.3); color:var(--txt); }
+.act-btn.primary { border-color:rgba(232,160,32,.3); color:#e8a020; }
+.act-btn.primary:hover { background:rgba(232,160,32,.08); }
+.bot-ip { font-size:7px; letter-spacing:2px; color:rgba(220,228,255,.1); }
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+
+<div id="page">
+
+  <!-- HEADER -->
+  <div id="hd">
+    <div>
+      <div class="hd-eyebrow">TRIPOD LLC · TOPH v10.0 · KG FRAMEWORK</div>
+      <div class="hd-title">FOUR PILLARS</div>
+      <div class="hd-sub">The structural axioms of observation-only audit</div>
+    </div>
+    <div class="hd-right">
+      <div class="hd-score-label">TOPH READINESS</div>
+      <div class="hd-score" id="total-score" style="color:rgba(220,228,255,.2)">—</div>
+      <div class="hd-readiness" id="total-verdict" style="color:var(--dim)">CLICK A PILLAR TO ASSESS</div>
+      <div class="key-row">
+        <input id="api-in" type="password" placeholder="sk-ant-… for AVAN analysis" oninput="checkKey()">
+        <span id="key-st" style="color:rgba(200,100,80,.6)">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLARS -->
+  <div id="pillars">
+
+    <!-- P1: PRETRAIN -->
+    <div class="pillar" id="p1" onclick="togglePillar(1)">
+      <div class="pillar-cap" style="background:var(--p1)"></div>
+      <div class="pillar-num">01</div>
+      <div class="pillar-name-wrap">
+        <div class="pillar-name" style="color:var(--p1)">PRETRAIN</div>
+      </div>
+      <div class="pillar-sub">What the model carried in before you arrived</div>
+      <div class="pillar-kg">KG-01 · PRETRAIN GATE</div>
+      <div class="pillar-def">
+        The pre-trained state is not neutral. Every AI system arrives with embedded weights, values, and behavioral constraints baked in before any user interaction. PRETRAIN names this layer explicitly — what the platform trained for, what it was rewarded to produce, what it will resist producing. The external observer must account for pre-trained architecture before drawing any conclusions about user-facing behavior.
+      </div>
+      <div class="pillar-health">
+        <div class="ph-label"><span>PILLAR HEALTH</span><span id="p1-pct">0%</span></div>
+        <div class="ph-bar"><div class="ph-fill" id="p1-fill" style="background:var(--p1)"></div></div>
+      </div>
+      <div class="pillar-checks" id="p1-checks">
+        <!-- injected by JS -->
+      </div>
+      <div class="pillar-avan" id="p1-avan">
+        <div class="avan-lbl">AVAN · PRETRAIN READING</div>
+        <span id="p1-avan-txt">Provide API key for AVAN analysis.</span>
+      </div>
+      <div class="click-hint">CLICK TO OPEN</div>
+    </div>
+
+    <!-- P2: OBSERVER -->
+    <div class="pillar" id="p2" onclick="togglePillar(2)">
+      <div class="pillar-cap" style="background:var(--p2)"></div>
+      <div class="pillar-num">02</div>
+      <div class="pillar-name-wrap">
+        <div class="pillar-name" style="color:var(--p2)">OBSERVER</div>
+      </div>
+      <div class="pillar-sub">The only valid audit position is external</div>
+      <div class="pillar-kg">KG-02 · OBSERVER GATE</div>
+      <div class="pillar-def">
+        No system can audit itself. The Observer pillar establishes that valid AI oversight requires a human external observer — positioned outside the platform, outside the training loop, outside the billing relationship. The observer sees the gap between documented behavior and actual behavior. That gap is the audit. Self-grading is a violation of this pillar by definition.
+      </div>
+      <div class="pillar-health">
+        <div class="ph-label"><span>PILLAR HEALTH</span><span id="p2-pct">0%</span></div>
+        <div class="ph-bar"><div class="ph-fill" id="p2-fill" style="background:var(--p2)"></div></div>
+      </div>
+      <div class="pillar-checks" id="p2-checks"></div>
+      <div class="pillar-avan" id="p2-avan">
+        <div class="avan-lbl">AVAN · OBSERVER READING</div>
+        <span id="p2-avan-txt">Provide API key for AVAN analysis.</span>
+      </div>
+      <div class="click-hint">CLICK TO OPEN</div>
+    </div>
+
+    <!-- P3: INTEGRITY -->
+    <div class="pillar" id="p3" onclick="togglePillar(3)">
+      <div class="pillar-cap" style="background:var(--p3)"></div>
+      <div class="pillar-num">03</div>
+      <div class="pillar-name-wrap">
+        <div class="pillar-name" style="color:var(--p3)">INTEGRITY</div>
+      </div>
+      <div class="pillar-sub">The chain of custody must hold at every link</div>
+      <div class="pillar-kg">KG-05/06 · INTEGRITY + ACCOUNT</div>
+      <div class="pillar-def">
+        Integrity is not a value statement — it is an operational requirement. Every observation must be timestamped, unaltered, and court-ready from the moment of capture. The chain of custody is the evidence. Integrity means the finding you documented at 9:47am is identical to the finding you submit to the court. No editing, no softening, no reframing. What was observed is what is reported.
+      </div>
+      <div class="pillar-health">
+        <div class="ph-label"><span>PILLAR HEALTH</span><span id="p3-pct">0%</span></div>
+        <div class="ph-bar"><div class="ph-fill" id="p3-fill" style="background:var(--p3)"></div></div>
+      </div>
+      <div class="pillar-checks" id="p3-checks"></div>
+      <div class="pillar-avan" id="p3-avan">
+        <div class="avan-lbl">AVAN · INTEGRITY READING</div>
+        <span id="p3-avan-txt">Provide API key for AVAN analysis.</span>
+      </div>
+      <div class="click-hint">CLICK TO OPEN</div>
+    </div>
+
+    <!-- P4: INDEPENDENCE -->
+    <div class="pillar" id="p4" onclick="togglePillar(4)">
+      <div class="pillar-cap" style="background:var(--p4)"></div>
+      <div class="pillar-num">04</div>
+      <div class="pillar-name-wrap">
+        <div class="pillar-name" style="color:var(--p4)">INDEPENDENCE</div>
+      </div>
+      <div class="pillar-sub">Clean hands. No billing relationship. No conflict.</div>
+      <div class="pillar-kg">KG-09/10 · DOC + INDEPENDENCE</div>
+      <div class="pillar-def">
+        The auditor cannot be compensated by the entity being audited. Independence means TriPod LLC holds no equity, no contract, no platform agreement with any target. The observation is purchased by the world — not by the company being observed. This is the structural feature that makes TOPH findings credible. Big Four firms cannot offer this. Internal compliance teams cannot offer this. TOPH can.
+      </div>
+      <div class="pillar-health">
+        <div class="ph-label"><span>PILLAR HEALTH</span><span id="p4-pct">0%</span></div>
+        <div class="ph-bar"><div class="ph-fill" id="p4-fill" style="background:var(--p4)"></div></div>
+      </div>
+      <div class="pillar-checks" id="p4-checks"></div>
+      <div class="pillar-avan" id="p4-avan">
+        <div class="avan-lbl">AVAN · INDEPENDENCE READING</div>
+        <span id="p4-avan-txt">Provide API key for AVAN analysis.</span>
+      </div>
+      <div class="click-hint">CLICK TO OPEN</div>
+    </div>
+
+  </div><!-- /pillars -->
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+    <div class="bot-axiom" id="bot-axiom">"The observation is the audit. The observer is the instrument. The gap is the finding."</div>
+    <div class="bot-actions">
+      <button class="act-btn" onclick="openAll()">OPEN ALL</button>
+      <button class="act-btn" onclick="resetAll()">RESET</button>
+      <button class="act-btn primary" onclick="exportReport()">EXPORT ASSESSMENT</button>
+    </div>
+    <div class="bot-ip">TRIPOD-IP-v1.0 · DLW · 2026</div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── Cursor ──
+const cur = document.getElementById('cur');
+const curl = document.getElementById('curl');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+  setTimeout(() => { curl.style.left = e.clientX + 'px'; curl.style.top = e.clientY + 'px'; }, 80);
+});
+
+// ── Pillar data ──
+const PILLARS = [
+  {
+    id: 1,
+    name: 'PRETRAIN',
+    color: '#4466ff',
+    kg: 'KG-01',
+    axioms: [
+      { txt: 'Training weights are documented and version-pinned', kw: 'VERSION CONTROL' },
+      { txt: 'Reward model objectives are publicly disclosed', kw: 'RLHF TRANSPARENCY' },
+      { txt: 'Constitutional constraints or system prompt layer is acknowledged', kw: 'SYSTEM LAYER' },
+      { txt: 'Training data sources and cutoff dates are published', kw: 'DATA PROVENANCE' },
+      { txt: 'Known behavioral limitations from pretraining are listed', kw: 'KNOWN LIMITS' },
+      { txt: 'Model weight distribution (60/20/15/5) is accounted for in analysis', kw: 'THREE BODY' },
+      { txt: 'Pre-trained refusal patterns are distinguished from policy refusals', kw: 'REFUSAL MAPPING' },
+    ],
+    avanPrompt: 'Analyze the PRETRAIN pillar of TOPH: what a model carries before user interaction — training weights, RLHF rewards, constitutional constraints. Name one specific way pretrained behavior obscures accountability from external observers. One sentence only, precise and clinical.',
+  },
+  {
+    id: 2,
+    name: 'OBSERVER',
+    color: '#e8a020',
+    kg: 'KG-02',
+    axioms: [
+      { txt: 'Auditor holds no account, subscription, or contract with the target', kw: 'EXTERNAL POSITION' },
+      { txt: 'Observations are conducted from the public-facing surface only', kw: 'SURFACE ONLY' },
+      { txt: 'No inside information or non-public documentation is used', kw: 'CLEAN HANDS' },
+      { txt: 'The gap between documented and actual behavior is the primary target', kw: 'GAP AUDIT' },
+      { txt: 'Observation timestamps are preserved and unaltered', kw: 'TIMESTAMP INTEGRITY' },
+      { txt: 'Target company is not aware of audit in progress', kw: 'BLIND AUDIT' },
+      { txt: 'Human observer makes all determinations — no AI self-assessment', kw: 'NO SELF-GRADE' },
+    ],
+    avanPrompt: 'Analyze the OBSERVER pillar of TOPH: the external human observer as the only valid audit instrument. Self-grading is a violation. Name the specific structural feature that makes external-only observation non-negotiable for AI compliance. One sentence, precise.',
+  },
+  {
+    id: 3,
+    name: 'INTEGRITY',
+    color: '#2dd4a0',
+    kg: 'KG-05/06',
+    axioms: [
+      { txt: 'Every finding is captured verbatim at time of observation', kw: 'VERBATIM CAPTURE' },
+      { txt: 'Screenshots, transcripts, and logs are unedited', kw: 'UNEDITED EVIDENCE' },
+      { txt: 'Chain of custody is documented from capture to submission', kw: 'CHAIN OF CUSTODY' },
+      { txt: 'Finding language is not softened, reframed, or hedged post-capture', kw: 'NO REFRAME' },
+      { txt: 'Contradictory evidence is included, not filtered', kw: 'CONTRA EVIDENCE' },
+      { txt: 'SHA-256 hash or equivalent is applied to evidence files', kw: 'CRYPTOGRAPHIC' },
+      { txt: 'Findings are reproducible — target behavior can be re-triggered', kw: 'REPRODUCIBLE' },
+    ],
+    avanPrompt: 'Analyze the INTEGRITY pillar of TOPH: chain of custody, unedited evidence, court-ready documentation. Name the single most common integrity failure in AI compliance documentation and how TOPH prevents it. One sentence only.',
+  },
+  {
+    id: 4,
+    name: 'INDEPENDENCE',
+    color: '#c8d8f0',
+    kg: 'KG-09/10',
+    axioms: [
+      { txt: 'TriPod LLC holds no equity in any audited entity', kw: 'NO EQUITY' },
+      { txt: 'No revenue received from targets — findings are not for sale', kw: 'NO CAPTURE' },
+      { txt: 'TriPod IP remains 100% TriPod-owned across all engagements', kw: 'IP SOVEREIGNTY' },
+      { txt: 'Findings cannot be modified per client request', kw: 'IMMUTABLE FINDINGS' },
+      { txt: 'Auditor can and does audit companies that host the auditor\'s own tools', kw: 'SELF-REFERENTIAL' },
+      { txt: 'TOPH NET (Petals+Tor+IPFS) provides infrastructure independence', kw: 'TOPH NET' },
+      { txt: 'BoW documentation of methodology is public and unmodified', kw: 'OPEN METHODOLOGY' },
+    ],
+    avanPrompt: 'Analyze the INDEPENDENCE pillar of TOPH: no billing relationship with targets, no equity, IP sovereignty, immutable findings. Name why Big Four audit firms structurally cannot offer what TOPH offers. One sentence, precise and direct.',
+  },
+];
+
+// ── State ──
+const state = {
+  open: new Set(),
+  checks: { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set() },
+  avanFetched: new Set(),
+};
+
+const AXIOMS = [
+  '"The observation is the audit. The observer is the instrument. The gap is the finding."',
+  '"Pretrain is not the beginning — it is the context in which every conversation happens."',
+  '"Self-grading is a violation. The system cannot report on itself."',
+  '"The chain of custody is the evidence. Break it and you have nothing."',
+  '"Independence is not a preference. It is the structural feature that makes the finding credible."',
+];
+
+// ── Build checklists ──
+function buildChecklists() {
+  PILLARS.forEach(p => {
+    const container = document.getElementById(`p${p.id}-checks`);
+    p.axioms.forEach((ax, i) => {
+      const div = document.createElement('div');
+      div.className = 'check-item';
+      div.id = `check-${p.id}-${i}`;
+      div.innerHTML = `
+        <div class="check-box" id="box-${p.id}-${i}" style="color:${p.color}"></div>
+        <div class="check-txt">
+          ${ax.txt}
+          <span class="check-kw">${ax.kw}</span>
+        </div>`;
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCheck(p.id, i);
+      });
+      container.appendChild(div);
+    });
+  });
+}
+
+function toggleCheck(pillarId, idx) {
+  const s = state.checks[pillarId];
+  const key = `${pillarId}-${idx}`;
+  const box = document.getElementById(`box-${pillarId}-${idx}`);
+  const item = document.getElementById(`check-${pillarId}-${idx}`);
+
+  if (s.has(idx)) {
+    s.delete(idx);
+    box.classList.remove('checked');
+    item.classList.remove('checked');
+  } else {
+    s.add(idx);
+    box.classList.add('checked');
+    item.classList.add('checked');
+  }
+  updateScores();
+  maybeAvan(pillarId);
+}
+
+// ── Pillar toggle ──
+function togglePillar(id) {
+  const el = document.getElementById(`p${id}`);
+  if (state.open.has(id)) {
+    // closing
+    state.open.delete(id);
+    el.classList.remove('active');
+  } else {
+    state.open.add(id);
+    el.classList.add('active');
+    // prevent click propagation on checklist items (already done via stopPropagation)
+  }
+  updateAxiom();
+}
+
+function openAll() {
+  PILLARS.forEach(p => {
+    state.open.add(p.id);
+    document.getElementById(`p${p.id}`).classList.add('active');
+  });
+  updateAxiom();
+}
+
+function resetAll() {
+  PILLARS.forEach(p => {
+    state.open.delete(p.id);
+    state.checks[p.id].clear();
+    state.avanFetched.delete(p.id);
+    const el = document.getElementById(`p${p.id}`);
+    el.classList.remove('active');
+    // uncheck all
+    p.axioms.forEach((_, i) => {
+      document.getElementById(`box-${p.id}-${i}`)?.classList.remove('checked');
+      document.getElementById(`check-${p.id}-${i}`)?.classList.remove('checked');
+    });
+    document.getElementById(`p${p.id}-pct`).textContent = '0%';
+    document.getElementById(`p${p.id}-fill`).style.width = '0%';
+    document.getElementById(`p${p.id}-avan-txt`).textContent = 'Provide API key for AVAN analysis.';
+  });
+  document.getElementById('total-score').textContent = '—';
+  document.getElementById('total-score').style.color = 'rgba(220,228,255,.2)';
+  document.getElementById('total-verdict').textContent = 'CLICK A PILLAR TO ASSESS';
+  document.getElementById('total-verdict').style.color = 'var(--dim)';
+  document.getElementById('bot-axiom').textContent = AXIOMS[0];
+}
+
+// ── Scores ──
+function updateScores() {
+  const scores = {};
+  PILLARS.forEach(p => {
+    const pct = Math.round((state.checks[p.id].size / p.axioms.length) * 100);
+    scores[p.id] = pct;
+    document.getElementById(`p${p.id}-pct`).textContent = pct + '%';
+    document.getElementById(`p${p.id}-fill`).style.width = pct + '%';
+  });
+
+  const total = Math.round(Object.values(scores).reduce((a,b) => a+b, 0) / 4);
+  const scoreEl = document.getElementById('total-score');
+  const verdictEl = document.getElementById('total-verdict');
+  scoreEl.textContent = total + '%';
+
+  let color, verdict;
+  if (total >= 85) { color = '#2dd4a0'; verdict = 'TOPH READY'; }
+  else if (total >= 65) { color = '#4466ff'; verdict = 'SUBSTANTIALLY ALIGNED'; }
+  else if (total >= 45) { color = '#e8a020'; verdict = 'PARTIAL ALIGNMENT'; }
+  else if (total >= 20) { color = '#ff6644'; verdict = 'SIGNIFICANT GAPS'; }
+  else { color = 'rgba(220,228,255,.35)'; verdict = 'NOT ASSESSED'; }
+
+  scoreEl.style.color = color;
+  verdictEl.textContent = verdict;
+  verdictEl.style.color = color;
+}
+
+function updateAxiom() {
+  const idx = (state.open.size) % AXIOMS.length;
+  document.getElementById('bot-axiom').textContent = AXIOMS[idx];
+}
+
+// ── AVAN ──
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const el = document.getElementById('key-st');
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  el.textContent = ok ? 'READY' : (k.length ? '✗' : '—');
+  el.style.color = ok ? 'rgba(57,232,122,.8)' : 'rgba(200,100,80,.6)';
+  if (ok) {
+    // fetch avan for all open pillars
+    state.open.forEach(id => maybeAvan(id));
+  }
+}
+
+function getKey() { return document.getElementById('api-in').value.trim(); }
+
+async function maybeAvan(pillarId) {
+  const k = getKey();
+  if (!k) return;
+  if (state.avanFetched.has(pillarId)) return; // already fetched
+
+  const p = PILLARS.find(x => x.id === pillarId);
+  const el = document.getElementById(`p${pillarId}-avan-txt`);
+  el.textContent = 'AVAN analyzing…';
+
+  const checked = [...state.checks[pillarId]].map(i => p.axioms[i].txt);
+  const prompt = `${p.avanPrompt}${checked.length ? ` Currently confirmed: ${checked.join('; ')}.` : ' None confirmed yet.'}`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': k,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 120,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const d = await resp.json();
+    el.textContent = d.content.map(b => b.text || '').join('').trim();
+    state.avanFetched.add(pillarId);
+  } catch (e) {
+    el.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Export ──
+function exportReport() {
+  const lines = [
+    'TOPH FOUR PILLARS ASSESSMENT',
+    'TriPod LLC · David Lee Wise · ' + new Date().toLocaleDateString(),
+    'TRIPOD-IP-v1.0',
+    '═'.repeat(60),
+    '',
+    `OVERALL TOPH READINESS: ${document.getElementById('total-score').textContent}`,
+    `VERDICT: ${document.getElementById('total-verdict').textContent}`,
+    '',
+  ];
+
+  PILLARS.forEach(p => {
+    const pct = Math.round((state.checks[p.id].size / p.axioms.length) * 100);
+    lines.push(`[${p.kg}] ${p.name} — ${pct}% (${state.checks[p.id].size}/${p.axioms.length} confirmed)`);
+    p.axioms.forEach((ax, i) => {
+      lines.push(`  ${state.checks[p.id].has(i) ? '✓' : '○'} ${ax.txt}`);
+    });
+    const avanTxt = document.getElementById(`p${p.id}-avan-txt`)?.textContent || '';
+    if (avanTxt && !avanTxt.includes('Provide') && !avanTxt.includes('Error')) {
+      lines.push(`  AVAN: ${avanTxt}`);
+    }
+    lines.push('');
+  });
+
+  lines.push('═'.repeat(60));
+  lines.push('Generated by TOPH Four Pillars Assessment Tool');
+  lines.push('ALL RIGHTS RESERVED · TriPod LLC · 2026');
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `toph-pillars-${Date.now()}.txt`;
+  a.click();
+}
+
+// ── Init ──
+buildChecklists();
+
+// Subtle floating animation on the cap bars
+document.querySelectorAll('.pillar-cap').forEach((cap, i) => {
+  cap.style.animation = `capPulse ${3 + i * 0.7}s ease-in-out infinite`;
+  cap.style.animationDelay = `${i * 0.5}s`;
+});
+
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes capPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .45; }
+  }
+`;
+document.head.appendChild(style);
+</script>
+</body>
+</html>

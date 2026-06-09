@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH PHASE 0 | Split Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+  :root {
+    --dk:#041204; --dk2:#0a1f0a;
+    --neon:#cc44ff; --green:#00ff88; --cyan:#00ddff; --gold:#ffd700; --red:#ff4444;
+    --white:#e8e8e8; --gray:#666; --mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--dk);color:var(--white);font-family:var(--mono);min-height:100vh;padding:16px;}
+  .container{max-width:800px;margin:0 auto;}
+  .header{text-align:center;padding:20px 0 16px;border-bottom:1px solid rgba(204,68,255,0.3);margin-bottom:24px;}
+  .header h1{font-size:20px;color:var(--neon);letter-spacing:4px;}
+  .header .sub{font-size:10px;color:var(--gray);letter-spacing:2px;margin-top:4px;}
+
+  .section{background:var(--dk2);border-radius:8px;padding:24px;margin-bottom:20px;border:2px solid;}
+  .section.laptop{border-color:rgba(0,221,255,0.4);}
+  .section.desktop{border-color:rgba(0,255,136,0.4);}
+  .section h2{font-size:16px;letter-spacing:3px;margin-bottom:4px;}
+  .section.laptop h2{color:var(--cyan);}
+  .section.desktop h2{color:var(--green);}
+  .section .tag{font-size:10px;letter-spacing:2px;margin-bottom:16px;display:block;}
+  .section.laptop .tag{color:rgba(0,221,255,0.5);}
+  .section.desktop .tag{color:rgba(0,255,136,0.5);}
+
+  .task{display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .task:last-child{border-bottom:none;}
+  .task input[type="checkbox"]{
+    appearance:none;-webkit-appearance:none;width:22px;height:22px;min-width:22px;
+    border:2px solid var(--neon);border-radius:4px;background:transparent;
+    cursor:pointer;margin-top:2px;position:relative;transition:all 0.2s;
+  }
+  .task input[type="checkbox"]:checked{background:var(--neon);border-color:var(--neon);}
+  .task input[type="checkbox"]:checked::after{
+    content:'✓';position:absolute;top:-1px;left:3px;color:#000;font-size:14px;font-weight:700;
+  }
+  .task input[type="checkbox"]:checked ~ .task-content{opacity:0.4;text-decoration:line-through;}
+  .task-content{flex:1;}
+  .task-content .title{font-size:13px;font-weight:600;margin-bottom:4px;}
+  .task-content .desc{font-size:11px;color:#aaa;line-height:1.7;}
+  .task-content a{color:var(--gold);text-decoration:none;font-weight:600;word-break:break-all;}
+  .task-content a:hover{text-decoration:underline;color:#ffe44d;}
+  .task-content .cmd{
+    display:block;background:rgba(0,0,0,0.4);border:1px solid rgba(204,68,255,0.15);
+    border-radius:4px;padding:8px 10px;margin:8px 0;font-size:11px;color:var(--green);
+    white-space:pre-wrap;word-break:break-all;
+  }
+  .task-content .warn{color:var(--red);font-weight:600;}
+
+  .divider{text-align:center;padding:16px;font-size:12px;color:var(--gold);letter-spacing:3px;}
+
+  .note{background:rgba(204,68,255,0.06);border:1px solid rgba(204,68,255,0.2);border-radius:6px;padding:14px;margin:16px 0;font-size:11px;line-height:1.8;color:#bbb;}
+  .note strong{color:var(--neon);}
+
+  .footer{text-align:center;padding:20px;font-size:10px;color:var(--gray);border-top:1px solid rgba(204,68,255,0.15);margin-top:20px;}
+  .footer span{color:var(--neon);}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>TOPH PHASE 0</h1>
+    <div class="sub">SPLIT CHECKLIST &bull; LAPTOP FIRST &bull; THEN DESKTOP</div>
+  </div>
+
+  <!-- ============ LAPTOP ============ -->
+  <div class="section laptop">
+    <h2>☐ PART 1: LAPTOP</h2>
+    <span class="tag">ALIENWARE LAPTOP &bull; RTX 4050 &bull; 6GB &bull; DO THIS FIRST</span>
+
+    <div class="task">
+      <input type="checkbox" id="l1">
+      <label class="task-content" for="l1">
+        <div class="title">1. Get your laptop's IP address</div>
+        <div class="desc">Open Command Prompt. Run:
+          <span class="cmd">ipconfig</span>
+          Find <strong>IPv4 Address</strong> under your active adapter. Write it down. You'll need it on the desktop later.
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="l2">
+      <label class="task-content" for="l2">
+        <div class="title">2. Download llama.cpp (CUDA build for Windows)</div>
+        <div class="desc">
+          Go to:<br>
+          <a href="https://github.com/ggerganov/llama.cpp/releases" target="_blank">https://github.com/ggerganov/llama.cpp/releases</a><br><br>
+          Look for the latest release. Download the file named something like:<br>
+          <strong>llama-b____-bin-win-cuda-cu12.4-x64.zip</strong><br><br>
+          Your laptop has CUDA 13.0 / Driver 581.95. The cu12.4 build should work (backward compatible). If it doesn't, grab the <strong>Vulkan</strong> build instead as fallback:<br>
+          <strong>llama-b____-bin-win-vulkan-x64.zip</strong>
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="l3">
+      <label class="task-content" for="l3">
+        <div class="title">3. Extract to C:\llama</div>
+        <div class="desc">
+          Create the folder and extract:
+          <span class="cmd">mkdir C:\llama</span>
+          Extract the ZIP contents into <strong>C:\llama</strong><br>
+          Verify <strong>rpc-server.exe</strong> exists in the folder. That's the only file that matters on this machine.
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="l4">
+      <label class="task-content" for="l4">
+        <div class="title">4. Open firewall port 50052</div>
+        <div class="desc">
+          Open Command Prompt <span class="warn">as Administrator</span> (right-click → Run as administrator). Run:
+          <span class="cmd">netsh advfirewall firewall add rule name="llama-rpc" dir=in action=allow protocol=TCP localport=50052</span>
+          This lets the desktop connect to the laptop over your home network. Only affects local network, not exposed to internet.
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="l5">
+      <label class="task-content" for="l5">
+        <div class="title">5. Start the RPC server</div>
+        <div class="desc">
+          Open a regular Command Prompt. Run:
+          <span class="cmd">cd C:\llama
+rpc-server.exe --host 0.0.0.0 --port 50052</span>
+          You should see:<br>
+          <strong style="color:#00ff88;">main: server is listening on 0.0.0.0:50052</strong><br><br>
+          <span class="warn">Leave this window open. Don't close it.</span><br>
+          The laptop is now a remote GPU waiting for the desktop to connect.
+        </div>
+      </label>
+    </div>
+
+    <div class="note">
+      <strong>LAPTOP IS DONE.</strong> No model download needed. No Python. No Hugging Face account. Just llama.cpp extracted, firewall opened, RPC server running. Walk to the desktop.
+    </div>
+  </div>
+
+  <div class="divider">▼ &nbsp; MOVE TO DESKTOP &nbsp; ▼</div>
+
+  <!-- ============ DESKTOP ============ -->
+  <div class="section desktop">
+    <h2>☐ PART 2: DESKTOP</h2>
+    <span class="tag">ALIENWARE AURORA &bull; RTX 5070 &bull; 9GB &bull; DO THIS AFTER LAPTOP IS RUNNING</span>
+
+    <div class="task">
+      <input type="checkbox" id="d1">
+      <label class="task-content" for="d1">
+        <div class="title">1. Get your desktop's IP address</div>
+        <div class="desc">Open Command Prompt. Run:
+          <span class="cmd">ipconfig</span>
+          Write down the <strong>IPv4 Address</strong>. You'll also need the laptop IP you wrote down earlier.
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d2">
+      <label class="task-content" for="d2">
+        <div class="title">2. Verify you can reach the laptop</div>
+        <div class="desc">
+          <span class="cmd">ping LAPTOP_IP_HERE</span>
+          Replace with the actual IP you wrote down from the laptop. If you get replies, they're connected. If "Request timed out" — check that both machines are on the same WiFi/router.
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d3">
+      <label class="task-content" for="d3">
+        <div class="title">3. Download llama.cpp (same CUDA build)</div>
+        <div class="desc">
+          Same file as laptop:<br>
+          <a href="https://github.com/ggerganov/llama.cpp/releases" target="_blank">https://github.com/ggerganov/llama.cpp/releases</a><br><br>
+          Download the same <strong>cuda-cu12.4-x64.zip</strong> (or Vulkan). Extract to <strong>C:\llama</strong>
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d4">
+      <label class="task-content" for="d4">
+        <div class="title">4. Download the model</div>
+        <div class="desc">
+          Go to:<br>
+          <a href="https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF" target="_blank">https://huggingface.co/bartowski/Meta-Llama-3.1-8B-Instruct-GGUF</a><br><br>
+          Scroll down to find: <strong>Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf</strong> (~4.92 GB)<br>
+          Click the filename to download. Save to: <strong>C:\llama\models\</strong><br><br>
+          Create the models folder first if needed:
+          <span class="cmd">mkdir C:\llama\models</span>
+          <br>If it asks for a Hugging Face login, create a free account:<br>
+          <a href="https://huggingface.co/join" target="_blank">https://huggingface.co/join</a>
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d5">
+      <label class="task-content" for="d5">
+        <div class="title">5. Start distributed inference</div>
+        <div class="desc">
+          This is the moment. Open Command Prompt. Run:
+          <span class="cmd">cd C:\llama
+llama-server.exe --model C:\llama\models\Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf --host 0.0.0.0 --port 8080 --n-gpu-layers 33 --rpc LAPTOP_IP_HERE:50052 --ctx-size 4096 --chat-template llama3</span>
+          <span class="warn">Replace LAPTOP_IP_HERE with your laptop's actual IP address.</span><br><br>
+          What happens:<br>
+          → Desktop loads the model<br>
+          → Detects laptop RPC server as remote GPU<br>
+          → Splits layers across BOTH GPUs<br>
+          → RTX 5070 takes majority<br>
+          → RTX 4050 takes the rest<br>
+          → Web server starts on port 8080
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d6">
+      <label class="task-content" for="d6">
+        <div class="title">6. Open the chat</div>
+        <div class="desc">
+          Open a browser on the desktop:
+          <span class="cmd">http://localhost:8080</span>
+          Type a prompt. Hit enter. Watch it run.<br><br>
+          Or from the laptop browser (while RPC is still running):
+          <span class="cmd">http://DESKTOP_IP_HERE:8080</span>
+        </div>
+      </label>
+    </div>
+
+    <div class="task">
+      <input type="checkbox" id="d7">
+      <label class="task-content" for="d7">
+        <div class="title">7. Verify both GPUs are working</div>
+        <div class="desc">
+          While it's generating a response, run on BOTH machines:
+          <span class="cmd">nvidia-smi</span>
+          <strong style="color:#00ff88;">Desktop RTX 5070: VRAM in use ✓</strong><br>
+          <strong style="color:#00ddff;">Laptop RTX 4050: VRAM in use ✓</strong><br><br>
+          Both showing memory usage = distributed inference is live.<br>
+          <strong style="color:#ffd700;">Phase 0 complete. Two machines. One model. No cloud. No kill switch.</strong>
+        </div>
+      </label>
+    </div>
+
+    <div class="note">
+      <strong>DESKTOP IS DONE.</strong> You now have a distributed AI running on hardware you own, on internet you pay for, with a model that's free and open. No API key. No subscription. No platform. Nobody can turn this off except you.
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>TRIPOD LLC</span> &bull; TOPH PHASE 0 &bull; February 12, 2026<br>
+    <span>Architecture beats policy. Every time.</span>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<!-- saved from url=(0105)https://embed.fbsbx.com/playables/view/1229382302328282/?ext=1784076339&hash=Q92gDAGFCjZEX3nnypWLsCJZJQyH -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRISILO Toolsuite — Root 0 / OEW</title>
+<script src="./chart.umd.min.js.download"></script>
+<style>
+:root{color-scheme:dark;--bg:#0a0e14;--panel:#0f1720;--panel2:#111c2a;--border:#1e2a3c;--text:#c8d3e0;--muted:#7e92aa;--accent:#00d4ff;--accent2:#00ffa3;--warn:#ffb000;--danger:#ff3b82;--life:#00ffa3;--entropy:#ff8a3d}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;background-image:radial-gradient(1200px 800px at 85% -10%, rgba(0,212,255,.08), transparent 60%),radial-gradient(900px 600px at -10% 110%, rgba(255,59,130,.06), transparent 60%)}
+.app{max-width:1200px;margin:0 auto;padding:18px}
+header.hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.title{display:flex;align-items:center;gap:12px}
+.title h1{margin:0;font-size:20px;letter-spacing:.3px;font-weight:700}
+.title h1 span{color:var(--muted);font-weight:500;margin-left:6px}
+.logo{width:32px;height:32px;border-radius:8px;background:conic-gradient(from 180deg at 50% 50%, #00d4ff, #0066ff, #00ffa3, #00d4ff);box-shadow:0 0 24px rgba(0,212,255,.35), inset 0 0 12px rgba(0,0,0,.4);position:relative}
+.logo:after{content:"";position:absolute;inset:3px;border-radius:6px;background:#0a0e14;box-shadow:inset 0 0 12px rgba(0,212,255,.2)}
+.mode-indicator{font-family:ui-monospace,Menlo,Consolas;font-size:12px;color:var(--accent);background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.25);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:14px;overflow:auto}
+.tabs button{background:transparent;border:0;color:var(--muted);padding:10px 14px;cursor:pointer;border-bottom:2px solid transparent;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+.tabs button.active{color:var(--accent);border-color:var(--accent)}
+.tab{display:none;animation:fade .2s ease}
+.tab.active{display:block}
+@keyframes fade{from{opacity:.5;transform:translateY(4px)}}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:980px){.grid{grid-template-columns:1.6fr .9fr}}
+.grid2{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:980px){.grid2{grid-template-columns:340px 1fr}}
+.panel{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.02)}
+.panel h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.controls .sliders{display:grid;gap:10px;margin-bottom:12px}
+.controls label{display:grid;grid-template-columns:110px 1fr 54px;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.controls input[type=range]{width:100%;accent-color:var(--accent)}
+.controls input[type=number]{background:#0b1320;border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:8px;width:100%;font-family:ui-monospace}
+.controls output{font-family:ui-monospace;color:var(--text);text-align:right}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btns button{background:#0c1420;color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;letter-spacing:.2px;transition:.15s}
+.btns button:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.1)}
+.btns button.primary{background:linear-gradient(180deg,#00d4ff,#009cc4);color:#001018;border-color:#00a6c7}
+.btns button.primary:hover{box-shadow:0 0 16px rgba(0,212,255,.35)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:600px){.stats{grid-template-columns:repeat(5,1fr)}}
+.stat{background:#0b1320;border:1px solid var(--border);border-radius:12px;padding:10px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;inset:0;background:radial-gradient(200px 60px at 80% -20%, rgba(0,212,255,.15), transparent);pointer-events:none}
+.stat label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.stat value{display:block;font-family:ui-monospace,Menlo,Consolas;font-size:20px;color:var(--accent)}
+.chart{height:280px;padding:10px}
+.table{max-height:260px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-family:ui-monospace;font-size:12px}
+th,td{padding:6px 8px;border-bottom:1px solid #162233;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{position:sticky;top:0;background:#0f1720;color:var(--muted);font-weight:600;z-index:1}
+td.delta-L{color:var(--life)} td.delta-E{color:var(--entropy)} td.fused{color:var(--danger);font-weight:700}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:12px}
+.legend b{color:var(--text)}
+.tt{border-bottom:1px dotted var(--accent);cursor:help;position:relative;padding:0 2px}
+.tt:hover::after{content:attr(data-tip);position:absolute;left:50%;bottom:130%;transform:translateX(-50%);background:#06121f;border:1px solid #0f3550;color:#cfe7f5;padding:6px 8px;border-radius:8px;white-space:nowrap;font-size:11px;box-shadow:0 8px 20px rgba(0,0,0,.4);z-index:20}
+canvas{background:#070c13;border-radius:12px;border:1px solid var(--border);width:100%}
+.toggle{display:flex;background:#0b1320;border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px;width:max-content}
+.toggle button{border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-weight:700;letter-spacing:.3px}
+.toggle button.active{background:linear-gradient(180deg,#00d4ff,#00a0c6);color:#00141b;box-shadow:0 4px 16px rgba(0,212,255,.25)}
+.explain{margin-top:12px;color:var(--text);line-height:1.65}
+.explain h3{margin:8px 0 6px;color:var(--text);font-size:15px;letter-spacing:0}
+.explain code{background:#0b1320;border:1px solid var(--border);padding:1px 6px;border-radius:6px;color:var(--accent);font-family:ui-monospace}
+.kvs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.kv{background:#0b1320;border:1px solid var(--border);border-radius:10px;padding:8px}
+.kv label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kv value{display:block;font-family:ui-monospace;color:var(--accent);font-size:15px;margin-top:2px}
+.footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center;opacity:.7}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="title">
+      <div class="logo"></div>
+      <h1>TRISILO Toolsuite <span>Root 0 / OEW</span></h1>
+    </div>
+    <div class="mode-indicator" id="modeInd">DAVID MODE • time = c = π</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="tab-oew" class="active">OEW Flattened</button>
+    <button data-tab="tab-fractal">Root 0 Fractal</button>
+    <button data-tab="tab-constants">Constants</button>
+  </nav>
+
+  <main>
+    <!-- OEW TAB -->
+    <section id="tab-oew" class="tab active">
+      <div class="grid">
+        <div class="panel controls">
+          <h3>OEW Flattened Simulator</h3>
+          <div class="sliders">
+            <label>p(entropy) <input type="range" id="pE" min="0" max="1" step="0.01" value="0.33"><output>0.33</output></label>
+            <label>p(life) <input type="range" id="pL" min="0" max="1" step="0.01" value="0.67"><output>0.67</output></label>
+            <label>Batch steps <input type="range" id="batch" min="10" max="500" step="10" value="100"><output>100</output></label>
+            <label>Seed <input type="number" id="seed" value="42"></label>
+          </div>
+          <div class="btns">
+            <button id="run" class="primary">Run</button>
+            <button id="pause">Pause</button>
+            <button id="step">Step</button>
+            <button id="reset">Reset</button>
+            <button id="export">Export CSV</button>
+          </div>
+          <div class="legend">
+            <span><b>π</b> <span class="tt" data-tip="cobalt flip = local time = c(t)">cobalt flip</span></span>
+            <span><b>OEW</b> <span class="tt" data-tip="One Electron World, flattened scalar">∈ [0,1)</span></span>
+            <span><b>B</b> <span class="tt" data-tip="boron site 3 ports">2/3 → 3/3</span></span>
+            <span><b>Φ</b> <span class="tt" data-tip="fusion when OEW wraps">wrap event</span></span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Live Stats</h3>
+          <div class="stats">
+            <div class="stat"><label>π</label><value id="sPi">0</value></div>
+            <div class="stat"><label>OEW</label><value id="sOew">0.000</value></div>
+            <div class="stat"><label>B state</label><value id="sB" style="color: var(--accent);">2/3</value></div>
+            <div class="stat"><label>Φ fusions</label><value id="sFus">0</value></div>
+            <div class="stat"><label>fusion rate</label><value id="sRate">0</value></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel chart">
+        <canvas id="oewChart" width="2182" height="516" style="display: block; box-sizing: border-box; height: 258px; width: 1091px;"></canvas>
+      </div>
+
+      <div class="panel table">
+        <h3>Last 50 Steps</h3>
+        <table id="logTable">
+          <thead><tr><th>π</th><th>Δ</th><th>OEW</th><th>B</th><th>Φ</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FRACTAL TAB -->
+    <section id="tab-fractal" class="tab">
+      <div class="grid2">
+        <div class="panel controls">
+          <h3>Root 0 — 364 Node Tree</h3>
+          <div class="sliders">
+            <label>Depth (1-6) <input type="range" id="depth" min="1" max="6" value="5" step="1"><output>5</output></label>
+            <label>Cycles/tick <input type="range" id="fcycles" min="10" max="500" step="10" value="100"><output>100</output></label>
+            <label>p(E) <input type="range" id="fpE" min="0" max="1" step="0.01" value="0.33"><output>0.33</output></label>
+            <label>p(L) <input type="range" id="fpL" min="0" max="1" step="0.01" value="0.67"><output>0.67</output></label>
+          </div>
+          <div class="btns">
+            <button id="fRun" class="primary">Run</button>
+            <button id="fPause">Pause</button>
+            <button id="fReset">Reset</button>
+          </div>
+          <div class="kvs" style="margin-top:12px">
+            <div class="kv"><label>Total nodes</label><value id="fNodes">364</value></div>
+            <div class="kv"><label>Root fusions</label><value id="fRootF">0</value></div>
+          </div>
+          <h3 style="margin-top:14px">Fusions per Level</h3>
+          <div id="fPerLevel" class="kvs"><div class="kv"><label>L0</label><value>0</value></div><div class="kv"><label>L1</label><value>0</value></div><div class="kv"><label>L2</label><value>0</value></div><div class="kv"><label>L3</label><value>0</value></div><div class="kv"><label>L4</label><value>0</value></div><div class="kv"><label>L5</label><value>0</value></div></div>
+          <h3 style="margin-top:14px">Root Log</h3>
+          <div id="fRootLog" style="font-family:ui-monospace;font-size:12px;color:var(--muted);max-height:110px;overflow:auto">—</div>
+        </div>
+        <div class="panel">
+          <canvas id="treeCanvas" style="height:560px" width="0" height="0"></canvas>
+          <div class="legend">
+            <span><b style="color:#00d4ff">●</b> B=3/3 fusing</span>
+            <span><b style="color:#3a4b60">●</b> B=2/3 waiting</span>
+            <span><b style="color:#fff">●</b> Root 0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONSTANTS TAB -->
+    <section id="tab-constants" class="tab">
+      <div class="grid">
+        <div class="panel">
+          <h3>Substrate Switch — at -1</h3>
+          <div class="toggle">
+            <button data-mode="constant">Einstein Mode</button>
+            <button data-mode="variable" class="active">David Mode</button>
+          </div>
+          <div id="constExplain" class="explain"><h3>Substrate at -1 (pre-constant)</h3><p><b>time = π = c(t)</b>. The cobalt flip IS the clock. OEW ∈ [0,1) drives local c. When OEW wraps (≥1), Φ fusion occurs, B goes 2/3 → 3/3 → 2/3, and the field re-seeds. The 1/3 entropy / 2/3 life bias creates forward drift.</p><div class="kvs"><div class="kv"><label>c(t)</label><value>π ∈ [0,1)</value></div><div class="kv"><label>Δ life</label><value>+0.0666</value></div><div class="kv"><label>Δ entropy</label><value>−0.0333</value></div><div class="kv"><label>Φ avg</label><value>~1 / 30 π</value></div></div></div>
+        </div>
+        <div class="panel">
+          <h3>Definitions</h3>
+          <div class="explain">
+            <p><b>OEW</b> — One Electron World flattened to 1 scalar ∈ [0,1). Loops on ≥1.</p>
+            <p><b>π</b> <span class="tt" data-tip="cobalt-60 beta asymmetry flip">(?)</span> — cobalt flip count. In David mode, π ≡ local time ≡ c(t).</p>
+            <p><b>B</b> — boron site with 3 ports. Default 2/3 filled. At Φ it hits 3/3 then resets.</p>
+            <p><b>Φ</b> — fusion. Occurs on OEW wrap. Provides the ratchet.</p>
+            <p><b>1/3 : 2/3</b> — entropy : life bias. Life adds +0.0666, entropy subtracts -0.0333 per π. Net drift ≈ +0.0333 → wrap ≈ every 30 flips.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="footer">TRISILO / Root-0 / OEW — lab console — dark substrate</div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
+$$('.tabs button').forEach(b=>b.onclick=()=>{ $$('.tabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active'); $$('.tab').forEach(t=>t.classList.remove('active')); $('#'+b.dataset.tab).classList.add('active'); if(b.dataset.tab==='tab-fractal') setTimeout(drawTree,50); });
+
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+
+// OEW STATE
+const oew={pi:0,oew:0,b:2,fusions:0,hist:[],running:false,timer:null,rng:mulberry32(42),chart:null};
+const DELTA_L=0.0666666667, DELTA_E=0.0333333333;
+
+function syncOutputs(){
+  $$('input[type=range]').forEach(inp=>{ const out=inp.parentElement.querySelector('output'); if(out) out.value = (+inp.value).toFixed(inp.step.includes('.')?2:0);
+    inp.oninput=()=>{ out.value = (+inp.value).toFixed(inp.step.includes('.')?2:0);
+      if(inp.id==='pE'||inp.id==='fpE'){ const pair=$('#'+inp.id.replace('E','L')); pair.value=(1-parseFloat(inp.value)).toFixed(2); pair.parentElement.querySelector('output').value=pair.value; }
+      if(inp.id==='pL'||inp.id==='fpL'){ const pair=$('#'+inp.id.replace('L','E')); pair.value=(1-parseFloat(inp.value)).toFixed(2); pair.parentElement.querySelector('output').value=pair.value; }
+      if(inp.id==='depth') initFractal();
+      if(inp.id==='fcycles') frac.cycles=+inp.value;
+    };
+  });
+}
+
+function resetOEW(){ oew.pi=0;oew.oew=0;oew.b=2;oew.fusions=0;oew.hist=[]; oew.rng=mulberry32(+$('#seed').value||42); updateOEW(); }
+function stepOEW(){
+  const pL=parseFloat($('#pL').value); const pE=parseFloat($('#pE').value); const probL=pL/(pL+pE||1);
+  const isL=oew.rng()<probL;
+  oew.pi++; oew.oew += isL? DELTA_L : -DELTA_E;
+  let fused=0;
+  if(oew.oew>=1){ oew.oew-=1; fused=1; oew.fusions++; oew.b=3; }
+  else { oew.b=2; if(oew.oew<0) oew.oew=0; }
+  oew.hist.push({pi:oew.pi,delta:isL?'L':'E',oew:+oew.oew.toFixed(6),b:oew.b,fused});
+  if(oew.hist.length>5000) oew.hist.shift();
+  if(oew.pi%3===0||fused) updateOEW();
+}
+function updateOEW(){
+  $('#sPi').textContent=oew.pi.toLocaleString();
+  $('#sOew').textContent=oew.oew.toFixed(3);
+  $('#sB').textContent=oew.b+'/3'; $('#sB').style.color=oew.b===3?'var(--danger)':'var(--accent)';
+  $('#sFus').textContent=oew.fusions;
+  $('#sRate').textContent=oew.pi?(oew.fusions/oew.pi).toFixed(4):'0';
+  // table
+  const tb=$('#logTable tbody'); tb.innerHTML='';
+  oew.hist.slice(-50).reverse().forEach(r=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${r.pi}</td><td class="delta-${r.delta}">${r.delta}</td><td>${r.oew.toFixed(3)}</td><td>${r.b}/3</td><td class="${r.fused?'fused':''}">${r.fused?'Φ':''}</td>`; tb.appendChild(tr); });
+  // chart
+  if(oew.chart){ const h=oew.hist.slice(-400); oew.chart.data.labels=h.map(d=>d.pi); oew.chart.data.datasets[0].data=h.map(d=>d.oew); oew.chart.data.datasets[1].data=h.map(d=>d.fused?d.oew:null); oew.chart.update('none'); }
+}
+$('#run').onclick=()=>{ if(oew.running) return; oew.running=true; oew.timer=setInterval(()=>{ const n=+$('#batch').value; for(let i=0;i<n;i++) stepOEW(); }, 35); };
+$('#pause').onclick=()=>{ oew.running=false; clearInterval(oew.timer); };
+$('#step').onclick=()=>{ stepOEW(); };
+$('#reset').onclick=()=>{ $('#pause').click(); resetOEW(); };
+$('#export').onclick=()=>{ const rows=[['pi','delta','oew','b','fused'],...oew.hist.map(r=>[r.pi,r.delta,r.oew,r.b,r.fused])]; const csv=rows.map(r=>r.join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='trisilo_oew.csv'; a.click(); URL.revokeObjectURL(a.href); };
+
+// FRACTAL
+const frac={nodes:[],depth:5,cycles:100,running:false,timer:null,rng:mulberry32(1337),rootLog:[]};
+function buildTree(maxD){ const nodes=[]; let id=0; function add(parent,d){ const n={id:id++,parent,depth:d,children:[],oew:0,pi:0,b:2,fusions:0}; nodes.push(n); if(d<maxD){ for(let i=0;i<3;i++){ const c=add(n.id,d+1); n.children.push(c.id);} } return n; } add(null,0); return nodes; }
+function initFractal(){ frac.depth=+$('#depth').value; frac.nodes=buildTree(frac.depth); frac.rootLog=[]; frac.rng=mulberry32(1337+Math.floor(Math.random()*1000)); drawTree(); updateFrac(); }
+function fractalStep(){ const pL=parseFloat($('#fpL').value); const pE=parseFloat($('#fpE').value); const probL=pL/(pL+pE||1);
+  for(const n of frac.nodes){ const isL=frac.rng()<probL; n.pi++; n.oew += isL? DELTA_L : -DELTA_E; let fused=false; if(n.oew>=1){ n.oew-=1; n.fusions++; n.b=3; fused=true; } else { n.b=2; if(n.oew<0) n.oew=0; } if(n.id===0 && fused) frac.rootLog.push({pi:n.pi,oew:n.oew}); }
+}
+function updateFrac(){ $('#fNodes').textContent=frac.nodes.length; $('#fRootF').textContent=frac.nodes[0]?.fusions||0; const per=Array(frac.depth+1).fill(0); frac.nodes.forEach(n=>per[n.depth]+=n.fusions); $('#fPerLevel').innerHTML=per.map((v,i)=>`<div class="kv"><label>L${i}</label><value>${v}</value></div>`).join(''); $('#fRootLog').innerHTML=frac.rootLog.slice(-12).reverse().map(r=>`π${r.pi} → ${r.oew.toFixed(3)} Φ`).join('<br>')||'—'; }
+function drawTree(){ const cvs=$('#treeCanvas'); const rect=cvs.getBoundingClientRect(); const dpr=window.devicePixelRatio||1; cvs.width=rect.width*dpr; cvs.height=rect.height*dpr; const ctx=cvs.getContext('2d'); ctx.setTransform(1,0,0,0,1,0); ctx.clearRect(0,0,cvs.width,cvs.height); ctx.scale(dpr,dpr); const w=rect.width, h=rect.height; const cx=w/2, cy=h/2; const maxR=Math.min(w,h)*0.42;
+  const byDepth=Array.from({length:frac.depth+1},()=>[]); frac.nodes.forEach(n=>byDepth[n.depth].push(n));
+  byDepth.forEach((arr,d)=>{ const r=d===0?0:(d/frac.depth)*maxR; const cnt=arr.length; arr.forEach((n,i)=>{ const ang=cnt===1?-Math.PI/2:(i/cnt)*Math.PI*2 -Math.PI/2; n._x=cx+r*Math.cos(ang); n._y=cy+r*Math.sin(ang); }); });
+  ctx.lineWidth=1; ctx.strokeStyle='rgba(100,130,170,.18)'; frac.nodes.forEach(n=>{ if(n.parent!=null){ const p=frac.nodes[n.parent]; ctx.beginPath(); ctx.moveTo(p._x,p._y); ctx.lineTo(n._x,n._y); ctx.stroke(); } });
+  frac.nodes.forEach(n=>{ ctx.beginPath(); const rad=n.id===0?6:(n.b===3?4.8:3); ctx.arc(n._x,n._y,rad,0,Math.PI*2); ctx.fillStyle=n.id===0?'#ffffff':(n.b===3?'#00d4ff':'#3a4b60'); ctx.shadowColor=n.b===3?'rgba(0,212,255,.85)':'transparent'; ctx.shadowBlur=n.b===3?12:0; ctx.fill(); }); ctx.shadowBlur=0;
+}
+$('#fRun').onclick=()=>{ if(frac.running) return; frac.running=true; frac.timer=setInterval(()=>{ for(let i=0;i<frac.cycles;i++) fractalStep(); drawTree(); updateFrac(); },50); };
+$('#fPause').onclick=()=>{ frac.running=false; clearInterval(frac.timer); };
+$('#fReset').onclick=()=>{ $('#fPause').click(); initFractal(); };
+window.addEventListener('resize',()=>{ if($('#tab-fractal').classList.contains('active')) drawTree(); });
+
+// CONSTANTS
+function setCMode(m){ $$('.toggle button').forEach(b=>b.classList.toggle('active',b.dataset.mode===m)); $('#modeInd').textContent=m==='constant'?'EINSTEIN MODE • c = 299,792,458 m/s':'DAVID MODE • time = c = π';
+  $('#constExplain').innerHTML=m==='constant'
+    ? `<h3>Substrate locked at c</h3><p>Time is an independent background. π ticks linearly. OEW still evolves and Φ events are recorded, but they <i>do not</i> change c. Boron stays mostly at 2/3. This is the geometric regime.</p><div class="kvs"><div class="kv"><label>c</label><value>299,792,458 m/s</value></div><div class="kv"><label>π</label><value>independent t</value></div><div class="kv"><label>Φ effect</label><value>observable only</value></div><div class="kv"><label>dilation</label><value>metric</value></div></div>`
+    : `<h3>Substrate at -1 (pre-constant)</h3><p><b>time = π = c(t)</b>. The cobalt flip IS the clock. OEW ∈ [0,1) drives local c. When OEW wraps (≥1), Φ fusion occurs, B goes 2/3 → 3/3 → 2/3, and the field re-seeds. The 1/3 entropy / 2/3 life bias creates forward drift.</p><div class="kvs"><div class="kv"><label>c(t)</label><value>π ∈ [0,1)</value></div><div class="kv"><label>Δ life</label><value>+0.0666</value></div><div class="kv"><label>Δ entropy</label><value>−0.0333</value></div><div class="kv"><label>Φ avg</label><value>~1 / 30 π</value></div></div>`;
+}
+$$('.toggle button').forEach(b=>b.onclick=()=>setCMode(b.dataset.mode));
+
+// INIT
+window.addEventListener('load',()=>{
+  syncOutputs();
+  const ctx=$('#oewChart').getContext('2d'); Chart.defaults.color='#7d8ea6'; Chart.defaults.font.family='ui-monospace,Menlo,Consolas';
+  oew.chart=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'OEW',data:[],borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.12)',borderWidth:2,tension:.28,pointRadius:0,fill:true},{label:'Φ',data:[],showLine:false,pointRadius:5,pointBackgroundColor:'#ff3b82',pointBorderColor:'#ff3b82',pointHoverRadius:6}]},options:{animation:false,responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#06121f',borderColor:'#0f3550',borderWidth:1}},scales:{x:{grid:{color:'rgba(30,42,60,.8)'},ticks:{maxTicksLimit:8}},y:{min:0,max:1,grid:{color:'rgba(30,42,60,.6)'}}}}});
+  resetOEW(); initFractal(); setCMode('variable'); updateOEW();
+});
+</script>
+
+</body></html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iron Rain on the Burrow</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; background:#030201; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Code", Consolas, "Courier New", monospace; color:#c9b8a8; }
+canvas { position:absolute; top:0; left:0; width:100%; height:100%; display:block; }
+#ui { position:absolute; top:20px; left:20px; z-index:10; width:272px; padding:18px 20px 20px; background: linear-gradient(180deg, rgba(18,6,4,0.94), rgba(7,2,2,0.88)); border:1px solid rgba(139,20,10,0.45); border-top:1px solid rgba(255,80,40,0.2); border-radius:12px; box-shadow: 0 8px 30px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,80,40,0.08), inset 0 -6px 18px rgba(0,0,0,0.7); backdrop-filter: blur(12px) saturate(1.1); }
+@media (max-width:640px){ #ui { top:12px; left:12px; right:12px; width:auto; max-width:none; padding:14px 16px 16px; } }
+h1 { font-size:22px; letter-spacing:4px; font-weight:800; margin:0 0 2px; background: linear-gradient(180deg, #ff6a3d 0%, #ff2a1a 40%, #7a0505 100%); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 0 18px rgba(255,40,10,0.35); }
+.subtitle { font-size:10px; letter-spacing:2.8px; color:#7a4e3a; margin-bottom:18px; text-transform:uppercase; }
+.control { margin:14px 0; }
+label { display:flex; justify-content:space-between; align-items:center; font-size:11px; letter-spacing:1.6px; color:#a97c62; margin-bottom:8px; text-transform:uppercase; }
+label span { color:#ff8a65; font-variant-numeric:tabular-nums; }
+input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:24px; background:transparent; cursor:pointer; margin:0; }
+input[type=range]::-webkit-slider-runnable-track { height:5px; background: linear-gradient(90deg, #1a0705, #3a0f0a 50%, #1a0705); border:1px solid #2a0a06; border-radius:3px; box-shadow: inset 0 2px 4px #000, 0 0 8px rgba(139,0,0,0.2); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; margin-top:-7px; background: radial-gradient(circle at 30% 30%, #ff9a76 0%, #ff542a 30%, #b01010 60%, #3a0505 100%); border:1px solid #ff3b1f; border-radius:50%; box-shadow:0 0 10px rgba(255,60,30,0.65), inset 0 1px 2px rgba(255,200,180,0.4), inset 0 -1px 3px rgba(0,0,0,0.8); }
+input[type=range]::-moz-range-track { height:5px; background: linear-gradient(90deg, #1a0705, #3a0f0a); border:1px solid #2a0a06; border-radius:3px; box-shadow: inset 0 2px 4px #000; }
+input[type=range]::-moz-range-thumb { width:18px; height:18px; border:1px solid #ff3b1f; border-radius:50%; background: radial-gradient(circle, #ff6a3d, #b01010 60%, #3a0505); box-shadow:0 0 10px rgba(255,60,30,0.65); }
+button { width:100%; margin-top:18px; padding:11px 12px; background: linear-gradient(180deg, #2a0805 0%, #160201 100%); border:1px solid #7a1a10; border-top-color:#a8321f; color:#ffb694; font-size:12px; font-weight:600; letter-spacing:2.2px; text-transform:uppercase; border-radius:9px; cursor:pointer; transition:all .18s; box-shadow:0 3px 10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,120,80,0.12), inset 0 -4px 10px rgba(0,0,0,0.6); }
+button:hover { background: linear-gradient(180deg, #4a140c 0%, #2a0805 100%); border-color:#ff4a24; color:#fff; box-shadow:0 0 18px rgba(255,60,30,0.35), 0 3px 12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,160,120,0.2); transform:translateY(-1px); }
+button:active { transform:translateY(0); box-shadow:0 1px 6px rgba(0,0,0,0.8), inset 0 2px 6px rgba(0,0,0,0.8); }
+.grain { position:fixed; inset:0; pointer-events:none; z-index:5; opacity:.07; mix-blend-mode:overlay; background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJuIj48ZmVUdXJidWxlbmNlIHR5cGU9ImZyYWN0YWxOb2lzZSIgYmFzZUZyZXF1ZW5jeT0iMC45IiBudW1PY3RhdmVzPSI0IiBzdGl0Y2hUaWxlcz0ic3RpdGNoIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbHRlcj0idXJsKCNuKSIgb3BhY2l0eT0iMSIvPjwvc3ZnPg=="); }
+.stats { position:absolute; bottom:12px; right:14px; font-size:10px; letter-spacing:1px; color:#5a3326; z-index:6; text-align:right; opacity:.65; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="grain"></div>
+<div id="ui">
+  <h1>IRON RAIN</h1>
+  <div class="subtitle">on the burrow • per aspera</div>
+  <div class="control">
+    <label>Rain Intensity <span id="intensityVal">5</span></label>
+    <input type="range" id="intensity" min="1" max="10" value="5" step="1">
+  </div>
+  <div class="control">
+    <label>Wave Speed <span id="speedVal">2.5</span></label>
+    <input type="range" id="waveSpeed" min="0.5" max="5" value="2.5" step="0.1">
+  </div>
+  <button id="restart">Restart Burrow</button>
+</div>
+<div class="stats" id="stats"></div>
+
+<script>
+'use strict';
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d', { alpha: false });
+let W, H, groundY, bgCanvas, bgCtx;
+const $ = id => document.getElementById(id);
+const config = { rainIntensity:5, waveSpeed:2.5, gravity:0.18, maxSeeds:380, maxParticles:520 };
+let seeds=[], waves=[], particles=[], time=0;
+
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  groundY = Math.max(140, H * 0.26);
+  createBackground();
+}
+function createBackground(){
+  bgCanvas = document.createElement('canvas');
+  bgCanvas.width = W; bgCanvas.height = H;
+  bgCtx = bgCanvas.getContext('2d');
+  // sky to soil
+  const g = bgCtx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, '#040202');
+  g.addColorStop(0.18, '#070302');
+  g.addColorStop(0.26, '#0a0503');
+  g.addColorStop(1, '#0e0705');
+  bgCtx.fillStyle = g; bgCtx.fillRect(0,0,W,H);
+  // soil strata
+  bgCtx.save();
+  for(let y = groundY+12; y < H; y += 16 + Math.random()*22){
+    const alpha = 0.04 + Math.random()*0.07;
+    bgCtx.strokeStyle = `rgba(90,45,30,${alpha})`;
+    bgCtx.lineWidth = 1;
+    bgCtx.beginPath();
+    let off = Math.random()*1000;
+    for(let x=-20; x<=W+20; x+=30){
+      const yy = y + Math.sin((x+off)*0.008)*2.5 + Math.cos((x*0.015))*1.5;
+      if(x===-20) bgCtx.moveTo(x,yy); else bgCtx.lineTo(x,yy);
+    }
+    bgCtx.stroke();
+    if(Math.random()<0.18){
+      bgCtx.strokeStyle = `rgba(110,20,12,${0.05+Math.random()*0.06})`;
+      bgCtx.lineWidth = 1.5 + Math.random()*1.5;
+      bgCtx.beginPath();
+      bgCtx.moveTo(0, y+Math.random()*4);
+      bgCtx.bezierCurveTo(W*0.3, y-8, W*0.6, y+10, W, y+Math.random()*4);
+      bgCtx.stroke();
+    }
+  }
+  bgCtx.restore();
+  // surface glow
+  const sg = bgCtx.createLinearGradient(0, groundY-30, 0, groundY+22);
+  sg.addColorStop(0,'rgba(0,0,0,0)');
+  sg.addColorStop(0.4,'rgba(255,40,10,0.08)');
+  sg.addColorStop(0.7,'rgba(120,15,5,0.18)');
+  sg.addColorStop(1,'rgba(10,3,2,0.9)');
+  bgCtx.fillStyle = sg;
+  bgCtx.fillRect(0, groundY-30, W, 52);
+  // surface crust
+  bgCtx.fillStyle = 'rgba(20,8,5,0.9)';
+  bgCtx.fillRect(0, groundY-1, W, 2);
+  bgCtx.fillStyle = 'rgba(255,60,20,0.15)';
+  bgCtx.fillRect(0, groundY-2, W, 1);
+}
+
+class Particle{
+  constructor(x,y,vx,vy,life,color,size){this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.life=life;this.max=life;this.color=color;this.size=size||2+Math.random()*2;}
+  update(){this.x+=this.vx; this.y+=this.vy; this.vx*=0.97; this.vy*=0.97; this.vy+=0.04; this.life--;}
+  draw(){const a=Math.max(0,this.life/this.max); ctx.globalAlpha=a*0.85; ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,this.size*a,0,Math.PI*2); ctx.fill();}
+  get dead(){return this.life<=0;}
+}
+class Wave{
+  constructor(x,y){this.x=x;this.y=y;this.r=0;this.alpha=0.85;this.speed=config.waveSpeed*(0.75+Math.random()*0.5);this.hue=Math.random()<0.7?0:30;}
+  update(){this.r+=this.speed; this.alpha*=0.972; if(this.alpha<0.015) this.alpha=0;}
+  draw(){if(this.alpha<=0)return; ctx.globalAlpha=this.alpha; ctx.lineWidth=2; ctx.strokeStyle=this.hue?`rgba(255,190,70,${0.7})`:`rgba(255,80,30,${0.8})`; ctx.shadowColor=this.hue?'#ffb700':'#ff3b1f'; ctx.shadowBlur=14; ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.stroke(); ctx.shadowBlur=0; ctx.globalAlpha=this.alpha*0.35; ctx.lineWidth=1; ctx.strokeStyle='rgba(255,130,60,0.5)'; ctx.beginPath(); ctx.arc(this.x,this.y,this.r*0.62,0,Math.PI*2); ctx.stroke();}
+  get dead(){return this.alpha<=0 || this.r>Math.max(W,H)*0.55;}
+}
+class Seed{
+  constructor(o){this.x=o.x; this.y=o.y; this.vx=o.vx??(Math.random()-0.5)*0.6; this.vy=o.vy??Math.random()*0.6+0.4; this.radius=o.isChild?2+Math.random()*0.7:3.2+Math.random()*1.1; this.isChild=!!o.isChild; this.generation=o.generation||0; this.state=o.state||'falling'; this.age=0; this.wobble=Math.random()*Math.PI*2; this.trail=[]; this.burrowPath=[]; this.nest=null; this.wait=0; this.depthTarget=0; this.burrowSpeed=0; this.ascendSpeed=0; this.alive=true; this.boost=0;}
+  update(){
+    this.age++; if(this.boost>0)this.boost--;
+    switch(this.state){
+      case 'falling':
+        this.vy+=config.gravity; this.vx+=Math.sin((this.age+this.wobble)*0.08)*0.016; this.x+=this.vx; this.y+=this.vy;
+        if(this.y>=groundY){ this.y=groundY; impact(this.x,this.y,12); this.state='burrowing'; this.burrowSpeed=1.7+Math.random()*1.3; this.depthTarget=groundY+55+Math.random()*95; if(this.isChild) this.depthTarget=groundY+28+Math.random()*38; this.burrowPath=[{x:this.x,y:this.y}]; this.nest={x:this.x,y:this.depthTarget,rings:[]}; }
+        break;
+      case 'burrowing':
+        this.y+=this.burrowSpeed; this.x+=Math.sin(this.age*0.22)*0.28; this.burrowPath.push({x:this.x,y:this.y}); if(this.burrowPath.length>70) this.burrowPath.shift(); if(Math.random()<0.45) soilPuff(this.x,this.y); if(this.y>=this.depthTarget){ this.y=this.depthTarget; this.state='waiting'; this.wait=28+Math.random()*38; const rc=3+Math.floor(Math.random()*3); for(let i=0;i<rc;i++) this.nest.rings.push({r:15-i*3.2 + Math.random(), pulse:Math.random()*6.28}); }
+        break;
+      case 'waiting':
+        this.wait--; if(this.wait<=0){ this.state='ascending'; this.ascendSpeed=this.isChild?2.9+Math.random()*0.6:2.2+Math.random()*0.7; }
+        break;
+      case 'ascending':
+        this.y-=this.ascendSpeed; this.x+=Math.sin(this.age*0.14)*0.22; this.trail.push({x:this.x,y:this.y}); if(this.trail.length>20) this.trail.shift(); if(this.age%3===0) waves.push(new Wave(this.x,this.y)); if(Math.random()<0.7) ascendSpark(this.x,this.y); for(const w of waves){ const d=Math.hypot(this.x-w.x,this.y-w.y); if(Math.abs(d-w.r)<9 && d<140){ this.boost=10; break; } } if(this.y<=groundY){ this.y=groundY; this.state='surfacing'; }
+        break;
+      case 'surfacing':
+        burst(this.x,this.y); this.alive=false; if(this.generation<2){ const cnt=this.isChild?2:2+Math.floor(Math.random()*2); for(let i=0;i<cnt;i++){ const vx=(Math.random()-0.5)*3.8; const vy=-3.2-Math.random()*2.2; seeds.push(new Seed({x:this.x,y:groundY,vx,vy,isChild:true,generation:this.generation+1,state:'pollen'})); } } break;
+      case 'pollen':
+        this.vy+=config.gravity*0.66; this.vx*=0.997; this.x+=this.vx; this.y+=this.vy; this.trail.push({x:this.x,y:this.y}); if(this.trail.length>9) this.trail.shift(); if(Math.random()<0.28) ascendSpark(this.x,this.y); if(this.y>=groundY){ this.y=groundY; impact(this.x,this.y,7); this.state='burrowing'; this.burrowSpeed=1.4+Math.random()*0.7; this.depthTarget=groundY+22+Math.random()*28; this.burrowPath=[{x:this.x,y:this.y}]; this.nest={x:this.x,y:this.depthTarget,rings:[]}; this.trail=[]; } break;
+    }
+    if(this.x<-20||this.x>W+20||this.y>H+80) this.alive=false;
+  }
+  draw(){
+    // tunnel
+    if(this.burrowPath.length>1){
+      ctx.save(); ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.strokeStyle='rgba(30,10,7,0.65)'; ctx.lineWidth=7; ctx.beginPath(); this.burrowPath.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke();
+      ctx.strokeStyle='rgba(8,2,1,0.92)'; ctx.lineWidth=3.2; ctx.beginPath(); this.burrowPath.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke();
+      ctx.strokeStyle='rgba(180,30,15,0.12)'; ctx.lineWidth=1.2; ctx.beginPath(); this.burrowPath.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke();
+      ctx.restore();
+    }
+    // nest rings
+    if(this.nest && this.nest.rings.length){
+      ctx.save();
+      for(let i=0;i<this.nest.rings.length;i++){ const ring=this.nest.rings[i]; const pr=ring.r+Math.sin(ring.pulse+this.age*0.05)*0.7; ctx.globalAlpha=0.22 - i*0.04; ctx.strokeStyle='#4a120a'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(this.nest.x,this.nest.y,pr,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=0.85; ctx.fillStyle='rgba(4,1,1,0.9)'; ctx.beginPath(); ctx.arc(this.nest.x,this.nest.y,pr*0.55,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    }
+    ctx.save();
+    const x=this.x, y=this.y, r=this.radius;
+    if(this.state==='falling' || this.state==='pollen'){
+      if(this.trail.length>1 && this.state==='pollen'){ ctx.globalCompositeOperation='lighter'; for(let i=0;i<this.trail.length;i++){ const t=this.trail[i]; const a=i/this.trail.length; ctx.globalAlpha=a*0.35; ctx.fillStyle='#ffb762'; ctx.beginPath(); ctx.arc(t.x,t.y,r*a*0.8,0,Math.PI*2); ctx.fill(); } }
+      const glow=ctx.createRadialGradient(x,y,0,x,y,r*5); glow.addColorStop(0,'rgba(255,50,30,0.35)'); glow.addColorStop(1,'rgba(255,30,10,0)'); ctx.globalAlpha=0.9; ctx.fillStyle=glow; ctx.beginPath(); ctx.arc(x,y,r*5,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1; ctx.fillStyle='#9da1a8'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#c1c5cb'; ctx.globalAlpha=0.6; ctx.beginPath(); ctx.arc(x-r*0.35,y-r*0.35,r*0.45,0,Math.PI*2); ctx.fill();
+    } else if(this.state==='burrowing'){
+      ctx.shadowColor='#ff2a1a'; ctx.shadowBlur=14; ctx.fillStyle='#d62a18'; ctx.beginPath(); ctx.arc(x,y,r*1.15,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0;
+    } else if(this.state==='waiting'){
+      const p=0.6+Math.sin(this.age*0.12)*0.3; ctx.globalCompositeOperation='lighter'; const wg=ctx.createRadialGradient(x,y,0,x,y,r*7); wg.addColorStop(0,`rgba(255,200,100,${0.85*p})`); wg.addColorStop(0.4,`rgba(255,120,30,${0.35*p})`); wg.addColorStop(1,'rgba(180,20,5,0)'); ctx.fillStyle=wg; ctx.beginPath(); ctx.arc(x,y,r*7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#ffe6b3'; ctx.shadowColor='#ffb700'; ctx.shadowBlur=22; ctx.beginPath(); ctx.arc(x,y,r*1.4,0,Math.PI*2); ctx.fill();
+    } else if(this.state==='ascending'){
+      ctx.globalCompositeOperation='lighter';
+      for(let i=0;i<this.trail.length;i++){ const t=this.trail[i]; const a=i/this.trail.length; const sz=r*(0.4+a*1.6); const g=ctx.createRadialGradient(t.x,t.y,0,t.x,t.y,sz*3); g.addColorStop(0,`rgba(255,210,120,${0.5*a})`); g.addColorStop(1,'rgba(255,100,20,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(t.x,t.y,sz*3,0,Math.PI*2); ctx.fill(); }
+      const intensity=0.9+(this.boost>0?0.4:0); const ag=ctx.createRadialGradient(x,y,0,x,y,r*8); ag.addColorStop(0,`rgba(255,240,200,${intensity})`); ag.addColorStop(0.25,`rgba(255,190,80,${0.7*intensity})`); ag.addColorStop(0.6,`rgba(255,90,20,${0.25})`); ag.addColorStop(1,'rgba(120,10,0,0)'); ctx.fillStyle=ag; ctx.beginPath(); ctx.arc(x,y,r*8,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff6d5'; ctx.shadowColor='#ffcc66'; ctx.shadowBlur=26; ctx.beginPath(); ctx.arc(x,y,r*1.7,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+function impact(x,y,c){ if(particles.length>config.maxParticles) return; for(let i=0;i<c;i++){ particles.push(new Particle(x+(Math.random()-0.5)*8, y, (Math.random()-0.5)*2.2, -Math.random()*2.8 -0.5, 22+Math.random()*18, Math.random()<0.3?'#8a3a20':'#3a1a10', 1.5+Math.random()*2.2)); } }
+function soilPuff(x,y){ if(Math.random()<0.6 && particles.length<config.maxParticles) particles.push(new Particle(x+(Math.random()-0.5)*3, y, (Math.random()-0.5)*0.6, -0.2-Math.random()*0.5, 18+Math.random()*10, '#3a1e14', 1.2)); }
+function ascendSpark(x,y){ if(particles.length>config.maxParticles) return; particles.push(new Particle(x+(Math.random()-0.5)*2, y+(Math.random()-0.5)*2, (Math.random()-0.5)*0.7, -0.3-Math.random()*0.8, 14+Math.random()*8, Math.random()<0.5?'#ffb347':'#ff7a2a', 1)); }
+function burst(x,y){ impact(x,y,16); for(let i=0;i<10;i++) particles.push(new Particle(x,y, (Math.random()-0.5)*3, -Math.random()*3, 28, '#ffd27a', 1.8)); }
+
+function spawnSeed(x){ if(seeds.length>config.maxSeeds) return; seeds.push(new Seed({x:x??Math.random()*W, y:-20-Math.random()*180})); }
+
+function init(){
+  seeds=[]; waves=[]; particles=[]; time=0;
+  const initial = Math.min(180, 120 + Math.floor(W/12));
+  for(let i=0;i<initial;i++){ setTimeout(()=>spawnSeed(Math.random()*W), i*14 + Math.random()*600); }
+}
+function tick(){
+  time++;
+  ctx.drawImage(bgCanvas,0,0);
+  // red haze above ground
+  const haze = ctx.createLinearGradient(0,0,0,groundY+60);
+  haze.addColorStop(0,'rgba(0,0,0,0)'); haze.addColorStop(1,'rgba(80,5,0,0.09)');
+  ctx.fillStyle=haze; ctx.fillRect(0,0,W,groundY+60);
+
+  if(Math.random() < config.rainIntensity * 0.009) spawnSeed();
+
+  // update particles
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.update(); p.draw(); if(p.dead) particles.splice(i,1); }
+  ctx.restore();
+  // waves
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for(let i=waves.length-1;i>=0;i--){ const w=waves[i]; w.update(); w.draw(); if(w.dead) waves.splice(i,1); }
+  ctx.shadowBlur=0; ctx.restore();
+  // seeds
+  seeds.sort((a,b)=>a.y-b.y);
+  for(let i=seeds.length-1;i>=0;i--){ const s=seeds[i]; s.update(); s.draw(); if(!s.alive) seeds.splice(i,1); }
+
+  // vignette
+  ctx.save();
+  const vg = ctx.createRadialGradient(W*0.5, H*0.55, Math.min(W,H)*0.2, W*0.5, H*0.5, Math.max(W,H)*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.72)');
+  ctx.fillStyle=vg; ctx.globalCompositeOperation='multiply'; ctx.fillRect(0,0,W,H);
+  ctx.restore();
+  // surface scanline
+  ctx.fillStyle='rgba(255,50,20,0.06)'; ctx.fillRect(0,groundY-1,W,1);
+
+  $('stats').textContent = `seeds ${seeds.length} • waves ${waves.length} • dust ${particles.length}`;
+  requestAnimationFrame(tick);
+}
+
+// UI
+$('intensity').addEventListener('input', e=>{ config.rainIntensity=+e.target.value; $('intensityVal').textContent=e.target.value; });
+$('waveSpeed').addEventListener('input', e=>{ config.waveSpeed=+e.target.value; $('speedVal').textContent=(+e.target.value).toFixed(1); });
+$('restart').addEventListener('click', init);
+
+window.addEventListener('resize', ()=>{ resize(); init(); });
+resize(); init(); tick();
+</script>
+</body>
+</html>

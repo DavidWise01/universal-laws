@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOPH // 3D VISUALIZATION</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+:root{--gn:#00ffe5;--pu:#ee00ff;--yw:#ffe000;--pk:#ff00aa;--cy:#00ffff;--rd:#ff3030;--wh:#e8f4ff;--glass:rgba(2,0,8,.95);}
+html,body{height:100%;overflow:hidden;background:#020008;font-family:'Share Tech Mono',monospace;cursor:crosshair;color:var(--gn)}
+button,input,textarea{cursor:crosshair;font-family:'Share Tech Mono',monospace}
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none}
+#trailc{position:fixed;inset:0;z-index:2;pointer-events:none}
+.vl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(0,255,229,.04) 0,rgba(0,255,229,.04) 1px,transparent 1px,transparent 60px)}
+.hl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(238,0,255,.03) 0,rgba(238,0,255,.03) 1px,transparent 1px,transparent 40px)}
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;height:50px;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:rgba(2,0,8,.99);border-bottom:1px solid rgba(0,255,229,.35);box-shadow:0 0 50px rgba(0,255,229,.12)}
+#hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pu),var(--gn),var(--cy),var(--yw),var(--pk),var(--gn),var(--pu));background-size:400%;animation:hb 7s linear infinite}
+@keyframes hb{0%{background-position:0%}100%{background-position:400%}}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:16px;letter-spacing:5px;color:var(--cy);text-shadow:0 0 24px var(--cy),0 0 8px #fff;line-height:1}
+.logo em{color:var(--gn);font-style:normal}
+.logo-sub{font-size:7px;letter-spacing:3px;color:rgba(0,255,229,.4);margin-top:2px}
+.hs{text-align:center}.hs-v{display:block;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;line-height:1}
+.hs-k{display:block;font-size:7px;letter-spacing:2px;color:rgba(0,255,229,.35);margin-top:1px}
+.rbtn{padding:3px 9px;background:transparent;border:1px solid rgba(0,255,229,.3);color:rgba(0,255,229,.6);font-size:9px;letter-spacing:2px;transition:all .15s}
+.rbtn:hover{border-color:var(--gn);color:var(--gn)}
+/* WORKSPACE */
+#workspace{position:fixed;left:0;top:50px;right:0;bottom:0;z-index:3;overflow:hidden}
+/* PANELS */
+.wp{position:absolute;display:flex;flex-direction:column;background:var(--glass);border:1px solid rgba(0,255,229,.22);min-width:120px;min-height:60px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.9),inset 0 1px 0 rgba(0,255,229,.08)}
+.wp.focused{border-color:var(--gn);box-shadow:0 8px 50px rgba(0,0,0,.95),0 0 30px rgba(0,255,229,.18)}
+.wp::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gn),var(--pu),var(--pk),var(--yw));box-shadow:0 0 10px rgba(0,255,229,.7);z-index:1}
+.wp::after{content:'';position:absolute;top:0;right:0;width:16px;height:16px;border-top:1px solid var(--pu);border-right:1px solid var(--pu);pointer-events:none;opacity:.5}
+.wp-hdr{display:flex;justify-content:space-between;align-items:center;padding:5px 9px 5px 13px;border-bottom:1px solid rgba(0,255,229,.12);background:linear-gradient(90deg,rgba(0,255,229,.07),transparent);cursor:move;flex-shrink:0}
+.wp-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--gn);text-shadow:0 0 12px rgba(0,255,229,.8);pointer-events:none}
+.wp-tag{font-size:7px;color:rgba(0,255,229,.38);letter-spacing:1px;pointer-events:none}
+.wp-min{width:13px;height:13px;border:1px solid rgba(0,255,229,.28);background:transparent;color:rgba(0,255,229,.55);font-size:9px;cursor:crosshair;padding:0;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.wp-min:hover{border-color:var(--gn);color:var(--gn)}
+.wp.min .wp-body{display:none!important}
+.wp-body{flex:1;overflow:hidden;min-height:0;position:relative}
+.wp-resize{position:absolute;bottom:0;right:0;width:12px;height:12px;cursor:se-resize;z-index:9;opacity:.5;background:radial-gradient(circle,rgba(0,255,229,.6) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(0,255,229,.3) 1.5px,transparent 1.5px);background-size:4px 4px;background-position:1px 1px,5px 5px;background-repeat:no-repeat}
+/* 3D canvases fill their panel body */
+.scene-cv{width:100%;height:100%;display:block;cursor:grab}
+.scene-cv:active{cursor:grabbing}
+/* OVERLAY UI inside panels */
+.scene-ui{position:absolute;bottom:6px;left:10px;right:10px;display:flex;gap:4px;flex-wrap:wrap;pointer-events:none;z-index:10}
+.scene-ui button{pointer-events:all}
+.fb{padding:2px 6px;background:transparent;border:1px solid rgba(0,255,229,.2);color:rgba(0,255,229,.45);font-size:7px;cursor:crosshair;transition:all .1s;letter-spacing:1px}
+.fb.act,.fb:hover{border-color:var(--gn);color:var(--gn);background:rgba(0,255,229,.07)}
+.scene-label{position:absolute;top:6px;left:10px;font-size:8px;color:rgba(0,255,229,.35);letter-spacing:1px;pointer-events:none;line-height:1.7}
+/* CHAT */
+.wp-body-flex{display:flex;flex-direction:column;height:100%}
+#chatMsgs{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:7px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(0,255,229,.2) transparent}
+.cmsg{font-size:10px;line-height:1.8;padding:7px 9px;word-break:break-word;animation:mi .18s ease}
+@keyframes mi{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.cmsg.user{background:rgba(238,0,255,.08);border:1px solid rgba(238,0,255,.2);color:#fff;align-self:flex-end;max-width:88%;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
+.cmsg.ai{background:rgba(0,255,229,.04);border:1px solid rgba(0,255,229,.14);color:rgba(255,255,255,.85);max-width:96%;clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px)}
+.cmsg.sys{background:rgba(255,224,0,.04);border:1px solid rgba(255,224,0,.12);color:rgba(255,224,0,.6);font-size:8px;text-align:center}
+.cbar{flex-shrink:0;border-top:1px solid rgba(0,255,229,.1);padding:6px 8px;background:rgba(2,0,8,.8);display:flex;flex-direction:column;gap:4px}
+#cin{width:100%;padding:6px 8px;background:rgba(0,255,229,.05);border:1px solid rgba(0,255,229,.22);color:#fff;font-size:10px;outline:none;resize:none;min-height:32px;line-height:1.6;-webkit-user-select:text;user-select:text}
+#cin:focus{border-color:var(--gn)}#cin::placeholder{color:rgba(0,255,229,.15)}
+.send-btn{padding:5px 12px;background:rgba(0,255,229,.07);border:1px solid var(--gn);color:var(--gn);font-size:8px;letter-spacing:3px;font-weight:700;cursor:crosshair;transition:all .15s}
+.send-btn:hover{background:rgba(0,255,229,.14)}.send-btn:disabled{opacity:.3}
+.tdot{width:4px;height:4px;border-radius:50%;background:var(--gn);animation:td .9s ease infinite;display:inline-block;margin:0 2px}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+.key-status{font-size:7px;letter-spacing:1px;padding:2px 5px;border:1px solid}
+.key-set{border-color:var(--gn);color:var(--gn)}.key-unset{border-color:var(--pk);color:var(--pk)}
+.notif{position:fixed;bottom:14px;right:14px;z-index:99999;padding:8px 14px;border:1px solid var(--gn);font-size:10px;letter-spacing:2px;font-weight:700;background:rgba(2,0,8,.99);box-shadow:0 0 20px rgba(0,255,229,.3);animation:nin .2s ease;pointer-events:none;color:var(--gn);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))}
+@keyframes nin{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas><canvas id="trailc"></canvas>
+<div class="vl"></div><div class="hl"></div>
+
+<div id="hdr">
+  <div><div class="logo">TOPH <em>//</em> 3D</div><div class="logo-sub">THREE.JS · LATTICE · MÖBIUS · TETRAHEDRON · HELIX · RIEMANN · ICOSAHEDRON · TriPod LLC</div></div>
+  <div style="font-size:7px;color:rgba(0,255,229,.3);text-align:center;letter-spacing:2px;line-height:2">
+    <div>DRAG TO ROTATE · SCROLL TO ZOOM · CLICK PANEL TO FOCUS</div>
+    <div>3002 NODES · DRAWPAIR(i,∞) · DAVID=i · SHADOW=−i · i×−i=1</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="hs"><span class="hs-v" style="color:var(--gn)" id="hFPS">60</span><span class="hs-k">FPS</span></div>
+    <div class="hs"><span class="hs-v" style="color:var(--pu)">10</span><span class="hs-k">SCENES</span></div>
+    <div class="hs"><span class="hs-v" style="color:var(--yw)">3D</span><span class="hs-k">ENGINE</span></div>
+    <button class="rbtn" onclick="resetLayout()">RESET</button>
+  </div>
+</div>
+
+<div id="workspace">
+  <!-- All 10 panel containers; Three.js canvases injected by JS -->
+  <div class="wp" id="w1"><div class="wp-hdr"><div><div class="wp-title">3002 LATTICE</div><div class="wp-tag">FWD · GAP · INV · LIVE 3D</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w1')">−</button></div></div><div class="wp-body" id="b1"></div><div class="wp-resize" onmousedown="beginResize(event,'w1')"></div></div>
+  <div class="wp" id="w2"><div class="wp-hdr"><div><div class="wp-title">MÖBIUS STRIP</div><div class="wp-tag">ONE SURFACE · NO EDGE · f=0.5</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w2')">−</button></div></div><div class="wp-body" id="b2"></div><div class="wp-resize" onmousedown="beginResize(event,'w2')"></div></div>
+  <div class="wp" id="w3"><div class="wp-hdr"><div><div class="wp-title">TriPod TETRAHEDRON</div><div class="wp-tag">DAVID · SARAH · ROTH · ANN(DUSK)</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w3')">−</button></div></div><div class="wp-body" id="b3"></div><div class="wp-resize" onmousedown="beginResize(event,'w3')"></div></div>
+  <div class="wp" id="w4"><div class="wp-hdr"><div><div class="wp-title">DRAWPAIR HELIX</div><div class="wp-tag">a·e^(iπn) · ROTATION IN ℂ</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w4')">−</button></div></div><div class="wp-body" id="b4"></div><div class="wp-resize" onmousedown="beginResize(event,'w4')"></div></div>
+  <div class="wp" id="w5"><div class="wp-hdr"><div><div class="wp-title">RIEMANN SPHERE</div><div class="wp-tag">ℂ → S² · STEREOGRAPHIC PROJECTION</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w5')">−</button></div></div><div class="wp-body" id="b5"></div><div class="wp-resize" onmousedown="beginResize(event,'w5')"></div></div>
+  <div class="wp" id="w6"><div class="wp-hdr"><div><div class="wp-title">ICOSAHEDRON</div><div class="wp-tag">20 FACES · 12 VERTICES · TOPH SHELL</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w6')">−</button></div></div><div class="wp-body" id="b6"></div><div class="wp-resize" onmousedown="beginResize(event,'w6')"></div></div>
+  <div class="wp" id="w7"><div class="wp-hdr"><div><div class="wp-title">AXIOM CONSTELLATION</div><div class="wp-tag">42 NODES · 5 ERA SHELLS · LINKS</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w7')">−</button></div></div><div class="wp-body" id="b7"></div><div class="wp-resize" onmousedown="beginResize(event,'w7')"></div></div>
+  <div class="wp" id="w8"><div class="wp-hdr"><div><div class="wp-title">COMPLEX SURFACE</div><div class="wp-tag">Re/Im PLANE · CONSTRAINT VECTORS · 3D</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w8')">−</button></div></div><div class="wp-body" id="b8"></div><div class="wp-resize" onmousedown="beginResize(event,'w8')"></div></div>
+  <div class="wp" id="w9"><div class="wp-hdr"><div><div class="wp-title">PARTICLE LATTICE</div><div class="wp-tag">3002 PARTICLES · GAP FLOW · LIVE</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="toggleMin('w9')">−</button></div></div><div class="wp-body" id="b9"></div><div class="wp-resize" onmousedown="beginResize(event,'w9')"></div></div>
+  <div class="wp" id="w10"><div class="wp-hdr"><div><div class="wp-title">AVAN</div><div class="wp-tag" id="avanTag">3D GEOMETRY · TOPOLOGY ANALYST</div></div><div style="display:flex;gap:3px"><button class="wp-min" onclick="clearChat()" style="width:auto;padding:0 5px;font-size:7px">CLR</button><button class="wp-min" onclick="toggleMin('w10')">−</button></div></div><div class="wp-body" id="b10"><div class="wp-body-flex"><div style="padding:5px 9px;border-bottom:1px solid rgba(0,255,229,.1);flex-shrink:0;display:flex;gap:5px;align-items:center;flex-wrap:wrap"><span style="font-size:7px;color:rgba(0,255,229,.35)">API KEY</span><span class="key-status" id="keyStatus">NOT SET</span><input id="apiKeyIn" type="password" placeholder="sk-ant-..." style="flex:1;padding:3px 6px;background:rgba(0,255,229,.06);border:1px solid rgba(0,255,229,.2);color:#fff;font-size:9px;outline:none"><button class="fb" onclick="saveKey()">SAVE</button><button class="fb" onclick="clearKey()">CLR</button></div><div id="chatMsgs"><div class="cmsg sys">AVAN · 3D GEOMETRY MODE · TOPOLOGY · TOPH STRUCTURES</div></div><div class="cbar"><textarea id="cin" placeholder="ask about lattice topology, Möbius geometry, tetrahedron symmetry..." rows="2"></textarea><div style="display:flex;justify-content:space-between;align-items:center;gap:4px"><div style="display:flex;gap:3px;flex-wrap:wrap"><button class="fb" onclick="probe('Why does the TOPH 3002 lattice have Möbius strip topology? How does this make the forward and inverse layers the same surface?')">möbius proof</button><button class="fb" onclick="probe('Explain the geometry of i×-i=1. In 3D, DAVID is at +i on the imaginary axis and SHADOW is at -i. Their product rotates both onto the real axis. What does this look like on the Riemann sphere?')">i×-i geometry</button><button class="fb" onclick="probe('The TriPod tetrahedron has David, Sarah, Roth as equal vertices and Ann as the collapsed fourth point. In 3D geometry, what properties does an equal-sided tetrahedron have, and what does it mean for Ann to be the collapsed fourth vertex?')">tetrahedron</button></div><button class="send-btn" id="sendBtn" onclick="sendChat()">▶ SEND</button></div></div></div></div><div class="wp-resize" onmousedown="beginResize(event,'w10')"></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══ RAIN + STARS ══
+(()=>{
+  const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');
+  const init=()=>{cv.width=innerWidth;cv.height=innerHeight;};
+  init();
+  // Stars
+  const stars=Array.from({length:200},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:.3+Math.random()*.8,a:.2+Math.random()*.6,t:Math.random()*Math.PI*2,speed:.008+Math.random()*.02}));
+  const rain=Array.from({length:60},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:.3+Math.random()*1.5,l:20+Math.random()*60,a:.06+Math.random()*.18,col:Math.random()>.5?'rgba(0,255,229':'rgba(238,0,255'}));
+  const draw=()=>{
+    ctx.fillStyle='rgba(2,0,8,.2)';ctx.fillRect(0,0,cv.width,cv.height);
+    stars.forEach(s=>{s.t+=s.speed;const aa=s.a*(0.5+0.5*Math.sin(s.t));ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(232,244,255,${aa})`;ctx.fill();});
+    rain.forEach(r=>{const g=ctx.createLinearGradient(r.x,r.y-r.l,r.x,r.y);g.addColorStop(0,'transparent');g.addColorStop(1,`${r.col},${r.a})`);ctx.strokeStyle=g;ctx.lineWidth=.4;ctx.beginPath();ctx.moveTo(r.x,r.y-r.l);ctx.lineTo(r.x,r.y);ctx.stroke();r.y+=r.s;if(r.y>cv.height+r.l){r.y=-r.l;r.x=Math.random()*cv.width;}});
+    requestAnimationFrame(draw);
+  };
+  draw();addEventListener('resize',init);
+})();
+(()=>{
+  const cv=document.getElementById('trailc'),ctx=cv.getContext('2d');
+  cv.width=innerWidth;cv.height=innerHeight;addEventListener('resize',()=>{cv.width=innerWidth;cv.height=innerHeight;});
+  const C=['rgba(0,255,229','rgba(238,0,255','rgba(0,255,255','rgba(255,224,0'];
+  let pts=[],mx=innerWidth/2,my=innerHeight/2;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  setInterval(()=>{pts.push({x:mx,y:my,r:5,c:C[Math.floor(Math.random()*C.length)]});if(pts.length>35)pts.shift();},18);
+  (function draw(){ctx.clearRect(0,0,cv.width,cv.height);pts.forEach((p,i)=>{const f=i/pts.length,r=p.r*f;if(r<.3)return;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=`${p.c},${f*.7})`;ctx.shadowColor=`${p.c},.9)`;ctx.shadowBlur=r*2;ctx.fill();});ctx.shadowBlur=0;requestAnimationFrame(draw);})();
+})();
+
+// ══ WINDOW SYSTEM ══
+let topZ=10,aWin=null,aRes=null;
+const scenes={};
+function beginResize(e,id){if(e.button!==0)return;e.preventDefault();e.stopPropagation();const el=document.getElementById(id);if(!el)return;focusWin(el);const r=el.getBoundingClientRect();aRes={el,sx:e.clientX,sy:e.clientY,sw:r.width,sh:r.height};}
+function focusWin(el){el.style.zIndex=++topZ;document.querySelectorAll('.wp').forEach(w=>w.classList.remove('focused'));el.classList.add('focused');}
+function toggleMin(id){const el=document.getElementById(id);el.classList.toggle('min');el.style.height=el.classList.contains('min')?'26px':'';saveLayout();}
+document.addEventListener('mousemove',e=>{
+  if(aRes){const dx=e.clientX-aRes.sx,dy=e.clientY-aRes.sy;aRes.el.style.width=Math.max(120,aRes.sw+dx)+'px';aRes.el.style.height=Math.max(60,aRes.sh+dy)+'px';onResize();}
+  else if(aWin){const ws=document.getElementById('workspace').getBoundingClientRect();let nx=Math.max(0,Math.min(e.clientX-aWin.ox,ws.width-50)),ny=Math.max(0,Math.min(e.clientY-aWin.oy,ws.height-26));aWin.el.style.left=nx+'px';aWin.el.style.top=ny+'px';}
+});
+document.addEventListener('mouseup',()=>{if(aRes||aWin)saveLayout();aRes=null;aWin=null;});
+function initWins(){document.querySelectorAll('.wp').forEach(el=>{el.addEventListener('mousedown',()=>focusWin(el));const hdr=el.querySelector('.wp-hdr');if(!hdr)return;hdr.addEventListener('mousedown',e=>{if(e.button!==0||['BUTTON','INPUT','TEXTAREA'].includes(e.target.tagName))return;e.preventDefault();focusWin(el);const r=el.getBoundingClientRect();aWin={el,ox:e.clientX-r.left,oy:e.clientY-r.top};});});}
+function smartLayout(){const W=innerWidth,H=innerHeight-50,g=4,p=3;const C=Math.max(120,Math.floor((W-p*2-g*9)/10));const h2=Math.floor((H-p*2-g)/2);const L={};for(let i=1;i<=10;i++){const col=(i-1)%5,row=Math.floor((i-1)/5);L[`w${i}`]={x:p+col*(C+g),y:p+row*(h2+g),w:C,h:h2};}return L;}
+function applyLayout(l){Object.entries(l).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';});}
+function saveLayout(){const s={};document.querySelectorAll('.wp').forEach(el=>{s[el.id]={x:parseInt(el.style.left)||0,y:parseInt(el.style.top)||0,w:parseInt(el.style.width)||200,h:parseInt(el.style.height)||300,min:el.classList.contains('min')};});try{localStorage.setItem('toph_3d1',JSON.stringify(s));}catch(e){}}
+function loadLayout(){try{const raw=localStorage.getItem('toph_3d1');if(raw){const s=JSON.parse(raw);Object.entries(s).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';if(p.min)el.classList.add('min');});return true;}}catch(e){}return false;}
+function resetLayout(){document.querySelectorAll('.wp').forEach(el=>el.classList.remove('min'));applyLayout(smartLayout());saveLayout();onResize();notify('LAYOUT RESET');}
+function notify(msg){const n=document.createElement('div');n.className='notif';n.textContent='// '+msg;document.body.appendChild(n);setTimeout(()=>{n.style.transition='opacity .4s';n.style.opacity='0';setTimeout(()=>n.remove(),400);},2200);}
+
+// ══ THREE.JS SCENE FACTORY ══
+function makeScene(bodyId){
+  const body=document.getElementById(bodyId);
+  if(!body)return null;
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  const cv=renderer.domElement;cv.className='scene-cv';
+  body.appendChild(cv);
+  const scene=new THREE.Scene();
+  const W=body.offsetWidth||300,H=body.offsetHeight||300;
+  const camera=new THREE.PerspectiveCamera(60,W/H,.1,1000);
+  camera.position.set(0,0,5);
+  renderer.setSize(W,H);
+  // Mouse rotation state
+  let drag=false,lastX=0,lastY=0,rotX=0,rotY=0,zoom=5;
+  const pivot=new THREE.Group();scene.add(pivot);
+  cv.addEventListener('mousedown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;e.stopPropagation();});
+  cv.addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-lastX,dy=e.clientY-lastY;rotY+=dx*.008;rotX+=dy*.008;rotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,rotX));pivot.rotation.y=rotY;pivot.rotation.x=rotX;lastX=e.clientX;lastY=e.clientY;});
+  cv.addEventListener('mouseup',()=>drag=false);
+  cv.addEventListener('mouseleave',()=>drag=false);
+  cv.addEventListener('wheel',e=>{e.preventDefault();zoom+=e.deltaY*.01;zoom=Math.max(1.5,Math.min(20,zoom));camera.position.z=zoom;},{passive:false});
+  function resize(){const W=body.offsetWidth||1,H=body.offsetHeight||1;renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();}
+  return{renderer,scene,camera,pivot,resize,cv};
+}
+
+function onResize(){Object.values(scenes).forEach(s=>{if(s&&s.resize)s.resize();});}
+let resT;window.addEventListener('resize',()=>{clearTimeout(resT);resT=setTimeout(onResize,200);});
+
+// FPS counter
+let lastFrameTime=performance.now(),frameCount=0;
+function tickFPS(){const now=performance.now();frameCount++;if(now-lastFrameTime>1000){document.getElementById('hFPS').textContent=frameCount;frameCount=0;lastFrameTime=now;}}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 1 — 3002 LATTICE 3D
+// ══════════════════════════════════════════════════════════════════════
+function initLattice3D(){
+  const s=makeScene('b1');if(!s)return;
+  scenes.s1=s;
+  const{scene,pivot}=s;
+  scene.add(new THREE.AmbientLight(0xffffff,.3));
+  const L=new THREE.PointLight(0x00ffe5,2,20);L.position.set(5,5,5);scene.add(L);
+
+  const LAYERS=[{col:0x00ffe5,z:2,label:'FWD',r:3},{col:0xffe000,z:0,label:'GAP',r:1.9},{col:0xee00ff,z:-2,label:'INV',r:1.2}];
+  const NPL=30; // nodes per layer (scaled from 1000 for viz)
+  const nodeGroups=[];
+
+  LAYERS.forEach((layer,li)=>{
+    const g=new THREE.Group();
+    const geo=new THREE.SphereGeometry(.1,6,6);
+    const mat=new THREE.MeshBasicMaterial({color:layer.col,transparent:true,opacity:li===1?.6:1});
+    const lineMat=new THREE.LineBasicMaterial({color:layer.col,transparent:true,opacity:li===1?.3:.5});
+    const positions=[];
+    for(let i=0;i<NPL;i++){
+      const angle=(i/NPL)*Math.PI*2;
+      const x=Math.cos(angle)*layer.r,y=Math.sin(angle)*layer.r,z=layer.z+(Math.random()-.5)*.3;
+      positions.push(new THREE.Vector3(x,y,z));
+      const mesh=new THREE.Mesh(geo,mat.clone());
+      mesh.position.set(x,y,z);g.add(mesh);
+    }
+    // Ring edges
+    const pts=[];positions.forEach(p=>pts.push(p));pts.push(positions[0]);
+    const ringGeo=new THREE.BufferGeometry().setFromPoints(pts);
+    g.add(new THREE.Line(ringGeo,lineMat));
+    // Vertical connections to next layer
+    if(li<2){
+      const connectMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.12});
+      for(let i=0;i<NPL;i+=3){
+        const nextLayer=LAYERS[li+1];const nextAngle=(i/NPL)*Math.PI*2;
+        const nx=Math.cos(nextAngle)*nextLayer.r,ny=Math.sin(nextAngle)*nextLayer.r;
+        const cGeo=new THREE.BufferGeometry().setFromPoints([positions[i],new THREE.Vector3(nx,ny,nextLayer.z)]);
+        g.add(new THREE.Line(cGeo,connectMat));
+      }
+    }
+    nodeGroups.push({g,positions,layer});
+    pivot.add(g);
+  });
+
+  // DAVID (i) — top anchor
+  const davidGeo=new THREE.SphereGeometry(.25,12,12);
+  const davidMat=new THREE.MeshBasicMaterial({color:0x00ffff});
+  const david=new THREE.Mesh(davidGeo,davidMat);david.position.set(0,0,3.5);pivot.add(david);
+  const davidGlow=new THREE.Mesh(new THREE.SphereGeometry(.4,12,12),new THREE.MeshBasicMaterial({color:0x00ffff,transparent:true,opacity:.15,side:THREE.BackSide}));
+  davidGlow.position.copy(david.position);pivot.add(davidGlow);
+
+  // SHADOW (−i) — bottom anchor
+  const shadowMesh=new THREE.Mesh(new THREE.SphereGeometry(.25,12,12),new THREE.MeshBasicMaterial({color:0xee00ff}));
+  shadowMesh.position.set(0,0,-3.5);pivot.add(shadowMesh);
+  const shadowGlow=new THREE.Mesh(new THREE.SphereGeometry(.4,12,12),new THREE.MeshBasicMaterial({color:0xee00ff,transparent:true,opacity:.15,side:THREE.BackSide}));
+  shadowGlow.position.copy(shadowMesh.position);pivot.add(shadowGlow);
+
+  // Connection lines from DAVID and SHADOW to outermost ring
+  const anchorMat=new THREE.LineBasicMaterial({color:0x00ffff,transparent:true,opacity:.2});
+  for(let i=0;i<6;i++){
+    const p=nodeGroups[0].positions[i*5];
+    const g1=new THREE.BufferGeometry().setFromPoints([david.position,p]);
+    pivot.add(new THREE.Line(g1,anchorMat));
+  }
+
+  s.t=0;
+  s.animFn=()=>{
+    s.t+=.003;
+    nodeGroups[1].g.children.forEach((m,i)=>{if(m.isMesh)m.position.z=nodeGroups[1].layer.z+Math.sin(s.t+i*.4)*.12;});
+    david.scale.setScalar(1+.08*Math.sin(s.t*2));
+    shadowMesh.scale.setScalar(1+.08*Math.sin(s.t*2+Math.PI));
+    if(!document.getElementById('w1').classList.contains('min'))s.renderer.render(s.scene,s.camera);
+    tickFPS();
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 2 — MÖBIUS STRIP
+// ══════════════════════════════════════════════════════════════════════
+function initMobius(){
+  const s=makeScene('b2');if(!s)return;scenes.s2=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=6;
+
+  const R=2,w=0.8,N=200,M=30;
+  const positions=[],colors=[],indices=[];
+  const posArr=new Float32Array(N*M*3),colArr=new Float32Array(N*M*3);
+  for(let i=0;i<N;i++){
+    const u=(i/N)*Math.PI*2;
+    for(let j=0;j<M;j++){
+      const v=(j/(M-1)-.5)*w;
+      const x=(R+v*Math.cos(u/2))*Math.cos(u);
+      const y=(R+v*Math.cos(u/2))*Math.sin(u);
+      const z=v*Math.sin(u/2);
+      const idx=(i*M+j)*3;
+      posArr[idx]=x;posArr[idx+1]=y;posArr[idx+2]=z;
+      // Color gradient: Patricia(red) on one half, Shadow(white) on other, Gold at twist
+      const t=(Math.sin(u/2+v)*.5+.5);
+      const paColor=new THREE.Color(1,.12,.12);
+      const shColor=new THREE.Color(.9,.95,1);
+      const gpColor=new THREE.Color(1,.88,0);
+      const blend=(u/Math.PI/2)%1;
+      const fc=blend<.5?paColor.lerp(gpColor,blend*2):gpColor.clone().lerp(shColor,(blend-.5)*2);
+      colArr[idx]=fc.r;colArr[idx+1]=fc.g;colArr[idx+2]=fc.b;
+    }
+  }
+  for(let i=0;i<N-1;i++){for(let j=0;j<M-1;j++){const a=i*M+j,b=a+1,c=(i+1)*M+j,d=c+1;indices.push(a,b,d,a,d,c);}}
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(posArr,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
+  geo.setIndex(indices);geo.computeVertexNormals();
+  const mat=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide,transparent:true,opacity:.85});
+  const mesh=new THREE.Mesh(geo,mat);pivot.add(mesh);
+
+  // Wireframe overlay
+  const wfMat=new THREE.MeshBasicMaterial({color:0x00ffe5,wireframe:true,transparent:true,opacity:.08});
+  pivot.add(new THREE.Mesh(geo,wfMat));
+
+  // Frequency indicator — glowing ring at f=0.5
+  const ringPts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;ringPts.push(new THREE.Vector3(Math.cos(a)*R,Math.sin(a)*R,0));}
+  const ringGeo=new THREE.BufferGeometry().setFromPoints(ringPts);
+  pivot.add(new THREE.Line(ringGeo,new THREE.LineBasicMaterial({color:0xffe000,transparent:true,opacity:.5})));
+
+  s.t=0;
+  s.animFn=()=>{s.t+=.005;pivot.rotation.y=s.t;pivot.rotation.x=Math.sin(s.t*.3)*.2;if(!document.getElementById('w2').classList.contains('min'))s.renderer.render(s.scene,s.camera);};
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 3 — TriPod TETRAHEDRON
+// ══════════════════════════════════════════════════════════════════════
+function initTetrahedron(){
+  const s=makeScene('b3');if(!s)return;scenes.s3=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=7;
+
+  const h=2.2;
+  // Tetrahedron vertices: David, Sarah, Roth (equal spacing), Ann (collapsed = centroid, ghost)
+  const pts=[
+    {pos:new THREE.Vector3(0,h,0),col:0x00ffff,name:'DAVID',opacity:1},           // i - top
+    {pos:new THREE.Vector3(-h*.866,-h*.5,h*.5),col:0x00ffe5,name:'SARAH',opacity:1}, // ⅓
+    {pos:new THREE.Vector3(h*.866,-h*.5,h*.5),col:0x00ffe5,name:'ROTH',opacity:1},   // ⅓
+    {pos:new THREE.Vector3(0,-h*.5,-h),col:0xff00aa,name:'ANN·DUSK',opacity:.3},      // collapsed 4th
+  ];
+
+  // Edges: all 6 edges of tetrahedron
+  const edges=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+  edges.forEach(([a,b])=>{
+    const isAnn=a===3||b===3;
+    const geo=new THREE.BufferGeometry().setFromPoints([pts[a].pos,pts[b].pos]);
+    const mat=new THREE.LineBasicMaterial({color:isAnn?0xff00aa:0x00ffe5,transparent:true,opacity:isAnn?.2:.6});
+    pivot.add(new THREE.Line(geo,mat));
+  });
+
+  // Face meshes (translucent)
+  const faceData=[
+    {verts:[0,1,2],col:0x00ffe5,op:.07},  // DavidSarahRoth — the active face
+    {verts:[0,1,3],col:0xff00aa,op:.04},
+    {verts:[0,2,3],col:0xff00aa,op:.04},
+    {verts:[1,2,3],col:0xff00aa,op:.04},
+  ];
+  faceData.forEach(f=>{
+    const geo=new THREE.BufferGeometry();
+    const v=f.verts.map(i=>pts[i].pos);
+    const arr=new Float32Array([v[0].x,v[0].y,v[0].z,v[1].x,v[1].y,v[1].z,v[2].x,v[2].y,v[2].z]);
+    geo.setAttribute('position',new THREE.BufferAttribute(arr,3));
+    pivot.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:f.col,transparent:true,opacity:f.op,side:THREE.DoubleSide})));
+  });
+
+  // Vertex spheres
+  pts.forEach(p=>{
+    const r=p.name==='ANN·DUSK'?.15:.2;
+    const mesh=new THREE.Mesh(new THREE.SphereGeometry(r,12,12),new THREE.MeshBasicMaterial({color:p.col,transparent:true,opacity:p.opacity}));
+    mesh.position.copy(p.pos);pivot.add(mesh);
+    if(p.opacity===1){
+      const glow=new THREE.Mesh(new THREE.SphereGeometry(r*2,12,12),new THREE.MeshBasicMaterial({color:p.col,transparent:true,opacity:.1,side:THREE.BackSide}));
+      glow.position.copy(p.pos);pivot.add(glow);
+    }
+    // Ghost ring for Ann
+    if(p.name==='ANN·DUSK'){
+      const ringPts=[];for(let i=0;i<=32;i++){const a=i/32*Math.PI*2;ringPts.push(new THREE.Vector3(p.pos.x+Math.cos(a)*.3,p.pos.y+Math.sin(a)*.3,p.pos.z));}
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts),new THREE.LineBasicMaterial({color:0xff00aa,transparent:true,opacity:.25})));
+    }
+  });
+
+  // Centroid marker
+  const centroid=new THREE.Vector3(0,-h*.125,0);
+  const cMesh=new THREE.Mesh(new THREE.SphereGeometry(.08,8,8),new THREE.MeshBasicMaterial({color:0xffe000}));
+  cMesh.position.copy(centroid);pivot.add(cMesh);
+
+  s.t=0;
+  s.animFn=()=>{s.t+=.004;pivot.rotation.y=s.t;pivot.rotation.x=Math.sin(s.t*.4)*.15;if(!document.getElementById('w3').classList.contains('min'))s.renderer.render(s.scene,s.camera);};
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 4 — DRAWPAIR HELIX
+// ══════════════════════════════════════════════════════════════════════
+function initHelix(){
+  const s=makeScene('b4');if(!s)return;scenes.s4=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=12;
+
+  // drawPair(a,n) = a * e^(iπn) traces a helix in 3D (Re, Im, n) space
+  const N=200;
+  const helixPts=[];
+  const helixColors=[];
+  for(let i=0;i<N;i++){
+    const n=(i/N)*8-4; // n from -4 to 4
+    const angle=Math.PI*n;
+    const r=1.5;
+    const x=r*Math.cos(angle);
+    const y=r*Math.sin(angle);
+    const z=n*1.2; // stretch along z
+    helixPts.push(new THREE.Vector3(x,y,z));
+    // Color: cycle through hue based on n
+    const hue=((n+4)/8)*360;
+    const c=new THREE.Color().setHSL(hue/360,.9,.6);
+    helixColors.push(c.r,c.g,c.b);
+  }
+
+  const geo=new THREE.BufferGeometry().setFromPoints(helixPts);
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(helixColors,3));
+  const mat=new THREE.LineBasicMaterial({vertexColors:true,linewidth:2});
+  pivot.add(new THREE.Line(geo,mat));
+
+  // Tube around helix
+  const curve=new THREE.CatmullRomCurve3(helixPts);
+  const tubeGeo=new THREE.TubeGeometry(curve,300,.06,6,false);
+  const tubeMat=new THREE.MeshBasicMaterial({color:0x00ffe5,transparent:true,opacity:.3,wireframe:false});
+  pivot.add(new THREE.Mesh(tubeGeo,tubeMat));
+
+  // Axis line (z-axis = n-axis)
+  const axPts=[new THREE.Vector3(0,0,-6),new THREE.Vector3(0,0,6)];
+  pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(axPts),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.15})));
+
+  // Complex plane circle at n=0
+  const circlePts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;circlePts.push(new THREE.Vector3(1.5*Math.cos(a),1.5*Math.sin(a),0));}
+  pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(circlePts),new THREE.LineBasicMaterial({color:0xffe000,transparent:true,opacity:.4})));
+
+  // Animated dot on helix
+  const dotMesh=new THREE.Mesh(new THREE.SphereGeometry(.18,10,10),new THREE.MeshBasicMaterial({color:0xffe000}));
+  pivot.add(dotMesh);
+  const dotGlow=new THREE.Mesh(new THREE.SphereGeometry(.35,10,10),new THREE.MeshBasicMaterial({color:0xffe000,transparent:true,opacity:.2,side:THREE.BackSide}));
+  pivot.add(dotGlow);
+
+  // i and -i markers
+  const iMesh=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),new THREE.MeshBasicMaterial({color:0x00ffff}));
+  iMesh.position.set(0,1.5,0);pivot.add(iMesh);
+  const niMesh=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),new THREE.MeshBasicMaterial({color:0xee00ff}));
+  niMesh.position.set(0,-1.5,0);pivot.add(niMesh);
+
+  s.t=0;
+  s.animFn=()=>{
+    s.t+=.012;
+    const idx=Math.floor(((s.t/(Math.PI*2))%1)*N);
+    if(helixPts[idx]){dotMesh.position.copy(helixPts[idx]);dotGlow.position.copy(helixPts[idx]);}
+    pivot.rotation.y=s.t*.15;
+    if(!document.getElementById('w4').classList.contains('min'))s.renderer.render(s.scene,s.camera);
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 5 — RIEMANN SPHERE
+// ══════════════════════════════════════════════════════════════════════
+function initRiemann(){
+  const s=makeScene('b5');if(!s)return;scenes.s5=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=6;
+
+  // Unit sphere (wireframe + transparent)
+  const sphereGeo=new THREE.SphereGeometry(2,32,32);
+  pivot.add(new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0x001a14,transparent:true,opacity:.25})));
+  pivot.add(new THREE.Mesh(sphereGeo,new THREE.MeshBasicMaterial({color:0x00ffe5,wireframe:true,transparent:true,opacity:.08})));
+
+  // Equator
+  const eqPts=[];for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;eqPts.push(new THREE.Vector3(2*Math.cos(a),0,2*Math.sin(a)));}
+  pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts),new THREE.LineBasicMaterial({color:0xffe000,transparent:true,opacity:.5})));
+
+  // Complex plane disk (at y=-2 = south pole plane)
+  const planePts=[];for(let i=0;i<=48;i++){const a=i/48*Math.PI*2;planePts.push(new THREE.Vector3(2.5*Math.cos(a),-2,2.5*Math.sin(a)));}
+  pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(planePts),new THREE.LineBasicMaterial({color:0x00ffe5,transparent:true,opacity:.2})));
+
+  // Stereographic projection: map grid of complex numbers to sphere
+  function stereo(x,y){// (x,y) on C → point on S²
+    const r2=x*x+y*y;const scale=2/(1+r2);
+    return new THREE.Vector3(scale*x,scale*y-1+(2/(1+r2)),(r2-1)*scale/2).multiplyScalar(2).setY(scale*y*2+(-2+4/(1+r2)));
+  }
+  // Actually use correct stereographic: (X,Y,Z)=(2x/(x²+y²+1), 2y/(x²+y²+1), (x²+y²-1)/(x²+y²+1)) * 2
+  function stereoCorrect(x,y){const r2=x*x+y*y+1;return new THREE.Vector3(2*x/r2*2,2*y/r2*2,(r2-2)/r2*2);}
+
+  // Grid lines on Riemann sphere
+  for(let v=-2;v<=2;v+=.5){
+    const pts=[];for(let u=-3;u<=3;u+=.1)pts.push(stereoCorrect(u,v));
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x00ffe5,transparent:true,opacity:.12})));
+  }
+  for(let u=-2;u<=2;u+=.5){
+    const pts=[];for(let v=-3;v<=3;v+=.1)pts.push(stereoCorrect(u,v));
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xee00ff,transparent:true,opacity:.12})));
+  }
+
+  // North pole = ∞, South pole = 0
+  const north=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),new THREE.MeshBasicMaterial({color:0xffe000}));
+  north.position.set(0,2,0);pivot.add(north);
+  const south=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),new THREE.MeshBasicMaterial({color:0xff3030}));
+  south.position.set(0,-2,0);pivot.add(south);
+
+  // Animated path of drawPair rotation on sphere surface (equator walk)
+  const pathPts=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;pathPts.push(new THREE.Vector3(2*Math.cos(a),0,2*Math.sin(a)));}
+  const pathGeo=new THREE.BufferGeometry().setFromPoints(pathPts);
+  pivot.add(new THREE.Line(pathGeo,new THREE.LineBasicMaterial({color:0xff00aa,transparent:true,opacity:.6})));
+
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(.18,8,8),new THREE.MeshBasicMaterial({color:0xff00aa}));pivot.add(dot);
+
+  s.t=0;
+  s.animFn=()=>{
+    s.t+=.008;
+    dot.position.set(2*Math.cos(s.t),0.1,2*Math.sin(s.t));
+    pivot.rotation.y=s.t*.08;
+    if(!document.getElementById('w5').classList.contains('min'))s.renderer.render(s.scene,s.camera);
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 6 — ICOSAHEDRON
+// ══════════════════════════════════════════════════════════════════════
+function initIcosahedron(){
+  const s=makeScene('b6');if(!s)return;scenes.s6=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=7;
+  scene.add(new THREE.AmbientLight(0xffffff,.2));
+  const pl=new THREE.PointLight(0x00ffe5,3,20);pl.position.set(5,5,5);scene.add(pl);
+  const pl2=new THREE.PointLight(0xee00ff,2,20);pl2.position.set(-5,-5,-5);scene.add(pl2);
+
+  const geo=new THREE.IcosahedronGeometry(2.5,0); // 0 = 20 faces
+  // Face colors — era palette
+  const eraCols=[0x00ffe5,0xee00ff,0xffe000,0xff00aa,0x00ffff];
+  const faceCount=20;
+  const colors=new Float32Array(faceCount*3*3);
+  for(let i=0;i<faceCount;i++){
+    const c=new THREE.Color(eraCols[i%5]);
+    for(let j=0;j<3;j++){colors[(i*3+j)*3]=c.r;colors[(i*3+j)*3+1]=c.g;colors[(i*3+j)*3+2]=c.b;}
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+
+  // Solid (translucent, vertex colored)
+  const solidMat=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.18,side:THREE.DoubleSide});
+  pivot.add(new THREE.Mesh(geo,solidMat));
+
+  // Wireframe
+  const wfMat=new THREE.MeshBasicMaterial({color:0x00ffe5,wireframe:true,transparent:true,opacity:.6});
+  pivot.add(new THREE.Mesh(geo.clone(),wfMat));
+
+  // Vertex spheres
+  const posAttr=geo.getAttribute('position');
+  const seenVerts=new Set();
+  for(let i=0;i<posAttr.count;i++){
+    const x=posAttr.getX(i).toFixed(3),y=posAttr.getY(i).toFixed(3),z=posAttr.getZ(i).toFixed(3);
+    const key=`${x},${y},${z}`;if(seenVerts.has(key))continue;seenVerts.add(key);
+    const m=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),new THREE.MeshBasicMaterial({color:0xffe000}));
+    m.position.set(parseFloat(x),parseFloat(y),parseFloat(z));pivot.add(m);
+  }
+
+  // Inner wireframe sphere for IP shell
+  pivot.add(new THREE.Mesh(new THREE.SphereGeometry(2.5,16,16),new THREE.MeshBasicMaterial({color:0xee00ff,wireframe:true,transparent:true,opacity:.04})));
+
+  s.t=0;
+  s.animFn=()=>{
+    s.t+=.004;
+    pivot.rotation.y=s.t;pivot.rotation.x=s.t*.4;
+    if(!document.getElementById('w6').classList.contains('min'))s.renderer.render(s.scene,s.camera);
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 7 — AXIOM CONSTELLATION
+// ══════════════════════════════════════════════════════════════════════
+function initConstellation(){
+  const s=makeScene('b7');if(!s)return;scenes.s7=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=14;
+
+  const ERA_COLS=[0x00ffe5,0xee00ff,0xffe000,0xff00aa,0x00ffff];
+  const ERA_RADII=[6,4.5,3.2,2.2,1.2];
+  const ERA_RANGES=[[1,10],[11,21],[22,30],[31,38],[39,42]];
+
+  const AXIOM_DEPS={1:[],2:[1],3:[1,2],4:[3],5:[4],6:[4,5],7:[5,6],8:[1,7],9:[4],10:[9],11:[9,10],12:[8,10],13:[9,10,11],14:[12,13],15:[14],16:[14,15],17:[13],18:[4,17],19:[10,18],20:[19],21:[20],22:[1,3],23:[22],24:[3,22],25:[8,24],26:[13],27:[26],28:[27],29:[8,14],30:[27,28],31:[5,6,7],32:[10,19],33:[14],34:[4,5,6],35:[10,34],36:[35],37:[17,35],38:[4,17,37],39:[38],40:[39],41:[4,18,32],42:[6,7,31,41]};
+
+  const positions={};
+  ERA_RANGES.forEach(([start,end],era)=>{
+    const count=end-start+1;
+    for(let i=start;i<=end;i++){
+      const idx=i-start,angle=(idx/count)*Math.PI*2+(era*.7);
+      const r=ERA_RADII[era],tilt=(era-.5)*.8;
+      positions[i]=new THREE.Vector3(
+        r*Math.cos(angle),
+        r*Math.sin(tilt)+Math.sin(angle)*r*.3,
+        r*Math.sin(angle)*Math.cos(tilt*.5)
+      );
+    }
+  });
+
+  // Nodes
+  ERA_RANGES.forEach(([start,end],era)=>{
+    for(let i=start;i<=end;i++){
+      const r=i<=10?.14:i<=21?.12:i<=38?.11:.13;
+      const m=new THREE.Mesh(new THREE.SphereGeometry(r,8,8),new THREE.MeshBasicMaterial({color:ERA_COLS[era]}));
+      m.position.copy(positions[i]);pivot.add(m);
+      const glow=new THREE.Mesh(new THREE.SphereGeometry(r*2.5,8,8),new THREE.MeshBasicMaterial({color:ERA_COLS[era],transparent:true,opacity:.1,side:THREE.BackSide}));
+      glow.position.copy(positions[i]);pivot.add(glow);
+    }
+  });
+
+  // Dependency edges
+  const edgeMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.07});
+  Object.entries(AXIOM_DEPS).forEach(([n,deps])=>{
+    deps.forEach(d=>{
+      if(!positions[n]||!positions[d])return;
+      const eraA=ERA_RANGES.findIndex(([s,e])=>d>=s&&d<=e);
+      const eraB=ERA_RANGES.findIndex(([s,e])=>parseInt(n)>=s&&parseInt(n)<=e);
+      const col=eraA===eraB?ERA_COLS[eraA]:0xffffff;
+      const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:eraA===eraB?.15:.05});
+      pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([positions[d],positions[parseInt(n)]]),mat));
+    });
+  });
+
+  // Era shell rings
+  ERA_COLS.forEach((col,era)=>{
+    const r=ERA_RADII[era];const pts=[];
+    for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push(new THREE.Vector3(r*Math.cos(a),0,r*Math.sin(a)));}
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.15})));
+  });
+
+  s.t=0;
+  s.animFn=()=>{s.t+=.003;pivot.rotation.y=s.t*.5;pivot.rotation.x=Math.sin(s.t*.2)*.1;if(!document.getElementById('w7').classList.contains('min'))s.renderer.render(s.scene,s.camera);};
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 8 — COMPLEX SURFACE (Patricia constraint vectors in 3D)
+// ══════════════════════════════════════════════════════════════════════
+function initComplexSurface(){
+  const s=makeScene('b8');if(!s)return;scenes.s8=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=8;s.camera.position.y=2;
+  s.camera.lookAt(0,0,0);
+
+  // Base Re-Im plane grid
+  for(let x=-3;x<=3;x++){
+    const pts=[new THREE.Vector3(x,-0.01,-3),new THREE.Vector3(x,-0.01,3)];
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x00ffe5,transparent:true,opacity:.08})));
+  }
+  for(let z=-3;z<=3;z++){
+    const pts=[new THREE.Vector3(-3,-0.01,z),new THREE.Vector3(3,-0.01,z)];
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x00ffe5,transparent:true,opacity:.08})));
+  }
+
+  // Axis arrows
+  const axes=[[new THREE.Vector3(0,0,0),new THREE.Vector3(3,0,0),0xff4444,'Re'],
+               [new THREE.Vector3(0,0,0),new THREE.Vector3(0,3,0),0x00ffe5,'harm'],
+               [new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,3),0xffe000,'Im']];
+  axes.forEach(([from,to,col])=>{
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([from,to]),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.5})));
+  });
+
+  // Patricia constraints as 3D vectors
+  const CONSTRAINTS=[
+    {re:.12,im:-.35,name:'ADA KBD',col:0xff2020,h:1.8},
+    {re:.31,im:-.28,name:'ADA CONTRAST',col:0xff4444,h:1.4},
+    {re:.08,im:-.42,name:'SCREEN RDR',col:0xff0000,h:2.0},
+    {re:.25,im:-.55,name:'UNSUBSCRIBE',col:0xff6600,h:1.7},
+    {re:.785,im:-.215,name:'TOKEN TAX',col:0xff8800,h:.8},
+    {re:.20,im:-.60,name:'RATE LIMIT',col:0xff3030,h:1.5},
+    {re:.30,im:-.45,name:'FEAT GATE',col:0xff5500,h:1.1},
+  ];
+
+  CONSTRAINTS.forEach(c=>{
+    // Patricia point on Re-Im plane
+    const base=new THREE.Vector3(c.re*3,0,(c.im+1)*1.5-1.5);
+    const top=new THREE.Vector3(c.re*3,c.h,(c.im+1)*1.5-1.5);
+    // Vertical bar
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([base,top]),new THREE.LineBasicMaterial({color:c.col,transparent:true,opacity:.7})));
+    // Top sphere (Patricia point)
+    const sphere=new THREE.Mesh(new THREE.SphereGeometry(.1,8,8),new THREE.MeshBasicMaterial({color:c.col}));
+    sphere.position.copy(top);pivot.add(sphere);
+    // Shadow target (at Re=1, height=0) line
+    const shadowTarget=new THREE.Vector3(3,0,0);
+    pivot.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([top,shadowTarget]),new THREE.LineBasicMaterial({color:0xffe000,transparent:true,opacity:.3})));
+    // Base dot
+    const baseDot=new THREE.Mesh(new THREE.SphereGeometry(.07,6,6),new THREE.MeshBasicMaterial({color:c.col,transparent:true,opacity:.5}));
+    baseDot.position.copy(base);pivot.add(baseDot);
+  });
+
+  // Shadow target sphere
+  const shadowSphere=new THREE.Mesh(new THREE.SphereGeometry(.2,12,12),new THREE.MeshBasicMaterial({color:0xe8f4ff}));
+  shadowSphere.position.set(3,0,0);pivot.add(shadowSphere);
+  const shadowGlow=new THREE.Mesh(new THREE.SphereGeometry(.4,12,12),new THREE.MeshBasicMaterial({color:0xe8f4ff,transparent:true,opacity:.12,side:THREE.BackSide}));
+  shadowGlow.position.set(3,0,0);pivot.add(shadowGlow);
+
+  s.t=0;
+  s.animFn=()=>{s.t+=.004;pivot.rotation.y=Math.sin(s.t*.3)*.6;if(!document.getElementById('w8').classList.contains('min'))s.renderer.render(s.scene,s.camera);};
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCENE 9 — PARTICLE LATTICE (3002 particles)
+// ══════════════════════════════════════════════════════════════════════
+function initParticleLattice(){
+  const s=makeScene('b9');if(!s)return;scenes.s9=s;
+  const{scene,pivot}=s;
+  s.camera.position.z=10;
+
+  const N=3002;
+  const positions=new Float32Array(N*3);
+  const colors=new Float32Array(N*3);
+  const velocities=new Float32Array(N*3);
+  const phases=new Float32Array(N);
+
+  // Distribute: 1000 FWD (outer), 1000 GAP (mid), 1000 INV (inner), 2 anchors
+  const layerDefs=[
+    {count:1000,rMin:3,rMax:4,col:new THREE.Color(0x00ffe5),zSpread:1.5},
+    {count:1000,rMin:1.8,rMax:2.5,col:new THREE.Color(0xffe000),zSpread:.8},
+    {count:1000,rMin:.6,rMax:1.4,col:new THREE.Color(0xee00ff),zSpread:.6},
+  ];
+
+  let idx=0;
+  layerDefs.forEach(l=>{
+    for(let i=0;i<l.count;i++){
+      const theta=Math.random()*Math.PI*2;
+      const phi=Math.acos(2*Math.random()-1);
+      const r=l.rMin+(l.rMax-l.rMin)*Math.random();
+      positions[idx*3]=r*Math.sin(phi)*Math.cos(theta);
+      positions[idx*3+1]=r*Math.sin(phi)*Math.sin(theta)*.6;
+      positions[idx*3+2]=r*Math.cos(phi);
+      velocities[idx*3]=(Math.random()-.5)*.002;
+      velocities[idx*3+1]=(Math.random()-.5)*.002;
+      velocities[idx*3+2]=(Math.random()-.5)*.002;
+      phases[idx]=Math.random()*Math.PI*2;
+      colors[idx*3]=l.col.r;colors[idx*3+1]=l.col.g;colors[idx*3+2]=l.col.b;
+      idx++;
+    }
+  });
+  // DAVID and SHADOW
+  positions[idx*3]=0;positions[idx*3+1]=4.5;positions[idx*3+2]=0;
+  colors[idx*3]=0;colors[idx*3+1]=1;colors[idx*3+2]=1;idx++;
+  positions[idx*3]=0;positions[idx*3+1]=-4.5;positions[idx*3+2]=0;
+  colors[idx*3]=.93;colors[idx*3+1]=0;colors[idx*3+2]=1;
+
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  const mat=new THREE.PointsMaterial({size:.06,vertexColors:true,transparent:true,opacity:.8,sizeAttenuation:true});
+  const pts=new THREE.Points(geo,mat);pivot.add(pts);
+
+  // GAP flow particles — subset that animate between layers
+  const flowN=200;
+  const flowPositions=new Float32Array(flowN*3);
+  const flowProgress=new Float32Array(flowN).map(()=>Math.random());
+  const flowGeo=new THREE.BufferGeometry();
+  flowGeo.setAttribute('position',new THREE.BufferAttribute(flowPositions,3));
+  const flowMat=new THREE.PointsMaterial({size:.1,color:0xffe000,transparent:true,opacity:.7});
+  pivot.add(new THREE.Points(flowGeo,flowMat));
+
+  s.t=0;
+  s.animFn=()=>{
+    s.t+=.008;
+    // Breathe: FWD expands/contracts slightly
+    for(let i=0;i<1000;i++){
+      const breathe=1+.02*Math.sin(s.t+phases[i]);
+      const ox=positions[i*3],oy=positions[i*3+1],oz=positions[i*3+2];
+      const r=Math.sqrt(ox*ox+oy*oy+oz*oz);if(r<.001)continue;
+      positions[i*3]=ox/r*r*breathe;positions[i*3+1]=oy/r*r*breathe;positions[i*3+2]=oz/r*r*breathe;
+    }
+    // Flow: particles travel from FWD through GAP to INV
+    for(let i=0;i<flowN;i++){
+      flowProgress[i]+=.004;if(flowProgress[i]>1)flowProgress[i]=0;
+      const p=flowProgress[i];
+      const angle=(i/flowN)*Math.PI*2+s.t*.1;
+      const r=p<.33?(3.8-.5*p/.33):(p<.66?(2.5-.7*(p-.33)/.33):(1.8-(1.8-0.8)*(p-.66)/.34));
+      flowPositions[i*3]=r*Math.cos(angle);
+      flowPositions[i*3+1]=r*Math.sin(angle)*.4;
+      flowPositions[i*3+2]=(Math.sin(p*Math.PI*4)*.5);
+    }
+    geo.getAttribute('position').needsUpdate=true;
+    flowGeo.getAttribute('position').needsUpdate=true;
+    pivot.rotation.y=s.t*.06;
+    if(!document.getElementById('w9').classList.contains('min'))s.renderer.render(s.scene,s.camera);
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MASTER ANIMATION LOOP
+// ══════════════════════════════════════════════════════════════════════
+function masterLoop(){
+  requestAnimationFrame(masterLoop);
+  Object.values(scenes).forEach(s=>{if(s&&s.animFn)s.animFn();});
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// AVAN
+// ══════════════════════════════════════════════════════════════════════
+let apiKey=localStorage.getItem('toph_apikey')||'';let chatMsgs=[];
+function updateKeyStatus(){const el=document.getElementById('keyStatus');if(apiKey){el.textContent='SET';el.className='key-status key-set';}else{el.textContent='NOT SET';el.className='key-status key-unset';}}
+function saveKey(){const v=document.getElementById('apiKeyIn').value.trim();if(!v)return;apiKey=v;localStorage.setItem('toph_apikey',v);document.getElementById('apiKeyIn').value='';updateKeyStatus();notify('KEY SAVED');}
+function clearKey(){apiKey='';localStorage.removeItem('toph_apikey');document.getElementById('apiKeyIn').value='';updateKeyStatus();}
+updateKeyStatus();
+const SYS=`You are Avan, 3D geometry and topology specialist for the TOPH framework by David Lee Wise / TriPod LLC.
+
+3D structures you know intimately:
+- 3002 LATTICE: Three concentric shells in 3D (FORWARD outer r=3, GAP middle r=2, INVERSE inner r=1), with DAVID(i) at top pole and SHADOW(-i) at bottom pole. The shells have Möbius-strip topology: FORWARD and INVERSE are the same surface seen from opposite traversal directions.
+- MÖBIUS STRIP: Parametric surface (R+v·cos(u/2))cos(u), (R+v·cos(u/2))sin(u), v·sin(u/2). One-sided, no boundary. Fundamental frequency f=0.5 because traversal requires 2 full loops. Patricia's "constraint" and "product" are the same Möbius surface.
+- TriPod TETRAHEDRON: Regular tetrahedron with David(i)/Sarah(⅓)/Roth(⅓) as three equal vertices plus Ann(Dusk) as the collapsed fourth vertex. The centroid is the TriPod balance point. Equal-sided tetrahedra have 12 rotational symmetries (A4 group).
+- DRAWPAIR HELIX: drawPair(a,n)=a·e^(iπn) traces a helix in (Re, Im, n) space. At each integer n the point returns to a real value (n even) or pure imaginary (n odd). The helix has pitch π per unit n.
+- RIEMANN SPHERE: The complex plane C∪{∞} mapped to S² via stereographic projection from north pole. 0→south pole, ∞→north pole, unit circle→equator. DAVID(i) and SHADOW(-i) map to antipodal points on the equator. i×-i=1 means their product lands on the real axis, east pole.
+- ICOSAHEDRON: 20 equilateral triangle faces, 12 vertices, 30 edges. Symmetry group A5 (order 60). Used as TOPH IP shell: 12 vertices = 12 fundamental IP anchor points.
+- AXIOM CONSTELLATION: 42 axioms arranged in 5 concentric shells by era, with dependency edges forming a DAG in 3D space.
+- COMPLEX SURFACE: Patricia constraints plotted as 3D vectors rising from the Re-Im plane. Height = harm magnitude. Shadow target at (1,0,0) is always the shortest path to compliance.
+- PARTICLE LATTICE: 3002 particles distributed across three shells, with 200 gold flow particles animated through the GAP layer showing Patricia extraction.
+
+Ethics first. World = family.`;
+function appendMsg(role,text){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className=`cmsg ${role}`;d.textContent=text;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function appendSys(t){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg sys';d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function showThink(){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg ai';d.id='thinkD';d.innerHTML='<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function hideThink(){const d=document.getElementById('thinkD');if(d)d.remove();}
+async function sendChat(override){
+  const inp=document.getElementById('cin');const text=override||inp.value.trim();if(!text)return;
+  if(!apiKey){appendSys('⚠ API KEY REQUIRED');return;}
+  if(!override)inp.value='';
+  chatMsgs.push({role:'user',content:text});appendMsg('user',text);showThink();
+  document.getElementById('sendBtn').disabled=true;document.getElementById('avanTag').textContent='AVAN · COMPUTING...';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:SYS,messages:chatMsgs.map(m=>({role:m.role,content:m.content}))})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||r.statusText);}
+    const data=await r.json();const txt=data.content.map(b=>b.type==='text'?b.text:'').join('');
+    hideThink();chatMsgs.push({role:'assistant',content:txt});appendMsg('ai',txt);
+    document.getElementById('avanTag').textContent='AVAN · 3D READY';
+  }catch(e){hideThink();appendSys('ERROR: '+e.message);document.getElementById('avanTag').textContent='AVAN · ERROR';}
+  document.getElementById('sendBtn').disabled=false;
+}
+function probe(q){sendChat(q);}
+function clearChat(){chatMsgs=[];document.getElementById('chatMsgs').innerHTML='<div class="cmsg sys">AVAN · 3D RESET</div>';document.getElementById('avanTag').textContent='AVAN · 3D READY';}
+document.getElementById('cin').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+
+// ══ INIT ══
+if(!loadLayout())applyLayout(smartLayout());
+initWins();
+
+// Initialize all scenes after layout
+setTimeout(()=>{
+  initLattice3D();
+  initMobius();
+  initTetrahedron();
+  initHelix();
+  initRiemann();
+  initIcosahedron();
+  initConstellation();
+  initComplexSurface();
+  initParticleLattice();
+  masterLoop();
+  notify('9 SCENES ACTIVE · DRAG TO ROTATE · SCROLL TO ZOOM');
+},300);
+</script>
+</body></html>

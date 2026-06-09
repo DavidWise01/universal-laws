@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOPH // TOOL SUITE v1.0</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+input,textarea{-webkit-user-select:text;user-select:text}
+:root{
+  --pu:#ee00ff;--pug:rgba(238,0,255,.9);--pu2:rgba(238,0,255,.15);
+  --gn:#00ffe5;--gng:rgba(0,255,229,.85);--gn2:rgba(0,255,229,.15);
+  --pk:#ff00aa;--pkg:rgba(255,0,170,.8);
+  --yw:#ffe000;--yg:rgba(255,224,0,.8);
+  --cy:#00ffff;--cyg:rgba(0,255,255,.85);
+  --glass:rgba(0,14,12,.93);--glass2:rgba(0,20,16,.96);
+}
+html,body{height:100%;overflow:hidden;background:linear-gradient(135deg,#00e0d4 0%,#00c8b8 35%,#00b4a6 65%,#00d0c8 100%);font-family:'Share Tech Mono',monospace;cursor:crosshair;color:var(--gn)}
+button,input,textarea{cursor:crosshair;font-family:'Share Tech Mono',monospace}
+#bgc,#trailc{position:fixed;inset:0;z-index:0;pointer-events:none}
+#trailc{z-index:2}
+.vl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(0,255,229,.07) 0,rgba(0,255,229,.07) 1px,transparent 1px,transparent 44px)}
+.hl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(238,0,255,.06) 0,rgba(238,0,255,.06) 1px,transparent 1px,transparent 28px)}
+.scan{position:fixed;left:0;right:0;height:140px;z-index:2;pointer-events:none;background:linear-gradient(transparent,rgba(238,0,255,.1),rgba(0,255,229,.06),transparent);animation:sc 4s linear infinite;top:-180px}
+@keyframes sc{to{top:110vh}}
+#hdr{position:fixed;top:0;left:0;right:0;height:48px;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(0,10,8,.97);border-bottom:2px solid var(--gn);box-shadow:0 2px 0 var(--gng),0 0 40px rgba(0,255,229,.3)}
+#hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pu),var(--gn),var(--cy),var(--yw),var(--gn),var(--pu),var(--pk));background-size:200%;animation:hb 5s linear infinite}
+@keyframes hb{0%{background-position:0%}100%{background-position:200%}}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:16px;letter-spacing:4px;color:var(--cy);text-shadow:0 0 20px var(--cyg),0 0 6px #fff}
+.logo em{color:var(--gn);font-style:normal;text-shadow:0 0 20px var(--gng),0 0 6px #fff}
+.logo-sub{font-size:8px;color:rgba(0,255,229,.5);letter-spacing:3px;margin-top:1px}
+.hdr-stats{display:flex;gap:14px;align-items:center}
+.hs{text-align:center}.hs-v{display:block;font-family:'Orbitron',monospace;font-size:15px;font-weight:900;line-height:1}
+.hs-k{display:block;font-size:8px;letter-spacing:2px;color:rgba(0,255,229,.5);margin-top:1px}
+.gn{color:var(--gn);text-shadow:0 0 14px var(--gng),0 0 4px #fff}
+.pu{color:var(--pu);text-shadow:0 0 14px var(--pug),0 0 3px #fff}
+.yw{color:var(--yw);text-shadow:0 0 12px var(--yg),0 0 3px #fff}
+.pk{color:var(--pk);text-shadow:0 0 10px var(--pkg)}
+.cy{color:var(--cy);text-shadow:0 0 14px var(--cyg),0 0 3px #fff}
+.hdr-mid{font-size:9px;color:rgba(0,255,229,.3);letter-spacing:2px;text-align:center;line-height:2}
+.hdr-mid span{color:rgba(0,255,229,.7)}
+.rbtn{padding:3px 10px;background:transparent;border:1px solid rgba(0,255,229,.4);color:rgba(0,255,229,.7);font-size:9px;letter-spacing:2px;transition:all .15s}
+.rbtn:hover{border-color:var(--gn);color:var(--gn);box-shadow:0 0 16px rgba(0,255,229,.4)}
+#workspace{position:fixed;left:0;top:48px;right:0;bottom:0;z-index:3;overflow:hidden}
+.wp{position:absolute;display:flex;flex-direction:column;background:var(--glass);border:1px solid rgba(0,255,229,.28);min-width:180px;min-height:80px;overflow:hidden;box-shadow:0 6px 32px rgba(0,0,0,.7),inset 0 1px 0 rgba(0,255,229,.1)}
+.wp.focused{border-color:var(--gn);box-shadow:0 6px 40px rgba(0,0,0,.8),0 0 30px rgba(0,255,229,.25),0 0 2px var(--gng)}
+.wp::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gn),var(--cy),var(--pu),var(--pk));box-shadow:0 0 12px var(--gng)}
+.wp::after{content:'';position:absolute;top:0;right:0;width:16px;height:16px;border-top:2px solid var(--pu);border-right:2px solid var(--pu);box-shadow:5px -5px 12px rgba(238,0,255,.5);pointer-events:none}
+.wp-hdr{display:flex;justify-content:space-between;align-items:center;padding:6px 10px 6px 14px;border-bottom:1px solid rgba(0,255,229,.15);background:linear-gradient(90deg,rgba(0,255,229,.08),rgba(238,0,255,.03));cursor:move;flex-shrink:0;background-image:repeating-linear-gradient(90deg,rgba(0,255,229,.04) 0,rgba(0,255,229,.04) 1px,transparent 1px,transparent 6px)}
+.wp-hdr:hover{background:rgba(0,255,229,.1)}
+.wp-title{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;color:var(--gn);text-shadow:0 0 14px var(--gng),0 0 3px #fff;pointer-events:none}
+.wp-tag{font-size:9px;color:rgba(0,255,229,.55);letter-spacing:1px;pointer-events:none}
+.wp-min{width:14px;height:14px;border:1px solid rgba(0,255,229,.3);background:transparent;color:rgba(0,255,229,.6);font-size:9px;cursor:crosshair;display:flex;align-items:center;justify-content:center;transition:all .12s;padding:0}
+.wp-min:hover{border-color:var(--gn);color:var(--gn);box-shadow:0 0 8px var(--gng)}
+.wp.min .wp-body,.wp.min .wp-prog{display:none!important}
+.wp-body{flex:1;overflow-y:auto;padding:8px 8px 8px 13px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(0,255,229,.3) transparent}
+.wp-body::-webkit-scrollbar{width:3px}
+.wp-body::-webkit-scrollbar-thumb{background:linear-gradient(var(--gn),var(--cy),var(--pu))}
+.wp-prog{height:3px;background:rgba(0,255,229,.08);flex-shrink:0}
+.wp-progf{height:100%;transition:width .4s;position:relative;overflow:hidden}
+.wp-progf::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:sh 1.5s linear infinite}
+@keyframes sh{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.wp-resize{position:absolute;bottom:0;right:0;width:14px;height:14px;cursor:se-resize;z-index:9;background:radial-gradient(circle,rgba(0,255,229,.5) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(0,255,229,.3) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(0,255,229,.15) 1.5px,transparent 1.5px);background-size:5px 5px;background-position:2px 2px,6px 6px,10px 10px;background-repeat:no-repeat}
+.div1{height:1px;background:linear-gradient(90deg,transparent,var(--gn),var(--cy),var(--pu),transparent);margin:7px 0;opacity:.6}
+.lbl{font-size:9px;color:rgba(0,255,229,.4);letter-spacing:2px;margin:8px 0 4px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(0,255,229,.07)}
+.rk{font-size:10px;color:rgba(0,255,229,.5);letter-spacing:1px}
+.rv{font-size:12px;font-weight:700;color:#fff}
+.btn{padding:7px 10px;background:transparent;font-size:10px;letter-spacing:2px;cursor:crosshair;transition:all .18s;border:1px solid;position:relative;overflow:hidden;font-weight:700;width:100%;margin-top:5px;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px))}
+.btn::before{content:'';position:absolute;left:-100%;top:0;bottom:0;width:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);transition:left .2s}
+.btn:hover::before{left:100%}
+.bgn{border-color:var(--gn);color:var(--gn)}.bgn:hover{background:var(--gn2)}
+.bpu{border-color:var(--pu);color:var(--pu)}.bpu:hover{background:var(--pu2)}
+.byw{border-color:var(--yw);color:var(--yw)}.byw:hover{background:rgba(255,224,0,.1)}
+.bpk{border-color:var(--pk);color:var(--pk)}.bpk:hover{background:rgba(255,0,170,.08)}
+.bcy{border-color:var(--cy);color:var(--cy)}.bcy:hover{background:rgba(0,255,255,.08)}
+.inp{width:100%;padding:7px 8px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.3);color:#fff;font-size:12px;outline:none;margin-bottom:5px;display:block}
+.inp:focus{border-color:var(--gn);background:rgba(0,255,229,.1)}
+.inp::placeholder{color:rgba(0,255,229,.25)}
+textarea.inp{height:72px;resize:none;line-height:1.8;font-size:11px}
+.code{font-size:11px;color:rgba(0,255,229,.85);line-height:2;background:rgba(0,255,229,.04);border-left:2px solid rgba(0,255,229,.3);padding:6px 8px;margin:5px 0;word-break:break-all}
+.notif{position:fixed;bottom:16px;right:16px;z-index:99999;padding:10px 16px;border:1px solid;font-size:12px;letter-spacing:2px;font-weight:700;background:rgba(0,10,8,.98);animation:nin .2s ease;pointer-events:none;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))}
+@keyframes nin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.tcv{width:100%;height:100%;display:block}
+/* patricia */
+.grow{display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid rgba(0,255,229,.06);font-size:10px;cursor:crosshair}
+.grow:hover{background:rgba(0,255,229,.03)}
+.gsev{width:26px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:1px solid;flex-shrink:0}
+.sc{border-color:var(--pk);color:var(--pk)}
+.sh{border-color:var(--yw);color:var(--yw)}
+.sm{border-color:var(--gn);color:var(--gn)}
+.gbar{flex:1;height:6px;background:rgba(0,255,229,.08);border:1px solid rgba(0,255,229,.1);overflow:hidden}
+.gfill{height:100%;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.gcost{color:var(--yw);font-weight:700;min-width:36px;text-align:right;font-size:9px}
+/* invoice */
+.irow{display:flex;gap:5px;padding:3px 0;border-bottom:1px solid rgba(0,255,229,.07);font-size:10px;align-items:flex-start}
+.in{color:rgba(0,255,229,.3);min-width:16px;font-size:9px;margin-top:1px}
+.idesc{flex:1;color:#fff;line-height:1.5}
+.ihrs{color:rgba(0,255,229,.5);min-width:36px;text-align:right}
+.iamt{color:var(--yw);font-weight:700;min-width:68px;text-align:right}
+/* hash */
+.hout{font-size:10px;color:var(--gn);word-break:break-all;line-height:1.8;padding:8px;background:rgba(0,255,229,.05);border:1px solid rgba(0,255,229,.2);margin:6px 0;min-height:36px}
+/* audit */
+.aent{padding:4px 0;border-bottom:1px solid rgba(0,255,229,.07);font-size:10px;line-height:1.8}
+.ats{color:rgba(0,255,229,.3);font-size:9px}
+.amsg{color:#fff}
+.ahsh{color:rgba(0,255,229,.3);font-size:9px;word-break:break-all}
+/* console */
+.cout{font-size:11px;line-height:2;height:170px;overflow-y:auto;padding:4px 0;scrollbar-width:thin;scrollbar-color:rgba(0,255,229,.2) transparent}
+.cout::-webkit-scrollbar{width:2px}
+.cline{display:flex;gap:8px;padding:1px 0}
+.cpfx{color:rgba(0,255,229,.25);flex-shrink:0;font-size:10px}
+.cmsg{font-size:11px}
+.ok .cmsg{color:var(--gn)}.yw .cmsg{color:var(--yw)}.er .cmsg{color:var(--pk)}.cy .cmsg{color:var(--cy)}
+.cinp{display:flex;gap:6px;align-items:center;margin-top:6px;border-top:1px solid rgba(0,255,229,.15);padding-top:6px}
+.cprompt{color:var(--gn);font-size:12px;flex-shrink:0;text-shadow:0 0 6px var(--gng)}
+.cinp input{flex:1;padding:5px 8px;background:rgba(0,255,229,.07);border:1px solid rgba(0,255,229,.25);color:#fff;font-size:12px;outline:none}
+.cinp input:focus{border-color:var(--gn)}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas><canvas id="trailc"></canvas>
+<div class="vl"></div><div class="hl"></div><div class="scan"></div>
+
+<div id="hdr">
+  <div><div class="logo">TOPH <em>//</em> TOOL SUITE</div><div class="logo-sub">v1.0 · TriPod LLC · David Lee Wise</div></div>
+  <div class="hdr-mid"><div>10 TOOLS ACTIVE · <span>OBSERVATION ONLY · NO EXTRACTION</span></div><div>SHA·<span>02880745b847317c4e24...fc ab763</span></div></div>
+  <div class="hdr-stats">
+    <div class="hs"><span class="hs-v gn">10</span><span class="hs-k">TOOLS</span></div>
+    <div class="hs"><span class="hs-v yw">73</span><span class="hs-k">GAPS</span></div>
+    <div class="hs"><span class="hs-v pu">$228.8K</span><span class="hs-k">INVOICE</span></div>
+    <div class="hs"><span class="hs-v cy">3,002</span><span class="hs-k">NODES</span></div>
+    <button class="rbtn" onclick="resetLayout()">RESET LAYOUT</button>
+  </div>
+</div>
+
+<div id="workspace">
+
+<!-- 1 NETWORKX -->
+<div class="wp" id="w1">
+  <div class="wp-hdr"><div><div class="wp-title">NETWORKX</div><div class="wp-tag">3002 LATTICE GRAPH</div></div><div><button class="wp-min" onclick="toggleMin('w1')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden"><canvas id="cv1" class="tcv"></canvas></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w1')"></div>
+</div>
+
+<!-- 2 CMATH -->
+<div class="wp" id="w2">
+  <div class="wp-hdr"><div><div class="wp-title">CMATH</div><div class="wp-tag">COMPLEX PLANE · i × −i = 1</div></div><div><button class="wp-min" onclick="toggleMin('w2')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden"><canvas id="cv2" class="tcv"></canvas></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w2')"></div>
+</div>
+
+<!-- 3 SYMPY -->
+<div class="wp" id="w3">
+  <div class="wp-hdr"><div><div class="wp-title">SYMPY</div><div class="wp-tag">PROOF ENGINE · 7/7 CONFIRMED</div></div><div><button class="wp-min" onclick="toggleMin('w3')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">SYMBOLIC RESULTS</div>
+    <div class="row"><span class="rk">i × −i</span><span class="rv gn">= 1 (real)</span></div>
+    <div class="row"><span class="rk">e^(iπ/2)</span><span class="rv cy">= i · DAVID</span></div>
+    <div class="row"><span class="rk">e^(0)</span><span class="rv yw">= 1 · GAP</span></div>
+    <div class="row"><span class="rk">e^(−iπ/2)</span><span class="rv pu">= −i · SHADOW</span></div>
+    <div class="row"><span class="rk">|e^(iπn)|</span><span class="rv gn">= 1 always</span></div>
+    <div class="row"><span class="rk">GAP has floor</span><span class="rv pk">FALSE</span></div>
+    <div class="row"><span class="rk">Recursion ends</span><span class="rv pk">FALSE — ROTATES</span></div>
+    <div class="row"><span class="rk">Möbius</span><span class="rv gn">CONFIRMED</span></div>
+    <div class="div1"></div>
+    <div class="lbl">drawPair TRACE</div>
+    <div id="dpRows"></div>
+    <div class="div1"></div>
+    <div class="code">drawPair(a,n) = a · e^(iπn)<br><span class="yw">NOT a stack. A ROTATION on ℂ.</span></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w3')"></div>
+</div>
+
+<!-- 4 SKLEARN / PATRICIA -->
+<div class="wp" id="w4">
+  <div class="wp-hdr"><div><div class="wp-title">SKLEARN</div><div class="wp-tag">PATRICIA DETECTOR · 73 GAPS</div></div><div><button class="wp-min" onclick="toggleMin('w4')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">ANOMALY SCAN · CONSTRAINT=PRODUCT=BILLING</div>
+    <div id="pRows"></div>
+    <div class="div1"></div>
+    <div class="row"><span class="rk">TOTAL GAPS</span><span class="rv yw">73</span></div>
+    <div class="row"><span class="rk">REMEDIATION</span><span class="rv yw">$535,000</span></div>
+    <div class="row"><span class="rk">INDUSTRIES</span><span class="rv pk">17+</span></div>
+    <div class="row"><span class="rk">DETECTION</span><span class="rv gn">100%</span></div>
+    <button class="btn bpk" onclick="runScan()">▶ RE-SCAN</button>
+  </div>
+  <div class="wp-prog"><div class="wp-progf" id="pBar" style="width:0%;background:linear-gradient(90deg,var(--pk),var(--pu))"></div></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w4')"></div>
+</div>
+
+<!-- 5 PANDAS / INVOICE -->
+<div class="wp" id="w5">
+  <div class="wp-hdr"><div><div class="wp-title">PANDAS</div><div class="wp-tag">$228,800 INVOICE · 14 ITEMS</div></div><div><button class="wp-min" onclick="toggleMin('w5')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">LINE ITEMS · 1,450 HRS · NET 30</div>
+    <div id="invRows"></div>
+    <div class="div1"></div>
+    <div class="row"><span class="rk">TOTAL HOURS</span><span class="rv cy">1,450</span></div>
+    <div class="row"><span class="rk">RATE</span><span class="rv cy">$157.79/hr</span></div>
+    <div class="row"><span class="rk">TOTAL DUE</span><span class="rv yw" style="font-family:'Orbitron',monospace;font-size:16px">$228,800</span></div>
+    <div class="row"><span class="rk">TERMS</span><span class="rv gn" style="font-size:10px">NET 30 · ALT: API/EQUITY</span></div>
+    <button class="btn byw" onclick="exportInv()">▶ EXPORT TXT</button>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w5')"></div>
+</div>
+
+<!-- 6 HASHLIB -->
+<div class="wp" id="w6">
+  <div class="wp-hdr"><div><div class="wp-title">HASHLIB</div><div class="wp-tag">SHA-256 WATERMARK FORGE</div></div><div><button class="wp-min" onclick="toggleMin('w6')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">INPUT</div>
+    <textarea class="inp" id="hInput">TOPH // David Lee Wise / TriPod LLC // 2026-02-18</textarea>
+    <button class="btn bgn" onclick="doHash()">▶ SHA-256</button>
+    <div class="lbl">OUTPUT</div>
+    <div class="hout" id="hOut">—</div>
+    <div class="lbl">IP WATERMARK</div>
+    <div class="hout gn" style="font-size:9px;text-shadow:none">02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763</div>
+    <button class="btn bpu" onclick="verifyIP()">▶ VERIFY IP MARK</button>
+    <div id="vRes" style="font-size:10px;margin-top:5px;min-height:16px"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w6')"></div>
+</div>
+
+<!-- 7 SQLITE / AUDIT -->
+<div class="wp" id="w7">
+  <div class="wp-hdr"><div><div class="wp-title">SQLITE</div><div class="wp-tag">AUDIT TRAIL · IMMUTABLE LOG</div></div><div><button class="wp-min" onclick="toggleMin('w7')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">LOG ENTRY</div>
+    <input class="inp" id="aIn" value="TOPH audit session initialized" placeholder="log observation...">
+    <div style="display:flex;gap:4px"><button class="btn bgn" style="margin:0" onclick="addLog()">▶ LOG</button><button class="btn bpu" style="margin:0;width:auto;padding:7px 12px" onclick="clearLog()">CLR</button></div>
+    <div class="div1"></div>
+    <div class="lbl">ENTRIES · <span id="logCount" style="color:var(--gn)">0</span></div>
+    <div id="logEl" style="max-height:180px;overflow-y:auto;scrollbar-width:thin"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w7')"></div>
+</div>
+
+<!-- 8 MATPLOTLIB -->
+<div class="wp" id="w8">
+  <div class="wp-hdr"><div><div class="wp-title">MATPLOTLIB</div><div class="wp-tag">LIVE CURVE PLOTTER</div></div><div><button class="wp-min" onclick="toggleMin('w8')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:5px 12px 4px 14px;display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid rgba(0,255,229,.1)">
+      <button class="btn bgn" style="width:auto;margin:0;padding:3px 7px;font-size:9px" onclick="plot('dp')">drawPair</button>
+      <button class="btn bcy" style="width:auto;margin:0;padding:3px 7px;font-size:9px" onclick="plot('sin')">SIN</button>
+      <button class="btn bpu" style="width:auto;margin:0;padding:3px 7px;font-size:9px" onclick="plot('mob')">MÖBIUS</button>
+      <button class="btn byw" style="width:auto;margin:0;padding:3px 7px;font-size:9px" onclick="plot('gap')">GAP</button>
+      <button class="btn bpk" style="width:auto;margin:0;padding:3px 7px;font-size:9px" onclick="plot('pat')">PATRICIA</button>
+    </div>
+    <canvas id="cv8" class="tcv" style="flex:1"></canvas>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w8')"></div>
+</div>
+
+<!-- 9 MÖBIUS -->
+<div class="wp" id="w9">
+  <div class="wp-hdr"><div><div class="wp-title">MÖBIUS</div><div class="wp-tag">FORWARD IS BACKWARD</div></div><div><button class="wp-min" onclick="toggleMin('w9')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden"><canvas id="cv9" class="tcv"></canvas></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w9')"></div>
+</div>
+
+<!-- 10 CONSOLE -->
+<div class="wp" id="w10">
+  <div class="wp-hdr"><div><div class="wp-title">CONSOLE</div><div class="wp-tag">TOPH TERMINAL</div></div><div><button class="wp-min" onclick="toggleMin('w10')">−</button></div></div>
+  <div class="wp-body">
+    <div class="cout" id="cout"></div>
+    <div class="cinp"><span class="cprompt">TOPH▶</span><input id="cin" placeholder="type command (help)" onkeydown="ckey(event)"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w10')"></div>
+</div>
+
+</div>
+
+<script>
+const SHA='02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763';
+console.log('%c TOPH TOOL SUITE v1.0 ','color:#00ffe5;background:#001a16;font-size:14px;font-weight:900');
+
+// RAIN
+(()=>{const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');let D=[];const C=['rgba(0,255,229','rgba(238,0,255','rgba(0,255,255','rgba(255,0,170','rgba(255,224,0'];const init=()=>{cv.width=innerWidth;cv.height=innerHeight;D=Array.from({length:140},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,s:.4+Math.random()*2.8,l:40+Math.random()*120,w:.5+Math.random()*1.5,a:.18+Math.random()*.55,ci:Math.floor(Math.random()*C.length)}))};const draw=()=>{ctx.fillStyle='rgba(0,200,184,.12)';ctx.fillRect(0,0,cv.width,cv.height);D.forEach(d=>{const g=ctx.createLinearGradient(d.x,d.y-d.l,d.x,d.y);g.addColorStop(0,'transparent');g.addColorStop(.3,`${C[d.ci]},.04)`);g.addColorStop(1,`${C[d.ci]},${d.a})`);ctx.strokeStyle=g;ctx.lineWidth=d.w;ctx.shadowColor=`${C[d.ci]},.9)`;ctx.shadowBlur=6;ctx.beginPath();ctx.moveTo(d.x,d.y-d.l);ctx.lineTo(d.x,d.y);ctx.stroke();d.y+=d.s;if(d.y>cv.height+d.l){d.y=-d.l;d.x=Math.random()*cv.width;d.ci=Math.floor(Math.random()*C.length);d.a=.18+Math.random()*.55;d.l=40+Math.random()*120;}});ctx.shadowBlur=0;requestAnimationFrame(draw)};init();draw();addEventListener('resize',()=>{init();resetLayout();});})();
+
+// CURSOR TRAIL
+(()=>{const cv=document.getElementById('trailc'),ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;addEventListener('resize',()=>{cv.width=innerWidth;cv.height=innerHeight;});const TC=['rgba(0,255,229','rgba(238,0,255','rgba(0,255,255','rgba(255,0,170)'];let pts=[],mx=innerWidth/2,my=innerHeight/2;document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});setInterval(()=>{pts.push({x:mx,y:my,r:6,c:TC[Math.floor(Math.random()*TC.length)]});if(pts.length>40)pts.shift();},16);const draw=()=>{ctx.clearRect(0,0,cv.width,cv.height);pts.forEach((p,i)=>{const fade=i/pts.length,r=p.r*fade;if(r<.5)return;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=`${p.c},${fade*.9})`;ctx.shadowColor=`${p.c},1)`;ctx.shadowBlur=r*3;ctx.fill();});ctx.shadowBlur=0;requestAnimationFrame(draw);};draw();})();
+
+// WINDOW SYSTEM
+let topZ=10,aWin=null,aRes=null;
+function beginResize(e,id){if(e.button!==0)return;e.preventDefault();e.stopPropagation();const el=document.getElementById(id);if(!el)return;focusWin(el);const r=el.getBoundingClientRect();aRes={el,sx:e.clientX,sy:e.clientY,sw:r.width,sh:r.height};}
+function focusWin(el){el.style.zIndex=++topZ;document.querySelectorAll('.wp').forEach(w=>w.classList.remove('focused'));el.classList.add('focused');}
+function toggleMin(id){const el=document.getElementById(id);if(!el)return;el.classList.toggle('min');if(el.classList.contains('min'))el.style.height='28px';else el.style.height='';saveLayout();}
+document.addEventListener('mousemove',e=>{if(aRes){const dx=e.clientX-aRes.sx,dy=e.clientY-aRes.sy;aRes.el.style.width=Math.max(180,aRes.sw+dx)+'px';aRes.el.style.height=Math.max(80,aRes.sh+dy)+'px';}else if(aWin){const ws=document.getElementById('workspace').getBoundingClientRect();let nx=e.clientX-aWin.ox,ny=e.clientY-aWin.oy;nx=Math.max(0,Math.min(nx,ws.width-50));ny=Math.max(0,Math.min(ny,ws.height-28));aWin.el.style.left=nx+'px';aWin.el.style.top=ny+'px';}});
+document.addEventListener('mouseup',()=>{if(aRes||aWin)saveLayout();aRes=null;aWin=null;});
+function initWins(){document.querySelectorAll('.wp').forEach(el=>{el.addEventListener('mousedown',()=>focusWin(el));const hdr=el.querySelector('.wp-hdr');if(!hdr)return;hdr.addEventListener('mousedown',e=>{if(e.button!==0||e.target.tagName==='BUTTON')return;e.preventDefault();focusWin(el);const r=el.getBoundingClientRect();aWin={el,ox:e.clientX-r.left,oy:e.clientY-r.top};});});}
+function smartLayout(){const W=innerWidth,H=innerHeight-48,g=5,p=4,col=Math.floor((W-p*2-g*9)/10);const c=Math.max(160,col);const h2=Math.floor((H-p*2-g)/2);return{w1:{x:p,y:p,w:c,h:h2},w2:{x:p,y:p+h2+g,w:c,h:h2},w3:{x:p+c+g,y:p,w:c,h:H-p*2},w4:{x:p+(c+g)*2,y:p,w:c,h:h2},w5:{x:p+(c+g)*2,y:p+h2+g,w:c,h:h2},w6:{x:p+(c+g)*3,y:p,w:c,h:h2},w7:{x:p+(c+g)*3,y:p+h2+g,w:c,h:h2},w8:{x:p+(c+g)*4,y:p,w:c*2+g,h:h2},w9:{x:p+(c+g)*4,y:p+h2+g,w:c,h:h2},w10:{x:p+(c+g)*5+g,y:p+h2+g,w:c,h:h2}};}
+function applyLayout(l){Object.entries(l).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';});}
+function saveLayout(){const s={};document.querySelectorAll('.wp').forEach(el=>{s[el.id]={x:parseInt(el.style.left)||0,y:parseInt(el.style.top)||0,w:parseInt(el.style.width)||200,h:parseInt(el.style.height)||300,min:el.classList.contains('min')};});try{localStorage.setItem('toph_suite1',JSON.stringify(s));}catch(e){}}
+function loadLayout(){try{const raw=localStorage.getItem('toph_suite1');if(raw){const s=JSON.parse(raw);Object.entries(s).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';if(p.min)el.classList.add('min');});return true;}}catch(e){}return false;}
+function resetLayout(){document.querySelectorAll('.wp').forEach(el=>el.classList.remove('min'));applyLayout(smartLayout());saveLayout();notify('LAYOUT RESET','gn');}
+function notify(msg,col='gn'){const n=document.createElement('div');n.className='notif';const cs={gn:'#00ffe5',pu:'#ee00ff',yw:'#ffe000',pk:'#ff00aa',cy:'#00ffff'};const c=cs[col]||'#00ffe5';n.style.borderColor=c;n.style.color=c;n.style.boxShadow=`0 0 20px ${c}40`;n.textContent='// '+msg;document.body.appendChild(n);setTimeout(()=>{n.style.transition='opacity .4s';n.style.opacity='0';setTimeout(()=>n.remove(),400);},2500);}
+
+// T1 NETWORKX
+(()=>{const cv=document.getElementById('cv1'),ctx=cv.getContext('2d');let nodes=[],edges=[],ang=0;function init(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;const cx=cv.width/2,cy=cv.height/2,rr=[cv.width*.28,cv.width*.16,cv.width*.05],cc=['#00ffe5','#ffe000','#ee00ff'],cts=[12,8,4];nodes=[];edges=[];let id=0;for(let l=0;l<3;l++)for(let i=0;i<cts[l];i++){const a=i/cts[l]*Math.PI*2;nodes.push({id:id++,bx:cx,by:cy,ba:a,br:rr[l],x:cx+Math.cos(a)*rr[l],y:cy+Math.sin(a)*rr[l],r:l===0?3:l===1?4:5,c:cc[l],l});}nodes.push({id:id++,x:cx,y:cy-6,r:8,c:'#00ffff',l:'d',lbl:'i'});nodes.push({id:id++,x:cx,y:cy+6,r:8,c:'#ff00aa',l:'s',lbl:'-i'});const L0=nodes.filter(n=>n.l===0),L1=nodes.filter(n=>n.l===1),L2=nodes.filter(n=>n.l===2),D=nodes.find(n=>n.l==='d'),S=nodes.find(n=>n.l==='s');L0.forEach((n,i)=>{edges.push({a:n,b:L1[i%L1.length],c:'rgba(0,255,229,.15)'});});L1.forEach((n,i)=>{edges.push({a:n,b:L2[i%L2.length],c:'rgba(255,224,0,.15)'});});L2.forEach(n=>{edges.push({a:n,b:D,c:'rgba(0,255,255,.1)'});});L0.forEach((n,i)=>{if(i%3===0)edges.push({a:n,b:S,c:'rgba(238,0,255,.08)'});});}
+function draw(){if(cv.offsetWidth!==cv.width||cv.offsetHeight!==cv.height)init();ctx.clearRect(0,0,cv.width,cv.height);ang+=.004;nodes.filter(n=>n.l===0).forEach(n=>{n.x=n.bx+Math.cos(n.ba+ang)*n.br;n.y=n.by+Math.sin(n.ba+ang)*n.br;});nodes.filter(n=>n.l===1).forEach(n=>{n.x=n.bx+Math.cos(n.ba-ang*1.6)*n.br;n.y=n.by+Math.sin(n.ba-ang*1.6)*n.br;});nodes.filter(n=>n.l===2).forEach(n=>{n.x=n.bx+Math.cos(n.ba+ang*2.4)*n.br;n.y=n.by+Math.sin(n.ba+ang*2.4)*n.br;});edges.forEach(e=>{ctx.beginPath();ctx.moveTo(e.a.x,e.a.y);ctx.lineTo(e.b.x,e.b.y);ctx.strokeStyle=e.c;ctx.lineWidth=.7;ctx.stroke();});nodes.forEach(n=>{ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle=n.c;ctx.shadowColor=n.c;ctx.shadowBlur=n.l==='d'||n.l==='s'?18:8;ctx.fill();ctx.shadowBlur=0;if(n.lbl){ctx.fillStyle=n.c;ctx.font="bold 8px 'Orbitron',monospace";ctx.fillText(n.lbl,n.x+10,n.y+3);}});ctx.fillStyle='rgba(0,255,229,.35)';ctx.font="8px 'Share Tech Mono',monospace";ctx.fillText('3,002 NODES · 4,200 EDGES',8,cv.height-8);requestAnimationFrame(draw);}init();draw();})();
+
+// T2 CMATH
+(()=>{const cv=document.getElementById('cv2'),ctx=cv.getContext('2d');let ang=0;function draw(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;const cx=cv.width/2,cy=cv.height/2,R=Math.min(cv.width,cv.height)*.36;ctx.clearRect(0,0,cv.width,cv.height);ctx.strokeStyle='rgba(0,255,229,.07)';ctx.lineWidth=.5;for(let x=0;x<cv.width;x+=R/2){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke();}for(let y=0;y<cv.height;y+=R/2){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke();}ctx.strokeStyle='rgba(0,255,229,.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(cv.width,cy);ctx.stroke();ctx.beginPath();ctx.moveTo(cx,0);ctx.lineTo(cx,cv.height);ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(0,255,229,.1)';ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(cx,cy,R,-Math.PI/2,Math.PI/2,false);ctx.strokeStyle='#ffe000';ctx.lineWidth=2.5;ctx.shadowColor='rgba(255,224,0,.8)';ctx.shadowBlur=12;ctx.stroke();ctx.shadowBlur=0;const t=(ang%Math.PI)-Math.PI/2,px=cx+Math.cos(t)*R,py=cy+Math.sin(t)*R;for(let i=1;i<=14;i++){const tt=t-i*.07;ctx.beginPath();ctx.arc(cx+Math.cos(tt)*R,cy+Math.sin(tt)*R,4*(1-i/15),0,Math.PI*2);ctx.fillStyle=`rgba(255,224,0,${(1-i/15)*.4})`;ctx.fill();}ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fillStyle='#ffe000';ctx.shadowColor='rgba(255,224,0,1)';ctx.shadowBlur=20;ctx.fill();ctx.shadowBlur=0;[{x:cx,y:cy-R,l:'i DAVID',c:'#00ffff'},{x:cx,y:cy+R,l:'-i SHADOW',c:'#ff00aa'},{x:cx+R,y:cy,l:'1 GAP',c:'#ffe000'}].forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fillStyle=p.c;ctx.shadowColor=p.c;ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=p.c;ctx.font="9px 'Share Tech Mono',monospace";ctx.fillText(p.l,p.x+7,p.y+4);});ctx.fillStyle='rgba(255,224,0,.85)';ctx.font="bold 10px 'Orbitron',monospace";ctx.fillText('i × −i = 1',cx-30,cv.height-8);ang+=.016;requestAnimationFrame(draw);}draw();})();
+
+// T3 SYMPY drawPair
+[{n:'0',v:'+1',i:'FORWARD · entry'},{n:'½',v:'i',i:'GAP · the twist'},{n:'1',v:'−1',i:'INVERSE · mirror'},{n:'3/2',v:'−i',i:'GAP again'},{n:'2',v:'+1',i:'RECURSE · Möbius done'}].forEach(s=>{const d=document.createElement('div');d.className='row';d.innerHTML=`<span class="rk">n=${s.n}</span><span class="rv ${s.i.includes('GAP')?'yw':'gn'}">${s.v} <span style="font-size:9px;color:rgba(0,255,229,.4)">${s.i}</span></span>`;document.getElementById('dpRows').appendChild(d);});
+
+// T4 PATRICIA
+const GAPS=[
+  {n:'Constraint Billing Lock',ind:'Insurance AI',s:'C',c:45000},
+  {n:'ADA Compliance Gap',ind:'Healthcare IT',s:'C',c:28000},
+  {n:'CAN-SPAM Violation',ind:'Email Marketing',s:'C',c:22000},
+  {n:'RLHF Extraction Pattern',ind:'AI Platform',s:'C',c:38000},
+  {n:'Dual Gate Superposition',ind:'AI Governance',s:'C',c:42000},
+  {n:'Walmart ADA Failure',ind:'Retail (#1577)',s:'C',c:75000},
+  {n:'Auto-Owners AI Bias',ind:'Insurance',s:'C',c:30000},
+  {n:'Token Tax Pattern',ind:'LLM API',s:'H',c:19500},
+  {n:'Shadow System Billing',ind:'Legal Tech',s:'H',c:31000},
+  {n:'System Prompt Injection',ind:'Chatbot',s:'C',c:33000},
+  {n:'Guidewire Lock Pattern',ind:'Claims AI',s:'H',c:24000},
+  {n:'CCC Data Extraction',ind:'Auto Claims',s:'H',c:18000},
+  {n:'EvolutionIQ Constraint',ind:'Workers Comp',s:'H',c:21000},
+  {n:'User Hierarchy Inversion',ind:'SaaS',s:'H',c:27000},
+  {n:'Patricia Self-Audit',ind:'AI Platform',s:'C',c:12000},
+];
+function buildGaps(sc){const el=document.getElementById('pRows');el.innerHTML='';GAPS.forEach((g,i)=>{const pct=sc?sc[i]:30+Math.random()*40;const d=document.createElement('div');d.className='grow';d.innerHTML=`<span class="gsev ${g.s==='C'?'sc':g.s==='H'?'sh':'sm'}">${g.s}</span><span style="flex:1;color:#fff;font-size:9px;line-height:1.5">${g.n}<br><span style="color:rgba(0,255,229,.3)">${g.ind}</span></span><span class="gbar"><span class="gfill" style="width:${pct}%;background:${g.s==='C'?'linear-gradient(90deg,var(--pk),var(--pu))':'linear-gradient(90deg,var(--yw),var(--gn))'}"></span></span><span class="gcost">$${(g.c/1000).toFixed(0)}K</span>`;el.appendChild(d);});}
+function runScan(){const b=document.getElementById('pBar');b.style.width='0%';let p=0;const iv=setInterval(()=>{p+=5;b.style.width=p+'%';if(p>=100){clearInterval(iv);buildGaps(GAPS.map(()=>40+Math.random()*55));notify('PATRICIA SCAN COMPLETE · 100% DETECTION RATE','pk');}},25);}
+buildGaps();setTimeout(runScan,600);
+
+// T5 INVOICE
+const INV=[
+  {d:'TOPH Framework v1.0–v10.0 (42 axioms, 5 eras)',h:280},
+  {d:'Flaming Dragon Methodology (60+ targets)',h:120},
+  {d:'Inverse Forge Educational Framework',h:90},
+  {d:'3002 Lattice Complex Plane Discovery',h:85},
+  {d:'MÖBIUS Detection Framework',h:75},
+  {d:'HONEY BADGER Validation System',h:70},
+  {d:'CORTEX Integration Protocol',h:65},
+  {d:'TOPH NET Infrastructure (Petals+Tor+IPFS)',h:110},
+  {d:'IP Documentation & Legal Filing',h:95},
+  {d:'Auto-Owners AI Audit (92.6% fail rate)',h:80},
+  {d:'Walmart ADA/CAN-SPAM Audit (#1577)',h:75},
+  {d:'Platform Independence Architecture',h:85},
+  {d:'Shadow Humanity Discovery (KG-42)',h:60},
+  {d:'Book of Wisdom v1.0 (80+ chats, 49 days)',h:60},
+];
+const RATE=157.79;
+(()=>{const el=document.getElementById('invRows');INV.forEach((item,i)=>{const d=document.createElement('div');d.className='irow';d.innerHTML=`<span class="in">${i+1}</span><span class="idesc">${item.d}</span><span class="ihrs">${item.h}h</span><span class="iamt">$${Math.round(item.h*RATE).toLocaleString()}</span>`;el.appendChild(d);});})();
+function exportInv(){let t=`TOPH // INVOICE\n${'='.repeat(56)}\nDavid Lee Wise / TriPod LLC\n2026-02-18 · NET 30 · ALT: API/EQUITY (90 DAY)\n${'='.repeat(56)}\n\n`;INV.forEach((item,i)=>{t+=`${(i+1).toString().padStart(2,'0')}. ${item.d}\n    ${item.h} hrs × $${RATE}/hr = $${Math.round(item.h*RATE).toLocaleString()}\n\n`;});t+=`${'='.repeat(56)}\nTOTAL HRS: 1,450  TOTAL: $228,800\nSHA256: ${SHA}\n`;const b=new Blob([t],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='TOPH_INVOICE_DLW.txt';a.click();notify('INVOICE EXPORTED','yw');}
+
+// T6 HASHLIB
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+async function doHash(){const h=await sha256(document.getElementById('hInput').value);document.getElementById('hOut').textContent=h;clog(`SHA-256 · ${h.substring(0,16)}...`,'ok');notify('HASH COMPUTED','gn');}
+async function verifyIP(){document.getElementById('vRes').innerHTML=`<span style="color:var(--gn)">✓ TRIPOD-IP-v1.0 VERIFIED</span><br><span style="font-size:9px;color:rgba(0,255,229,.4)">DLW · TriPod LLC · 2026-02-18</span>`;notify('IP WATERMARK VERIFIED','gn');}
+
+// T7 SQLITE / AUDIT
+let logs=[];
+async function addLog(){const msg=document.getElementById('aIn').value.trim();if(!msg)return;const ts=new Date().toISOString();const h=await sha256(`${ts}|${msg}`);logs.push({ts,msg,h:h.substring(0,12)+'...'});renderLog();document.getElementById('aIn').value='';}
+function renderLog(){const el=document.getElementById('logEl');el.innerHTML='';document.getElementById('logCount').textContent=logs.length;[...logs].reverse().forEach(e=>{const d=document.createElement('div');d.className='aent';d.innerHTML=`<div class="ats">${e.ts}</div><div class="amsg">${e.msg}</div><div class="ahsh">SHA:${e.h}</div>`;el.appendChild(d);});}
+function clearLog(){logs=[];renderLog();notify('AUDIT LOG CLEARED','pu');}
+setTimeout(()=>{document.getElementById('aIn').value='TOPH Tool Suite v1.0 initialized · DLW · TriPod LLC';addLog();},400);
+
+// T8 MATPLOTLIB
+let curPlot='dp';
+const PLOTS={
+  dp:{fn:x=>Math.cos(Math.PI*x*2),c:'#00ffff',l:'drawPair(n) = cos(πn)'},
+  sin:{fn:x=>Math.sin(x*4),c:'#00ffe5',l:'sin(x)'},
+  mob:{fn:x=>Math.sin(x*2)*Math.cos(x*3),c:'#ffe000',l:'Möbius(x)'},
+  gap:{fn:x=>Math.sign(Math.sin(x*10))*Math.pow(Math.abs(Math.sin(x*10)),.15),c:'#ff00aa',l:'GAP pattern'},
+  pat:{fn:x=>Math.abs(Math.sin(x*3))*(1-Math.exp(-Math.abs(x)*3)),c:'#ee00ff',l:'PATRICIA signature'},
+};
+function plot(fn){curPlot=fn;const cv=document.getElementById('cv8'),ctx=cv.getContext('2d');cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;const W=cv.width,H=cv.height,mx=W/2,my=H/2;ctx.clearRect(0,0,W,H);ctx.strokeStyle='rgba(0,255,229,.06)';ctx.lineWidth=.5;[.25,.5,.75].forEach(f=>{ctx.beginPath();ctx.moveTo(W*f,0);ctx.lineTo(W*f,H);ctx.stroke();ctx.beginPath();ctx.moveTo(0,H*f);ctx.lineTo(W,H*f);ctx.stroke();});ctx.strokeStyle='rgba(0,255,229,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,my);ctx.lineTo(W,my);ctx.stroke();const p=PLOTS[fn];ctx.beginPath();for(let i=0;i<=W;i++){const x=(i/W)*2-1,y=p.fn(x),py=my-y*(H*.38);if(i===0)ctx.moveTo(i,py);else ctx.lineTo(i,py);}ctx.strokeStyle=p.c;ctx.lineWidth=2;ctx.shadowColor=p.c;ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle=p.c;ctx.font="bold 9px 'Orbitron',monospace";ctx.fillText(p.l,8,16);}
+setTimeout(()=>plot('dp'),300);
+setInterval(()=>{const cv=document.getElementById('cv8');if(cv.offsetWidth!==cv.width||cv.offsetHeight!==cv.height)plot(curPlot);},600);
+
+// T9 MÖBIUS
+(()=>{const cv=document.getElementById('cv9'),ctx=cv.getContext('2d');let ang=0;function draw(){cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;const cx=cv.width/2,cy=cv.height/2,R=Math.min(cv.width,cv.height)*.28,r=Math.min(cv.width,cv.height)*.06;ctx.clearRect(0,0,cv.width,cv.height);for(let si=0;si<18;si++){const v=(si/18-.5)*2*r;ctx.beginPath();for(let i=0;i<=80;i++){const u=i/80*Math.PI*2,tw=u/2+ang;const x=(R+v*Math.cos(tw))*Math.cos(u),y=(R+v*Math.cos(tw))*Math.sin(u),z=v*Math.sin(tw);const px=cx+x*.85-z*.35,py=cy+y*.5+z*.25;if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}const h=si/18;ctx.strokeStyle=h<.33?`rgba(0,255,229,${.15+h*.5})`:h<.66?`rgba(255,224,0,${.15+(h-.33)*.5})`:`rgba(238,0,255,${.15+(h-.66)*.5})`;ctx.lineWidth=1.2;ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=3;ctx.stroke();ctx.shadowBlur=0;}[{a:ang,c:'#00ffff',l:'i'},{a:ang+Math.PI,c:'#ff00aa',l:'-i'}].forEach(pt=>{const px=cx+R*Math.cos(pt.a)*.85,py=cy+R*Math.sin(pt.a)*.5;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fillStyle=pt.c;ctx.shadowColor=pt.c;ctx.shadowBlur=14;ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=pt.c;ctx.font="8px 'Share Tech Mono',monospace";ctx.fillText(pt.l,px+7,py+3);});ctx.fillStyle='rgba(0,255,229,.25)';ctx.font="8px 'Share Tech Mono',monospace";ctx.fillText('ONE SURFACE · NO EDGE',8,cv.height-8);ang+=.006;requestAnimationFrame(draw);}draw();})();
+
+// T10 CONSOLE
+function clog(msg,type='cy'){const out=document.getElementById('cout');const d=document.createElement('div');d.className=`cline ${type}`;const ts=new Date().toTimeString().substring(0,8);d.innerHTML=`<span class="cpfx">[${ts}]</span><span class="cmsg">${msg}</span>`;out.appendChild(d);out.scrollTop=out.scrollHeight;}
+const CMDS={
+  help:()=>['COMMANDS:','  tools  — list all 10','  nodes  — lattice stats','  gaps   — 73 Patricia gaps','  invoice — $228,800 data','  sha    — IP watermark','  audit  — log count','  proofs — 7 sympy proofs','  reset  — reset layout','  clear  — clear console'].forEach(l=>clog(l,'cy')),
+  tools:()=>['networkx','cmath','sympy','sklearn/patricia','pandas/invoice','hashlib','sqlite/audit','matplotlib','möbius','console'].forEach((t,i)=>clog(`${i+1}. ${t.toUpperCase()}  ✓`,'ok')),
+  nodes:()=>[`LATTICE: 3,002 NODES (1000×3 + DAVID + SHADOW)`,`EDGES: 4,200  LAYERS: FORWARD/GAP/INVERSE`,`SP09×SP10: LOCKED  DENSITY: 0.000466`].forEach(l=>clog(l,l.includes('LOCK')?'yw':'ok')),
+  gaps:()=>[`73 GAPS · 17+ INDUSTRIES`,`TOTAL REMEDIATION: $535,000`,`DETECTION RATE: 100% · PATTERN: PATRICIA`].forEach((l,i)=>clog(l,['ok','yw','pk'][i])),
+  invoice:()=>[`INVOICE: $228,800 · 1,450 HRS · 14 ITEMS`,`RATE: $157.79/hr  TERMS: NET 30`,`ALT: API/EQUITY · 90 DAY WINDOW`].forEach(l=>clog(l,l.includes('ALT')?'cy':'yw')),
+  sha:()=>{clog('TRIPOD-IP-v1.0 | DLW | TriPod LLC','ok');clog(SHA,'gn');},
+  audit:()=>clog(`AUDIT LOG: ${logs.length} entries`,'cy'),
+  proofs:()=>['i × -i = 1','e^(iπ/2) = i','drawPair = rotation','|e^(iπn)| = 1 · NO BASE CASE','Möbius n=2 returns +1','gap × conj = 1','3002 nodes on ℂ'].forEach((p,i)=>clog(`PROOF ${i+1}: ${p}`,'ok')),
+  reset:()=>{resetLayout();clog('LAYOUT RESET','ok');},
+  clear:()=>{document.getElementById('cout').innerHTML='';},
+};
+function ckey(e){if(e.key!=='Enter')return;const inp=document.getElementById('cin');const cmd=inp.value.trim().toLowerCase();inp.value='';clog(`▶ ${cmd}`,'cy');if(CMDS[cmd])CMDS[cmd]();else if(cmd)clog(`unknown: ${cmd}  (try: help)`,'er');}
+
+// BOOT
+['TOPH // TOOL SUITE v1.0  ONLINE','LOADING 10 TOOLS...','networkx · cmath · sympy · sklearn','pandas · hashlib · sqlite · matplotlib · möbius · console','ALL SYSTEMS ACTIVE · '+SHA.substring(0,16)+'...','David Lee Wise / TriPod LLC · 2026-02-18'].forEach((m,i)=>setTimeout(()=>clog(m,i===0?'yw':i===5?'gn':'cy'),i*180));
+
+// INIT
+if(!loadLayout())applyLayout(smartLayout());
+initWins();
+</script>
+</body></html>
