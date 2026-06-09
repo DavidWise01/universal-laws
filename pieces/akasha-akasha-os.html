@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AKASHA OS v8 — STABLE</title>
+<style>
+:root{
+  --bg:#020608;
+  --grid:#081921;
+  --panel:#071219;
+  --panel2:#0a1b23;
+  --border:#123746;
+  --cyan:#22d3ee;
+  --cyan2:#0891b2;
+  --text:#dff6ff;
+  --muted:#7a939e;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.grid-bg{
+  position:fixed;inset:0;
+  background:
+    linear-gradient(transparent 0,transparent calc(100% - 1px), var(--grid) calc(100% - 1px)),
+    linear-gradient(90deg, transparent 0,transparent calc(100% - 1px), var(--grid) calc(100% - 1px));
+  background-size:32px 32px;
+  opacity:.35;
+  pointer-events:none;
+}
+.topbar{
+  height:48px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;border-bottom:1px solid var(--border);
+  background:rgba(3,12,16,.85);backdrop-filter:blur(8px);
+  position:relative;z-index:10;
+}
+.brand{letter-spacing:.12em;font-weight:600;font-size:13px}
+.brand b{color:var(--cyan);font-weight:800}
+.ver{color:var(--muted);margin-left:8px;font-size:11px;letter-spacing:.08em}
+.topbar .actions{display:flex;gap:8px}
+.btn,button{
+  background:#031a21;color:var(--cyan);border:1px solid var(--cyan2);
+  padding:6px 10px;border-radius:8px;font-size:12px;letter-spacing:.04em;
+  cursor:pointer;transition:.15s;font-weight:600
+}
+.btn:hover,button:hover{background:#052e38;border-color:var(--cyan);color:#aef1ff}
+.btn.primary{background:transparent;border-color:var(--cyan);color:var(--cyan);padding:10px 14px;font-size:13px;width:100%}
+.btn.primary:hover{background:rgba(34,211,238,.1)}
+
+.os-grid{
+  position:absolute;top:48px;left:0;right:0;bottom:110px;
+  display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+  gap:10px;padding:10px;
+}
+@media(max-width:900px){
+  body{overflow:auto}
+  .os-grid{position:relative;grid-template-columns:1fr;grid-template-rows:auto;bottom:auto;height:auto}
+  .terminal-wrap{position:sticky;bottom:0}
+}
+.panel{
+  background:linear-gradient(180deg,rgba(10,26,34,.9),rgba(5,15,20,.9));
+  border:1px solid var(--border);border-radius:12px;
+  padding:12px;display:flex;flex-direction:column;gap:10px;
+  min-height:0;overflow:hidden;
+}
+.panel-head{display:flex;align-items:center;justify-content:space-between}
+.panel-head h2{margin:0;font-size:11px;letter-spacing:.14em;color:var(--cyan);font-weight:700}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats > div{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px}
+.stats label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stats b{display:block;font-size:15px;margin-top:2px;color:var(--cyan);font-variant-numeric:tabular-nums}
+.drop{
+  border:1px dashed var(--cyan2);border-radius:8px;padding:10px;text-align:center;
+  color:var(--muted);font-size:12px;background:rgba(3,20,27,.5);transition:.15s
+}
+.drop.drag{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.08)}
+.search-row input{width:100%;background:#03141b;border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:7px;font-size:12px;outline:none}
+.search-row input:focus{border-color:var(--cyan2)}
+.record-list{flex:1;overflow:auto;border:1px solid var(--border);border-radius:8px;background:var(--panel2);padding:4px;min-height:60px}
+.rec{padding:5px 6px;border-bottom:1px solid rgba(18,55,70,.6);font-size:11px;display:flex;justify-content:space-between;gap:8px}
+.rec:last-child{border-bottom:none}
+.rec b{color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+.rec span{color:var(--cyan2);font-variant-numeric:tabular-nums}
+
+.claim{font-size:12px;background:var(--panel2);border:1px solid var(--border);padding:7px 9px;border-radius:8px}
+.claim strong{color:var(--cyan);letter-spacing:.04em}
+.btn-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.btn-row button{font-size:11px;padding:7px 6px}
+textarea{
+  width:100%;background:#03141b;border:1px solid var(--border);color:var(--text);
+  border-radius:8px;padding:8px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;resize:none;outline:none
+}
+textarea:focus{border-color:var(--cyan2)}
+.row{display:flex;align-items:center;gap:8px}
+.muted{color:var(--muted);font-size:11px}
+.hist-title{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:2px}
+.history{flex:1;overflow:auto;border:1px solid var(--border);border-radius:8px;background:var(--panel2);padding:4px;min-height:50px}
+.hist-item{padding:5px 6px;font-size:11px;cursor:pointer;border-radius:5px}
+.hist-item:hover{background:rgba(34,211,238,.08);color:var(--cyan)}
+
+.deploy-input{display:flex;gap:6px}
+.deploy-input input{flex:1;background:#03141b;border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:7px;font-size:12px;outline:none}
+.deploy-input input:focus{border-color:var(--cyan2)}
+.progress-wrap{display:flex;align-items:center;gap:8px}
+.progress{flex:1;height:6px;background:#03141b;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.progress i{display:block;height:100%;width:0%;background:var(--cyan);box-shadow:0 0 6px var(--cyan);transition:width .2s}
+#prog-text{font-variant-numeric:tabular-nums;font-size:11px;color:var(--cyan2);min-width:34px;text-align:right}
+.grid64{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;flex:1;align-content:start}
+.cell{position:relative;aspect-ratio:1}
+.cell input{appearance:none;position:absolute;inset:0;background:#04141b;border:1px solid var(--border);border-radius:4px;cursor:pointer;margin:0}
+.cell input:checked{background:var(--cyan);box-shadow:0 0 8px rgba(34,211,238,.5) inset,0 0 4px rgba(34,211,238,.3)}
+.cell span{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;color:var(--muted);pointer-events:none}
+.cell input:checked + span{color:#001015;font-weight:700}
+
+.jane-status{font-size:12px;background:var(--panel2);border:1px solid var(--border);padding:6px 8px;border-radius:7px}
+.jane-status b{color:var(--cyan)}
+.boxes12{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.box{aspect-ratio:1;border:1px solid var(--border);background:#04141b;border-radius:50%;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.box:hover{border-color:var(--cyan2);color:var(--cyan)}
+.box.on{background:var(--cyan);color:#00202a;border-color:var(--cyan);box-shadow:0 0 10px rgba(34,211,238,.4)}
+.gates{margin-top:4px}
+.gate-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.gate-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.switch{position:relative;display:flex;align-items:center;justify-content:center;background:#04141b;border:1px solid var(--border);border-radius:7px;padding:6px;cursor:pointer;transition:.15s}
+.switch:hover{border-color:var(--cyan2)}
+.switch input{position:absolute;opacity:0}
+.switch span{font-size:12px;color:var(--muted);font-weight:700}
+.switch input:checked + span{color:var(--cyan)}
+.switch:has(input:checked){background:rgba(34,211,238,.12);border-color:var(--cyan)}
+.chronos{font-size:11px;color:var(--muted);background:var(--panel2);border:1px solid var(--border);padding:6px 8px;border-radius:7px;margin-top:4px}
+.chronos b{color:var(--cyan);font-variant-numeric:tabular-nums;margin-left:6px}
+.god-voice{display:flex;gap:6px;margin-top:auto}
+.god-voice input{flex:1;background:#03141b;border:1px solid var(--border);color:var(--text);padding:7px 9px;border-radius:7px;font-size:12px;outline:none}
+.god-voice input:focus{border-color:var(--cyan2)}
+
+.terminal-wrap{
+  position:absolute;left:0;right:0;bottom:0;height:110px;
+  background:rgba(3,11,15,.92);border-top:1px solid var(--border);
+  backdrop-filter:blur(6px);display:flex;flex-direction:column;
+}
+.term-out{flex:1;overflow:auto;padding:6px 10px;font:11px/1.35 ui-monospace,monospace;color:#c5e9f1}
+.term-out div{white-space:pre-wrap;word-break:break-word}
+.term-out div:first-child{color:var(--cyan)}
+.term-in{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid rgba(18,55,70,.6);background:#02090d}
+.term-in span{color:var(--cyan);font-weight:700}
+.term-in input{flex:1;background:transparent;border:none;color:var(--text);outline:none;font:12px ui-monospace,monospace}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#0d2f3b;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#155266}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="topbar">
+  <div class="brand">AKASHA <b>OS</b> <span class="ver">v8 — STABLE</span></div>
+  <div class="actions">
+    <button id="export-btn" title="Export all data">Export</button>
+    <button id="import-btn" title="Import data">Import</button>
+    <input type="file" id="import-file" accept="application/json" hidden>
+  </div>
+</header>
+
+<main class="os-grid">
+  <!-- TOP LEFT: WITNESS -->
+  <section class="panel" id="panel-witness">
+    <div class="panel-head"><h2>AKASHA WITNESS</h2><span class="dot"></span></div>
+    <div class="stats">
+      <div><label>Files Witnessed</label><b id="w-count">0</b></div>
+      <div><label>Last π</label><b id="w-pi">—</b></div>
+      <div><label>Total Records</label><b id="w-total">0</b></div>
+    </div>
+    <button class="btn primary" id="witness-btn">WITNESS FOLDER</button>
+    <div class="drop" id="drop-zone">Drag & Drop files here • Instant SHA-256</div>
+    <input type="file" id="file-input" multiple webkitdirectory hidden>
+    <div class="search-row"><input id="record-search" placeholder="Search akashic records…"></div>
+    <div class="record-list" id="record-list"></div>
+  </section>
+
+  <!-- TOP RIGHT: INSURANCE -->
+  <section class="panel" id="panel-insurance">
+    <div class="panel-head"><h2>INSURANCE WARRIOR</h2><span class="dot"></span></div>
+    <div class="claim">CLAIM <strong>300-0073283-2026</strong> LOCKED</div>
+    <div class="btn-row">
+      <button data-gen="demand">Generate Demand</button>
+      <button data-gen="doi">DOI Complaint</button>
+      <button data-gen="supervisor">Supervisor Letter</button>
+    </div>
+    <textarea id="ins-output" rows="6" placeholder="Output appears here..."></textarea>
+    <div class="row">
+      <button id="copy-ins">Copy Output</button>
+      <span class="muted" id="copy-status"></span>
+    </div>
+    <div class="hist-title">History</div>
+    <div class="history" id="ins-history"></div>
+  </section>
+
+  <!-- BOTTOM LEFT: DEPLOYER -->
+  <section class="panel" id="panel-deployer">
+    <div class="panel-head"><h2>PARALLEL DEPLOYER</h2><span class="dot"></span></div>
+    <div class="deploy-input">
+      <input id="deploy-action" placeholder="Action to parallelize…">
+      <button id="deploy-btn">Deploy 64</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress"><i id="prog-bar"></i></div>
+      <span id="prog-text">0/64</span>
+    </div>
+    <div class="grid64" id="grid64"></div>
+  </section>
+
+  <!-- BOTTOM RIGHT: JANE -->
+  <section class="panel" id="panel-jane">
+    <div class="panel-head"><h2>JANE + CONTROLS</h2><span class="dot"></span></div>
+    <div class="jane-status">Jane: <b id="jane-status-text">Box 1 found</b></div>
+    <div class="boxes12" id="boxes12"></div>
+    <div class="gates">
+      <div class="gate-title">Gatekeepers</div>
+      <div class="gate-grid">
+        <label class="switch"><input type="checkbox" data-gate="N"><span>N</span></label>
+        <label class="switch"><input type="checkbox" data-gate="S"><span>S</span></label>
+        <label class="switch"><input type="checkbox" data-gate="E"><span>E</span></label>
+        <label class="switch"><input type="checkbox" data-gate="W"><span>W</span></label>
+      </div>
+    </div>
+    <div class="chronos">Chronos π <b id="chronos-pi">3.1415926535</b></div>
+    <div class="god-voice">
+      <input id="god-input" placeholder="God voice text…">
+      <button id="god-speak">Speak</button>
+    </div>
+  </section>
+</main>
+
+<footer class="terminal-wrap">
+  <div class="term-out" id="term-out"></div>
+  <div class="term-in"><span>&gt;</span><input id="term-input" autocomplete="off" placeholder="witness, recall, status, generate, deploy, pulse"></div>
+</footer>
+
+<script>
+const CLAIM = '300-0073283-2026';
+let state = (()=>{try{return JSON.parse(localStorage.getItem('akasha-v8')||'{}')}catch{return{}}})();
+state.records = state.records||[];
+state.insurance = state.insurance||[];
+state.deployer = state.deployer||{action:'',grid:Array(64).fill(false)};
+if(!Array.isArray(state.deployer.grid)||state.deployer.grid.length!==64) state.deployer.grid=Array(64).fill(false);
+state.jane = state.jane||{boxes:Array(12).fill(false)};
+if(!Array.isArray(state.jane.boxes)||state.jane.boxes.length!==12) state.jane.boxes=Array(12).fill(false);
+if(!state.jane.boxes.some(Boolean)) state.jane.boxes[0]=true;
+state.gates = state.gates||{N:false,S:false,E:false,W:false};
+const save=()=>localStorage.setItem('akasha-v8',JSON.stringify(state));
+const $=id=>document.getElementById(id);
+
+// WITNESS
+async function sha256(file){
+  const buf = await file.arrayBuffer();
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function handleFiles(files){
+  const list = Array.from(files).filter(f=>f.size!==undefined);
+  if(!list.length) return;
+  let processed=0;
+  for(const f of list){
+    try{
+      const hash = await sha256(f);
+      const pi = (Math.PI * (state.records.length+1)).toFixed(12);
+      state.records.push({id:Date.now()+processed+Math.random(),name:f.name,size:f.size,hash,pi,ts:Date.now()});
+      processed++;
+    }catch(e){console.warn(e)}
+  }
+  save(); updateWitness(); renderRecords($('record-search').value); termLog(`Witnessed ${processed} files`);
+}
+function updateWitness(){
+  $('w-count').textContent = state.records.length;
+  $('w-total').textContent = state.records.length;
+  $('w-pi').textContent = state.records.length ? 'π'+state.records[state.records.length-1].pi : '—';
+}
+function renderRecords(filter=''){
+  const list=$('record-list'); list.innerHTML='';
+  const f=filter.toLowerCase();
+  const recs=state.records.filter(r=>!f||r.name.toLowerCase().includes(f)||r.hash.includes(f)).slice(-100).reverse();
+  for(const r of recs){
+    const div=document.createElement('div'); div.className='rec';
+    div.innerHTML=`<b title="${r.name}">${r.name}</b><span>π${r.pi.slice(0,8)}</span>`;
+    div.title=`${r.hash}\n${new Date(r.ts).toLocaleString()}`;
+    list.appendChild(div);
+  }
+  if(!recs.length){list.innerHTML=`<div class="muted" style="padding:8px">No records</div>`}
+}
+$('witness-btn').onclick=()=>$('file-input').click();
+$('file-input').onchange=e=>handleFiles(e.target.files);
+const dz=$('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');handleFiles(e.dataTransfer.files)});
+$('record-search').oninput=e=>renderRecords(e.target.value);
+
+// INSURANCE
+function tpl(type){
+  const d=new Date().toLocaleDateString();
+  switch(type){
+    case 'demand': return `DEMAND FOR PAYMENT\nClaim: ${CLAIM}\nDate: ${d}\n\nTo Whom It May Concern:\n\nThis constitutes formal demand for full, fair payment on claim ${CLAIM}. All damages documented and π-witnessed in Akashic records.\n\nProvide written response within 10 business days with payment or detailed denial citing policy language.\n\nFailure to respond will result in Department of Insurance complaint and further action.\n\nRegards,\nPolicyholder`;
+    case 'doi': return `DEPARTMENT OF INSURANCE COMPLAINT\nRE: Claim ${CLAIM}\nDate: ${d}\n\nFormal complaint for unreasonable delay, underpayment, and bad faith handling.\n\nClaim facts documented with timestamps and SHA-256 hashes (Akasha Witness). Request immediate investigation.\n\nRelief sought: full payment per policy, interest, and penalties as allowed by law.`;
+    case 'supervisor': return `ESCALATION TO SUPERVISOR\nClaim: ${CLAIM}\nDate: ${d}\n\nRequest immediate supervisor review. Prior adjuster communications have not resolved.\n\nAll evidence is witness-verified (π ${Math.PI.toFixed(6)}). Please contact within 48 hours to resolve or provide written position.\n\nThank you.`
+  }
+}
+function generateInsurance(type){
+  const text=tpl(type);
+  $('ins-output').value=text;
+  state.insurance.unshift({type,ts:Date.now(),text});
+  state.insurance=state.insurance.slice(0,50);
+  save(); renderInsHistory();
+}
+function renderInsHistory(){
+  const h=$('ins-history'); h.innerHTML='';
+  state.insurance.slice(0,12).forEach(item=>{
+    const div=document.createElement('div'); div.className='hist-item';
+    div.textContent=`${item.type.toUpperCase()} • ${new Date(item.ts).toLocaleTimeString()}`;
+    div.onclick=()=>{$('ins-output').value=item.text};
+    h.appendChild(div);
+  });
+  if(!state.insurance.length) h.innerHTML=`<div class="muted" style="padding:6px">No history</div>`;
+}
+document.querySelectorAll('[data-gen]').forEach(b=>b.onclick=()=>generateInsurance(b.dataset.gen));
+$('copy-ins').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('ins-output').value);$('copy-status').textContent='Copied';setTimeout(()=>$('copy-status').textContent='',1200)}catch{$('copy-status').textContent='Press Ctrl+C'}
+};
+
+// DEPLOYER
+function renderGrid64(){
+  const g=$('grid64'); g.innerHTML='';
+  state.deployer.grid.forEach((v,i)=>{
+    const cell=document.createElement('label'); cell.className='cell';
+    cell.innerHTML=`<input type="checkbox" data-i="${i}" ${v?'checked':''}><span>${i+1}</span>`;
+    g.appendChild(cell);
+  });
+  updateProgress();
+}
+function updateProgress(){
+  const c=state.deployer.grid.filter(Boolean).length;
+  $('prog-text').textContent=`${c}/64`;
+  $('prog-bar').style.width=`${c/64*100}%`;
+}
+$('grid64').addEventListener('change',e=>{
+  const i=+e.target.dataset.i; if(isNaN(i))return;
+  state.deployer.grid[i]=e.target.checked; save(); updateProgress();
+});
+$('deploy-btn').onclick=()=>{
+  const action=$('deploy-action').value.trim()||'Parallel Action';
+  state.deployer.action=action; state.deployer.grid=Array(64).fill(false);
+  save(); renderGrid64(); termLog(`Deployed 64: ${action}`);
+};
+$('deploy-action').value=state.deployer.action;
+
+// JANE
+function renderBoxes(){
+  const w=$('boxes12'); w.innerHTML='';
+  state.jane.boxes.forEach((v,i)=>{
+    const b=document.createElement('button'); b.className='box'+(v?' on':''); b.textContent=i+1;
+    b.onclick=()=>{state.jane.boxes[i]=!state.jane.boxes[i];save();renderBoxes();updateJaneStatus()};
+    w.appendChild(b);
+  });
+}
+function updateJaneStatus(){
+  const found=state.jane.boxes.filter(Boolean).length;
+  const first=state.jane.boxes.findIndex(v=>v)+1;
+  $('jane-status-text').textContent= found?`Box ${first} found • ${found}/12`:'Scanning...';
+}
+document.querySelectorAll('[data-gate]').forEach(chk=>{
+  chk.checked=!!state.gates[chk.dataset.gate];
+  chk.onchange=()=>{state.gates[chk.dataset.gate]=chk.checked;save()}
+});
+setInterval(()=>{
+  const base=3.1415926535;
+  const t=(Date.now()%60000)/60000;
+  $('chronos-pi').textContent=(base+t*0.00001).toFixed(10);
+},100);
+$('god-speak').onclick=()=>{
+  const txt=$('god-input').value.trim(); if(!txt) return;
+  try{const u=new SpeechSynthesisUtterance(txt);u.rate=0.9;u.pitch=0.85;speechSynthesis.speak(u)}catch{}
+};
+
+// TERMINAL
+const termOut=$('term-out'); const termIn=$('term-input');
+function termLog(m){const d=document.createElement('div');d.textContent=m;termOut.appendChild(d);termOut.scrollTop=termOut.scrollHeight}
+function runTerm(cmdline){
+  if(!cmdline) return; termLog('> '+cmdline);
+  const [cmd,...rest]=cmdline.trim().split(' '); const arg=rest.join(' ');
+  switch(cmd.toLowerCase()){
+    case 'witness': $('file-input').click(); termLog('Opening witness dialog…'); break;
+    case 'recall': {
+      const res=state.records.filter(r=>!arg||r.name.toLowerCase().includes(arg.toLowerCase())||r.hash.includes(arg));
+      termLog(`${res.length} records${arg?' for "'+arg+'"':''}`); res.slice(-5).reverse().forEach(r=>termLog(`• ${r.name} π${r.pi}`)); break;
+    }
+    case 'status': termLog(`Records:${state.records.length} | Deploy:${state.deployer.grid.filter(Boolean).length}/64 | Jane:${state.jane.boxes.filter(Boolean).length}/12 | Gates:${Object.entries(state.gates).filter(([,v])=>v).map(([k])=>k).join('')||'none'}`); break;
+    case 'generate': if(['demand','doi','supervisor'].includes(arg)){generateInsurance(arg);termLog(`Generated ${arg}`)} else termLog('Usage: generate [demand|doi|supervisor]'); break;
+    case 'deploy': $('deploy-action').value=arg||'Unnamed';$('deploy-btn').click(); break;
+    case 'pulse': termLog(`π=${$('chronos-pi').textContent} • Gates ${JSON.stringify(state.gates)}`); break;
+    case 'help': termLog('Commands: witness, recall [term], status, generate [demand|doi|supervisor], deploy [action], pulse'); break;
+    default: termLog('Unknown. Type help');
+  }
+}
+termIn.addEventListener('keydown',e=>{if(e.key==='Enter'){runTerm(termIn.value);termIn.value=''}});
+
+// EXPORT / IMPORT
+$('export-btn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`akasha-v8-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+  termLog('Exported data');
+};
+$('import-btn').onclick=()=>$('import-file').click();
+$('import-file').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{try{localStorage.setItem('akasha-v8',r.result);location.reload()}catch{alert('Invalid file')}}; r.readAsText(f);
+};
+
+// INIT
+updateWitness(); renderRecords(); renderInsHistory(); renderGrid64(); renderBoxes(); updateJaneStatus();
+termLog('AKASHA OS v8 STABLE — ready.'); termLog('Type help for commands.');
+</script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPERATIONAL NEXUS — Production Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { -webkit-font-smoothing: antialiased; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #030507; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0f14; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+        .grid-bg {
+            background-image: 
+                linear-gradient(rgba(34,197,94,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34,197,94,0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.5 } }
+        .log-enter { animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-[#030507] text-zinc-100 min-h-screen relative overflow-x-hidden">
+    <div class="fixed inset-0 grid-bg pointer-events-none"></div>
+    <div class="fixed inset-0 bg-gradient-to-b from-[#050a0f]/80 via-transparent to-[#030507] pointer-events-none"></div>
+    
+    <!-- Toast Container -->
+    <div id="toasts" class="fixed top-4 right-4 z-[100] space-y-2"></div>
+
+    <!-- Header -->
+    <header class="relative z-40 border-b border-zinc-800/80 bg-black/40 glass sticky top-0">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-[68px] gap-4">
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div class="hidden sm:block">
+                            <div class="font-semibold tracking-wide text-[15px] leading-none">OPERATIONAL NEXUS</div>
+                            <div class="text-[11px] text-zinc-500 font-medium tracking-widest uppercase mt-0.5">Production Control Plane</div>
+                        </div>
+                    <div class="hidden lg:flex items-center gap-2 pl-4 border-l border-zinc-800">
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-950/60 border border-red-900/50 text-[11px] font-medium text-red-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-500 pulse-dot"></span>
+                            PRODUCTION
+                        </span>
+                        <span class="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-400 mono">v1.0.0</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="hidden md:flex items-center gap-3 pr-3 mr-1 border-r border-zinc-800">
+                        <div class="text-right">
+                            <div class="text-[11px] text-zinc-500 leading-none">STATUS</div>
+                            <div class="text-[13px] font-medium text-emerald-400 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>OPERATIONAL</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] text-zinc-500 leading-none">UTC</div>
+                            <div id="utcClock" class="text-[13px] font-medium mono text-zinc-300">--:--:--</div>
+                        </div>
+                    <button onclick="openDeploy()" class="group relative px-3.5 h-9 bg-emerald-600 hover:bg-emerald-500 text-black font-medium text-[13px] rounded-lg transition-all hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        <span class="hidden sm:inline">Deploy</span>
+                    </button>
+                    <button onclick="openRollback()" class="px-3.5 h-9 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-medium text-[13px] rounded-lg transition hidden sm:flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h10a8 8 0 0 1 8 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                        Rollback
+                    </button>
+                    <button onclick="openScale()" class="px-3.5 h-9 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-medium text-[13px] rounded-lg transition hidden sm:flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                        Scale
+                    </button>
+                    <button onclick="scrollToLogs()" class="px-3.5 h-9 bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 text-zinc-400 font-medium text-[13px] rounded-lg transition flex items-center gap-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+                        <span class="hidden md:inline">Logs</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-[1920px] mx-auto">
+        <!-- Top Status -->
+        <div class="grid grid-cols-12 gap-4 mb-4">
+            <!-- Health Checks -->
+            <div class="col-span-12 xl:col-span-4">
+                <div class="h-full rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-[13px] font-semibold tracking-wide text-zinc-300 uppercase">Health Checks</h2>
+                        <span class="text-[11px] px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-900/50 font-medium">ALL SYSTEMS OPERATIONAL</span>
+                    </div>
+                    <div class="space-y-3.5">
+                        <div class="group">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] pulse-dot"></span>
+                                    <span class="text-[13px] font-medium text-zinc-200">Backend DB</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-500 border border-zinc-800">PostgreSQL 15.4</span>
+                                </div>
+                                <span class="text-[12px] mono text-zinc-500" id="dbLatency">12ms</span>
+                            </div>
+                            <div class="h-[28px] flex items-end gap-[2px]">
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 60%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 80%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 45%"></div>
+                                <div class="w-[3px] bg-emerald-500 rounded-sm" style="height: 70%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 55%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 90%" id="dbSpark"></div>
+                            </div>
+                            <div class="text-[11px] text-zinc-500 mt-1.5">Connected • 47 connections • replica lag 0ms</div>
+                        </div>
+                        <div class="h-px bg-zinc-800/60"></div>
+                        <div class="group">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] pulse-dot"></span>
+                                    <span class="text-[13px] font-medium text-zinc-200">Middle API</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-500 border border-zinc-800">3 replicas</span>
+                                </div>
+                                <span class="text-[12px] mono text-zinc-500" id="apiLatency">34ms</span>
+                            </div>
+                            <div class="h-[28px] flex items-end gap-[2px]">
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 70%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 50%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 65%"></div>
+                                <div class="w-[3px] bg-emerald-500 rounded-sm" style="height: 85%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 60%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 75%" id="apiSpark"></div>
+                            </div>
+                            <div class="text-[11px] text-zinc-500 mt-1.5">Responsive • p99 87ms • 0 errors</div>
+                        </div>
+                        <div class="h-px bg-zinc-800/60"></div>
+                        <div class="group">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] pulse-dot"></span>
+                                    <span class="text-[13px] font-medium text-zinc-200">Frontend</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-500 border border-zinc-800">CDN edge</span>
+                                </div>
+                                <span class="text-[12px] mono text-emerald-400">99.98%</span>
+                            </div>
+                            <div class="h-[28px] flex items-end gap-[2px]">
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 95%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 92%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 98%"></div>
+                                <div class="w-[3px] bg-emerald-500 rounded-sm" style="height: 96%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 99%"></div>
+                                <div class="w-[3px] bg-emerald-500/80 rounded-sm" style="height: 97%"></div>
+                            </div>
+                            <div class="text-[11px] text-zinc-500 mt-1.5">Loaded • 18 regions • 0.4s TTFB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metrics -->
+            <div class="col-span-12 xl:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 relative overflow-hidden group hover:border-zinc-700/80 transition">
+                    <div class="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Requests/sec</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald-500/60"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </div>
+                        <div class="text-[28px] font-semibold tracking-tight mono text-white leading-none" id="metricRps">2,847</div>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-[11px] font-medium text-emerald-400 flex items-center gap-0.5"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> 12.4%</span>
+                            <span class="text-[11px] text-zinc-600">vs 1m</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 relative overflow-hidden group hover:border-zinc-700/80 transition">
+                    <div class="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Merkle Proofs</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-violet-500/60"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <div class="text-[28px] font-semibold tracking-tight mono text-white leading-none" id="metricMerkle">1,429,812</div>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-[11px] font-medium text-violet-400">+<span id="merkleDelta">5</span>/s</span>
+                            <span class="text-[11px] text-zinc-600">generated</span>
+                        </div>
+                    </div>
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 relative overflow-hidden group hover:border-zinc-700/80 transition">
+                    <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Atoms Placed</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan-500/60"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>
+                        </div>
+                        <div class="text-[28px] font-semibold tracking-tight mono text-white leading-none" id="metricAtoms">847,293</div>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-[11px] font-medium text-cyan-400">+<span id="atomsDelta">2</span>/s</span>
+                            <span class="text-[11px] text-zinc-600">placement rate</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 relative overflow-hidden group hover:border-zinc-700/80 transition">
+                    <div class="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wide">Elements</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-500/60"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M6.34 17.66l-2.83 2.83M19.07 4.93l-2.83 2.83"/></svg>
+                        </div>
+                        <div class="text-[28px] font-semibold tracking-tight mono text-white leading-none">118<span class="text-zinc-600 text-[20px]">/118</span></div>
+                        <div class="flex items-center gap-1.5 mt-2">
+                            <span class="text-[11px] font-medium text-emerald-400 flex items-center gap-1"><span class="w-1 h-1 rounded-full bg-emerald-500"></span> COMPLETE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Middle Row -->
+        <div class="grid grid-cols-12 gap-4 mb-4">
+            <!-- Performance -->
+            <div class="col-span-12 lg:col-span-8">
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 h-full">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-[13px] font-semibold tracking-wide text-zinc-300 uppercase">Performance</h2>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-0.5 bg-emerald-500"></span><span class="text-[11px] text-zinc-500">p50</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-0.5 bg-cyan-500"></span><span class="text-[11px] text-zinc-500">p95</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2 h-0.5 bg-violet-500"></span><span class="text-[11px] text-zinc-500">p99</span></div>
+                        </div>
+                    <div class="h-[200px] relative">
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 mt-5 pt-4 border-t border-zinc-800/60">
+                        <div>
+                            <div class="text-[11px] text-zinc-500 mb-1.5">Redis Cache</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full" style="width: 94.7%" id="cacheRedis"></div></div>
+                                <span class="text-[12px] mono text-zinc-300 w-10 text-right" id="cacheRedisVal">94.7%</span>
+                            </div>
+                        <div>
+                            <div class="text-[11px] text-zinc-500 mb-1.5">CDN Cache</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full" style="width: 98.2%"></div></div>
+                                <span class="text-[12px] mono text-zinc-300 w-10 text-right">98.2%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-[11px] text-zinc-500 mb-1.5">DB Query</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-violet-600 to-violet-400 rounded-full" style="width: 87.3%"></div></div>
+                                <span class="text-[12px] mono text-zinc-300 w-10 text-right">87.3%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security -->
+            <div class="col-span-12 lg:col-span-4">
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5 h-full">
+                    <h2 class="text-[13px] font-semibold tracking-wide text-zinc-300 uppercase mb-4">Security</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="p-3.5 rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                            <div class="flex items-start justify-between mb-2.5">
+                                <div>
+                                    <div class="text-[12px] font-medium text-zinc-200 flex items-center gap-1.5">ROOT0 Signature <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]"></span></div>
+                                    <div class="text-[11px] text-zinc-500 mt-0.5">Ed25519 • Verified <span id="verifyAgo">2s</span> ago</div>
+                                </div>
+                                <button onclick="verifyRoot0()" class="text-[11px] px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 transition">Verify</button>
+                            </div>
+                            <div class="font-mono text-[11px] text-zinc-400 bg-black/50 rounded px-2 py-1.5 border border-zinc-900 truncate" id="root0Sig">0x9f3c81d2...a4e27b91</div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="text-[12px] font-medium text-zinc-200">TriPod Consensus</div>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-900/50">SYNCED</span>
+                            </div>
+                            <div class="relative h-[84px] flex items-center justify-center">
+                                <svg width="200" height="84" viewBox="0 0 200 84" class="overflow-visible">
+                                    <line x1="50" y1="42" x2="100" y2="20" stroke="#27272a" stroke-width="1.5"/>
+                                    <line x1="100" y1="20" x2="150" y2="42" stroke="#27272a" stroke-width="1.5"/>
+                                    <line x1="150" y1="42" x2="50" y2="42" stroke="#27272a" stroke-width="1.5"/>
+                                    <!-- animated lines -->
+                                    <line x1="50" y1="42" x2="100" y2="20" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"><animate attributeName="stroke-dashoffset" values="0;6" dur="1s" repeatCount="indefinite"/></line>
+                                    <line x1="100" y1="20" x2="150" y2="42" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"><animate attributeName="stroke-dashoffset" values="0;6" dur="1s" repeatCount="indefinite"/></line>
+                                    <circle cx="50" cy="42" r="14" fill="#09090b" stroke="#22c55e" stroke-width="1.5" class="drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]"/>
+                                    <circle cx="100" cy="20" r="14" fill="#09090b" stroke="#22c55e" stroke-width="1.5" class="drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]"/>
+                                    <circle cx="150" cy="42" r="14" fill="#09090b" stroke="#22c55e" stroke-width="1.5" class="drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]"/>
+                                    <text x="50" y="46" text-anchor="middle" fill="#a1a1aa" font-size="9" font-family="JetBrains Mono">0</text>
+                                    <text x="100" y="24" text-anchor="middle" fill="#a1a1aa" font-size="9" font-family="JetBrains Mono">1</text>
+                                    <text x="150" y="46" text-anchor="middle" fill="#a1a1aa" font-size="9" font-family="JetBrains Mono">2</text>
+                                </svg>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-zinc-500 mt-1">
+                                <span>Block <span class="mono text-zinc-400" id="blockHeight">1,429,812</span></span>
+                                <span>3/3 validators</span>
+                                <span class="text-emerald-400">Leader: Node-1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="grid grid-cols-12 gap-4">
+            <!-- Logs -->
+            <div class="col-span-12 lg:col-span-8" id="logs">
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[13px] font-semibold tracking-wide text-zinc-300 uppercase">Real-time Log Stream</h2>
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center gap-1 text-[11px] text-zinc-500"><span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>backend</span>
+                            <span class="flex items-center gap-1 text-[11px] text-zinc-500"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>api</span>
+                            <span class="flex items-center gap-1 text-[11px] text-zinc-500"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>frontend</span>
+                        </div>
+                    <div id="logStream" class="h-[280px] overflow-y-auto bg-black/60 rounded-xl border border-zinc-900 p-3 font-mono text-[12px] leading-[1.7]"></div>
+                </div>
+            </div>
+
+            <!-- Deployment -->
+            <div class="col-span-12 lg:col-span-4">
+                <div class="rounded-2xl bg-zinc-950/70 border border-zinc-800/80 glass p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-[13px] font-semibold tracking-wide text-zinc-300 uppercase">Deployment</h2>
+                        <span class="text-[11px] text-zinc-500">Docker • 3 services</span>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="group relative p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/20 border border-amber-900/50 flex items-center justify-center">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21l8-10"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-[13px] font-medium text-zinc-200">nexus-frontend</div>
+                                        <div class="text-[11px] text-zinc-500 mono">opnexus/frontend:v1.0.0</div>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-950/60 text-emerald-400 border border-emerald-900/50">RUNNING</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">CPU</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[32%] bg-amber-500/80 rounded-full" id="cpuFront"></div></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">MEM</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[48%] bg-amber-500/80 rounded-full"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group relative p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-violet-600/20 border border-violet-900/50 flex items-center justify-center">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-[13px] font-medium text-zinc-200">nexus-api</div>
+                                        <div class="text-[11px] text-zinc-500 mono">opnexus/api:v1.0.0 • <span id="replicaCount">3</span> replicas</div>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-950/60 text-emerald-400 border border-emerald-900/50">RUNNING</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">CPU</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[68%] bg-violet-500/80 rounded-full" id="cpuApi"></div></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">MEM</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[71%] bg-violet-500/80 rounded-full"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="group relative p-3.5 rounded-xl bg-zinc-900/40 border border-zinc-800 hover:border-zinc-700 transition cursor-pointer">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-900/50 flex items-center justify-center">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="text-[13px] font-medium text-zinc-200">nexus-db</div>
+                                        <div class="text-[11px] text-zinc-500 mono">postgres:15.4-alpine</div>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-0.5 text-[10px] font-medium rounded bg-emerald-950/60 text-emerald-400 border border-emerald-900/50">RUNNING</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">CPU</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[23%] bg-cyan-500/80 rounded-full"></div></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-zinc-600 mb-1">MEM</div>
+                                    <div class="h-1 bg-zinc-950 rounded-full overflow-hidden"><div class="h-full w-[82%] bg-cyan-500/80 rounded-full"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Deploy Modal -->
+    <div id="deployModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeDeploy()"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-[480px] rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl">
+                <div class="p-6 border-b border-zinc-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-[18px] font-semibold">Deploy to Production</h3>
+                        <button onclick="closeDeploy()" class="w-8 h-8 rounded-lg hover:bg-zinc-900 flex items-center justify-center text-zinc-500">✕</button>
+                    </div>
+                    <p class="text-[13px] text-zinc-500 mt-1">Rolling update • v1.0.0 → v1.0.1</p>
+                </div>
+                <div class="p-6 space-y-3" id="deploySteps">
+                    <div class="flex items-center gap-3 text-[13px]" data-step="1"><div class="w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center"><div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div></div><span class="text-zinc-500">Building Docker images</span></div>
+                    <div class="flex items-center gap-3 text-[13px]" data-step="2"><div class="w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center"><div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div></div><span class="text-zinc-500">Pushing to registry</span></div>
+                    <div class="flex items-center gap-3 text-[13px]" data-step="3"><div class="w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center"><div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div></div><span class="text-zinc-500">ROOT0 signature verification</span></div>
+                    <div class="flex items-center gap-3 text-[13px]" data-step="4"><div class="w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center"><div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div></div><span class="text-zinc-500">Rolling update (3 replicas)</span></div>
+                    <div class="flex items-center gap-3 text-[13px]" data-step="5"><div class="w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center"><div class="w-1.5 h-1.5 rounded-full bg-zinc-700"></div></div><span class="text-zinc-500">Health checks</span></div>
+                </div>
+                <div class="p-6 pt-0 flex justify-end gap-2">
+                    <button onclick="closeDeploy()" class="px-4 h-9 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[13px] font-medium">Cancel</button>
+                    <button id="startDeploy" onclick="startDeploy()" class="px-4 h-9 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-black text-[13px] font-medium">Start Deploy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scale Modal -->
+    <div id="scaleModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="closeScale()"></div>
+        <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+            <div class="w-full max-w-[420px] rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-6">
+                <h3 class="text-[18px] font-semibold mb-1">Scale API Replicas</h3>
+                <p class="text-[13px] text-zinc-500 mb-6">Adjust horizontal scaling for nexus-api</p>
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-[13px] text-zinc-400">Replicas</span>
+                        <span class="text-[24px] font-semibold mono" id="scaleValue">3</span>
+                    </div>
+                    <input type="range" min="1" max="10" value="3" id="scaleSlider" class="w-full h-2 bg-zinc-900 rounded-full appearance-none cursor-pointer accent-violet-500">
+                    <div class="flex justify-between text-[11px] text-zinc-600 mt-1.5"><span>1</span><span>10</span></div>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button onclick="closeScale()" class="px-4 h-9 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[13px] font-medium">Cancel</button>
+                    <button onclick="applyScale()" class="px-4 h-9 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-[13px] font-medium">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UTC Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('utcClock').textContent = now.toISOString().substr(11, 8);
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // Toasts
+        function showToast(title, msg, type='success') {
+            const el = document.createElement('div');
+            el.className = 'min-w-[320px] p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 shadow-2xl glass log-enter';
+            el.innerHTML = `<div class="flex items-start gap-3"><div class="w-8 h-8 rounded-lg ${type==='success'?'bg-emerald-500/15 text-emerald-400':'bg-amber-500/15 text-amber-400'} flex items-center justify-center flex-shrink-0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div><div class="flex-1 min-w-0"><div class="text-[13px] font-medium text-zinc-100">${title}</div><div class="text-[12px] text-zinc-500 mt-0.5">${msg}</div></div></div>`;
+            document.getElementById('toasts').appendChild(el);
+            setTimeout(()=> el.remove(), 4000);
+        }
+
+        // Metrics
+        let rps = 2847, merkle = 1429812, atoms = 847293;
+        setInterval(()=>{
+            rps = Math.max(2700, Math.min(3100, rps + Math.floor(Math.random()*41-20)));
+            document.getElementById('metricRps').textContent = rps.toLocaleString();
+            
+            const mDelta = 3 + Math.floor(Math.random()*5);
+            const aDelta = 1 + Math.floor(Math.random()*3);
+            merkle += mDelta; atoms += aDelta;
+            document.getElementById('metricMerkle').textContent = merkle.toLocaleString();
+            document.getElementById('metricAtoms').textContent = atoms.toLocaleString();
+            document.getElementById('merkleDelta').textContent = mDelta;
+            document.getElementById('atomsDelta').textContent = aDelta;
+            
+            document.getElementById('blockHeight').textContent = merkle.toLocaleString();
+            
+            // latencies
+            document.getElementById('dbLatency').textContent = (8 + Math.floor(Math.random()*8)) + 'ms';
+            document.getElementById('apiLatency').textContent = (28 + Math.floor(Math.random()*14)) + 'ms';
+        }, 1500);
+
+        // Logs
+        const logStream = document.getElementById('logStream');
+        const logTemplates = [
+            {t:'BACKEND', c:'text-cyan-400', m:'DB connection pool: ${v}/20 active · pgbouncer'},
+            {t:'API', c:'text-violet-400', m:'Merkle proof generated: 0x${h}... in ${v}ms'},
+            {t:'FRONTEND', c:'text-amber-400', m:'SSR render /dashboard · ${v}ms · edge-fra1'},
+            {t:'API', c:'text-violet-400', m:'TriPod consensus round ${v} · 3/3 votes'},
+            {t:'BACKEND', c:'text-cyan-400', m:'Atom placed: #${v} · merkle root updated'},
+            {t:'API', c:'text-violet-400', m:'Request POST /api/prove · 200 · ${v}ms'},
+            {t:'FRONTEND', c:'text-amber-400', m:'WebSocket connected · latency ${v}ms'},
+            {t:'BACKEND', c:'text-cyan-400', m:'ROOT0 verify ok · sig 0x${h}'},
+            {t:'API', c:'text-violet-400', m:'Cache HIT · key=element:${v} · redis'},
+        ];
+        function addLog() {
+            const tpl = logTemplates[Math.floor(Math.random()*logTemplates.length)];
+            const time = new Date().toISOString().substr(11,12);
+            const v = Math.floor(Math.random()*900+100);
+            const h = Math.random().toString(16).substr(2,4);
+            const msg = tpl.m.replace('${v}', v).replace('${h}', h);
+            const level = Math.random() > 0.92 ? 'WARN' : 'INFO';
+            const levelColor = level === 'WARN' ? 'text-amber-400' : 'text-zinc-600';
+            
+            const row = document.createElement('div');
+            row.className = 'log-enter flex gap-3';
+            row.innerHTML = `<span class="text-zinc-600">${time}</span><span class="${levelColor} w-10">${level}</span><span class="${tpl.c} w-[72px]">[${tpl.t}]</span><span class="text-zinc-300 flex-1">${msg}</span>`;
+            logStream.appendChild(row);
+            if (logStream.children.length > 200) logStream.removeChild(logStream.firstChild);
+            logStream.scrollTop = logStream.scrollHeight;
+        }
+        for(let i=0;i<18;i++) addLog();
+        setInterval(addLog, 820);
+
+        // Chart
+        const ctx = document.getElementById('latencyChart').getContext('2d');
+        const labels = Array.from({length:30}, (_,i)=> '');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    { label:'p50', data:Array(30).fill(0).map(()=> 22+Math.random()*6), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.08)', borderWidth:1.5, tension:0.4, fill:true, pointRadius:0 },
+                    { label:'p95', data:Array(30).fill(0).map(()=> 58+Math.random()*10), borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.06)', borderWidth:1.5, tension:0.4, fill:true, pointRadius:0 },
+                    { label:'p99', data:Array(30).fill(0).map(()=> 82+Math.random()*12), borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.05)', borderWidth:1.5, tension:0.4, fill:true, pointRadius:0 },
+                ]
+            },
+            options: {
+                responsive:true, maintainAspectRatio:false,
+                plugins:{ legend:{ display:false } },
+                scales:{
+                    x:{ display:false },
+                    y:{ min:0, max:140, grid:{ color:'rgba(39,39,42,0.6)', drawBorder:false }, ticks:{ color:'#52525b', font:{size:10, family:'JetBrains Mono'}, callback:v=>v+'ms' } }
+                },
+                interaction:{ intersect:false }
+            }
+        });
+        setInterval(()=>{
+            chart.data.datasets.forEach(ds=>{
+                ds.data.shift();
+                const base = ds.label==='p50'?24:ds.label==='p95'?62:86;
+                ds.data.push(base + Math.random()*10 - 2);
+            });
+            chart.update('none');
+        }, 2000);
+
+        // ROOT0 verify
+        let verifySec = 2;
+        setInterval(()=>{ verifySec++; document.getElementById('verifyAgo').textContent = verifySec+'s'; }, 1000);
+        function verifyRoot0(){
+            verifySec = 0;
+            const sig = document.getElementById('root0Sig');
+            sig.textContent = 'verifying...';
+            setTimeout(()=>{ sig.textContent = '0x'+Math.random().toString(16).substr(2,8)+'...'+Math.random().toString(16).substr(2,8); showToast('ROOT0 Verified', 'Signature valid · Ed25519 · chain of trust intact'); }, 900);
+        }
+
+        // Modals
+        function openDeploy(){ document.getElementById('deployModal').classList.remove('hidden'); }
+        function closeDeploy(){ document.getElementById('deployModal').classList.add('hidden'); }
+        function startDeploy(){
+            const btn = document.getElementById('startDeploy'); btn.disabled = true; btn.textContent = 'Deploying...';
+            const steps = document.querySelectorAll('#deploySteps [data-step]');
+            let i = 0;
+            function next(){
+                if(i>=steps.length){ setTimeout(()=>{ closeDeploy(); showToast('Deployment Complete', 'v1.0.1 deployed to production · 3/3 replicas healthy'); btn.disabled=false; btn.textContent='Start Deploy'; steps.forEach(s=>{ s.querySelector('div').className='w-5 h-5 rounded-full border-2 border-zinc-700 flex items-center justify-center'; s.querySelector('span').className='text-zinc-500'; }); }, 600); return; }
+                const step = steps[i];
+                step.querySelector('div').className = 'w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center';
+                step.querySelector('div').innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>';
+                step.querySelector('span').className = 'text-zinc-200';
+                i++; setTimeout(next, 700 + Math.random()*400);
+            }
+            next();
+        }
+        function openRollback(){ showToast('Rollback Initiated', 'Reverting to v0.9.9 · draining connections...', 'warn'); }
+        function openScale(){ document.getElementById('scaleModal').classList.remove('hidden'); }
+        function closeScale(){ document.getElementById('scaleModal').classList.add('hidden'); }
+        function applyScale(){ const v = document.getElementById('scaleSlider').value; document.getElementById('replicaCount').textContent = v; closeScale(); showToast('Scaled', `API replicas updated to ${v} · rolling update started`); }
+        document.getElementById('scaleSlider').addEventListener('input', e=> document.getElementById('scaleValue').textContent = e.target.value);
+        
+        function scrollToLogs(){ document.getElementById('logs').scrollIntoView({behavior:'smooth'}); document.getElementById('logs').classList.add('ring-2','ring-emerald-500/50'); setTimeout(()=>document.getElementById('logs').classList.remove('ring-2','ring-emerald-500/50'), 1200); }
+
+        // Simulate CPU wiggle
+        setInterval(()=>{
+            document.getElementById('cpuFront').style.width = (28 + Math.random()*12)+'%';
+            document.getElementById('cpuApi').style.width = (62 + Math.random()*14)+'%';
+            document.getElementById('cacheRedisVal').textContent = (93 + Math.random()*2).toFixed(1)+'%';
+            document.getElementById('cacheRedis').style.width = (93 + Math.random()*2)+'%';
+        }, 3000);
+    </script>
+</body>
+</html>

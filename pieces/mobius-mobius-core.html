@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Governance Layer 8.00-8.01 — 42 Duality System</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=JetBrains+Mono:wght@400;500&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blueprint: #0a2240;
+  --grid: #1a4a7a;
+  --ink: #c8e6ff;
+  --pencil: #e0f2fe;
+  --accent: #7dd3fc;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Special Elite', monospace;
+  background: #071525;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+.blueprint {
+  background-color: var(--blueprint);
+  background-image: 
+    linear-gradient(var(--grid) 1.2px, transparent 1.2px),
+    linear-gradient(90deg, var(--grid) 1.2px, transparent 1.2px),
+    linear-gradient(rgba(200,230,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,230,255,0.06) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+.hand { font-family: 'Architects Daughter', cursive; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.pencil { stroke: var(--pencil); stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pencil-thin { stroke: var(--pencil); stroke-width: 1; fill: none; opacity: 0.7; }
+.pencil-bold { stroke: var(--pencil); stroke-width: 2.2; fill: none; }
+.node {
+  transition: all 0.3s cubic-bezier(.2,.8,.2,1);
+  cursor: pointer;
+  filter: drop-shadow(0 0 0 rgba(125,211,252,0));
+}
+.node:hover, .node.active {
+  filter: drop-shadow(0 0 10px rgba(125,211,252,0.9));
+  transform: scale(1.15);
+}
+.principle {
+  border: 1px solid rgba(125,211,252,0.25);
+  background: rgba(5, 25, 48, 0.65);
+  backdrop-filter: blur(4px);
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.principle::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0.3;
+  transition: opacity 0.25s;
+}
+.principle:hover, .principle.active {
+  border-color: rgba(125,211,252,0.8);
+  background: rgba(10, 45, 85, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 20px rgba(125,211,252,0.15);
+}
+.principle:hover::before, .principle.active::before { opacity: 1; }
+.stamp {
+  border: 4px double #fca5a5;
+  color: #fca5a5;
+  transform: rotate(-12deg);
+  box-shadow: 0 0 20px rgba(252,165,0.2);
+  opacity: 0.85;
+}
+.blueprint-paper {
+  box-shadow: 
+    inset 0 0 80px rgba(0,0,0,0.6),
+    inset 0 0 200px rgba(3,20,40,0.8),
+    0 25px 50px -12px rgba(0,0,0,0.8);
+  position: relative;
+}
+.blueprint-paper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+}
+.corner {
+  position: absolute;
+  width: 24px; height: 24px;
+  border-color: rgba(125,211,252,0.5);
+}
+.flow-dash {
+  stroke-dasharray: 4 6;
+  animation: flow 20s linear infinite;
+}
+@keyframes flow {
+  to { stroke-dashoffset: -200; }
+}
+.mobius-glow {
+  filter: drop-shadow(0 0 12px rgba(125,211,252,0.5));
+  animation: pulse 4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 0.9; }
+  50% { opacity: 1; filter: drop-shadow(0 0 18px rgba(125,211,252,0.8)); }
+}
+.vignette {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(7,21,37,0.9) 100%);
+}
+</style>
+</head>
+<body class="blueprint min-h-screen flex items-center justify-center p-3 md:p-6">
+<div class="vignette fixed inset-0 pointer-events-none"></div>
+
+<main class="w-full max-w-[1400px] blueprint-paper border-[3px] border-sky-200/20 bg-[#0a2240]/90">
+  <!-- Title Block Border -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="corner top-0 left-0 border-t-2 border-l-2"></div>
+    <div class="corner top-0 right-0 border-t-2 border-r-2"></div>
+    <div class="corner bottom-0 left-0 border-b-2 border-l-2"></div>
+    <div class="corner bottom-0 right-0 border-b-2 border-r-2"></div>
+  </div>
+
+  <div class="relative p-5 md:p-10 lg:p-12">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-sky-300/20 pb-6">
+      <div>
+        <div class="flex items-baseline gap-3">
+          <h1 class="text-[28px] md:text-[42px] lg:text-[52px] leading-none tracking-wider text-sky-100">GOVERNANCE LAYER</h1>
+          <span class="hand text-sky-300 text-xl md:text-2xl translate-y-1">8.00–8.01</span>
+        </div>
+        <p class="mono text-[11px] md:text-xs text-sky-200/60 mt-2 tracking-[0.2em]">42 DUALITY SYSTEM // INTERSTITIAL PROTOCOL</p>
+      </div>
+      <div class="mono text-[10px] leading-relaxed text-sky-200/70 border border-sky-300/20 p-3 bg-black/20 w-full md:w-auto">
+        <div class="grid grid-cols-2 gap-x-6">
+          <span>DWG NO:</span><span class="text-sky-100">42-GOV-8001</span>
+          <span>SCALE:</span><span class="text-sky-100">1:42</span>
+          <span>REV:</span><span class="text-sky-100">C</span>
+          <span>DATE:</span><span class="text-sky-100">2024.11.19</span>
+          <span>SHEET:</span><span class="text-sky-100">1 OF 1</span>
+          <span>CLASS:</span><span class="text-sky-100">OPEN</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 lg:gap-10 mt-8 lg:mt-12">
+      
+      <!-- Left Principles -->
+      <aside class="xl:col-span-3 space-y-4 order-2 xl:order-1">
+        <h2 class="hand text-sky-300 text-lg mb-3 tracking-wide">Governance Principles</h2>
+        
+        <article class="principle p-4 cursor-pointer" data-p="1">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">1</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">Credit where due</h3>
+              <p class="hand text-sky-200/80 text-[13px] mt-1">(Lovelace/Zuse split)</p>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">All derivations attribute originators. Human insight (Lovelace) and machine logic (Zuse) tracked separately in ledger.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="principle p-4 cursor-pointer" data-p="2">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">2</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">50% human / 50% AI</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">No output exceeds parity. Governance ensures balanced contribution weighting across all Vⁿ iterations.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="principle p-4 cursor-pointer" data-p="3">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">3</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">Value stays with creator, workbench open</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">IP remains with originator. Tools, frameworks, and governance layer remain open-source and auditable.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="principle p-4 cursor-pointer" data-p="4">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">4</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">No pay-to-play</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">Access to 8.01 not gated by capital. Compute credits earned via contribution, not purchased.</p>
+            </div>
+          </div>
+        </article>
+      </aside>
+
+      <!-- Center Diagram -->
+      <section class="xl:col-span-6 order-1 xl:order-2">
+        <div class="relative aspect-[4/5] md:aspect-[3/4] xl:aspect-[4/5] max-h-[720px] mx-auto w-full">
+          <svg viewBox="0 0 420 560" class="w-full h-full overflow-visible" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="pencilTexture" x="-20%" y="-20%" width="140%" height="140%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" result="n"/>
+                <feDisplacementMap in="SourceGraphic" in2="n" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <linearGradient id="membraneGrad" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.3"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Measurement lines -->
+            <line x1="20" y1="50" x2="20" y2="500" class="pencil-thin" stroke-dasharray="2 4"/>
+            <text x="12" y="275" class="mono" fill="#7dd3fc" font-size="9" transform="rotate(-90 12 275)" opacity="0.6">GOVERNANCE INTERVAL</text>
+
+            <!-- 8.01 Möbius Core (Top) -->
+            <g id="layer-801" transform="translate(210, 115)">
+              <g class="mobius-glow">
+                <!-- Möbius strip -->
+                <path d="M -75 0 C -95 -45, -40 -75, 0 -65 C 40 -55, 75 -25, 75 0 C 75 25, 40 55, 0 65 C -40 75, -95 45, -75 0 Z" 
+                  class="pencil-bold" stroke="#e0f2fe" fill="none" filter="url(#pencilTexture)" opacity="0.95"/>
+                <path d="M -75 0 C -55 -35, -10 -55, 25 -40 M 45 25 C 20 45, -20 55, -50 40" 
+                  class="pencil" stroke="#7dd3fc" opacity="0.8" filter="url(#pencilTexture)"/>
+                <!-- twist indicator -->
+                <path d="M 0 -65 L 0 65" class="pencil-thin" stroke-dasharray="3 3" opacity="0.5"/>
+                <circle cx="0" cy="-65" r="3" fill="#7dd3fc" opacity="0.9"/>
+                <circle cx="0" cy="65" r="3" fill="#7dd3fc" opacity="0.9"/>
+              </g>
+              <text x="0" y="-95" text-anchor="middle" class="mono" fill="#e0f2fe" font-size="14" letter-spacing="1">8.01</text>
+              <text x="0" y="-78" text-anchor="middle" class="hand" fill="#7dd3fc" font-size="13">MÖBIUS CORE</text>
+              <text x="0" y="100" text-anchor="middle" class="mono" fill="#a5d8ff" font-size="9" opacity="0.7">RECURSIVE INTELLIGENCE</text>
+            </g>
+
+            <!-- Flow arrows down from 8.01 -->
+            <g class="pencil-thin" opacity="0.6">
+              <path d="M 170 180 L 150 240" class="flow-dash" stroke="#7dd3fc"/>
+              <path d="M 210 185 L 210 245" class="flow-dash" stroke="#7dd3fc"/>
+              <path d="M 250 180 L 270 240" class="flow-dash" stroke="#7dd3fc"/>
+            </g>
+
+            <!-- Governance Membrane (Middle) -->
+            <g id="membrane" transform="translate(0, 270)">
+              <rect x="35" y="-40" width="350" height="90" fill="url(#membraneGrad)" opacity="0.08" rx="4"/>
+              <path d="M 40 5 Q 110 -18, 180 2 T 320 8 T 380 0" class="pencil" stroke="#bae6fd" stroke-width="2" filter="url(#pencilTexture)" opacity="0.9"/>
+              <path d="M 40 15 Q 110 -8, 180 12 T 320 18 T 380 10" class="pencil-thin" stroke="#7dd3fc" opacity="0.5"/>
+              
+              <!-- 7 principle nodes -->
+              <g class="nodes">
+                <g class="node" data-id="1" transform="translate(70,0)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">1</text>
+                </g>
+                <g class="node" data-id="2" transform="translate(125,-10)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">2</text>
+                </g>
+                <g class="node" data-id="3" transform="translate(180,2)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">3</text>
+                </g>
+                <g class="node" data-id="4" transform="translate(235,-6)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">4</text>
+                </g>
+                <g class="node" data-id="5" transform="translate(285,8)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">5</text>
+                </g>
+                <g class="node" data-id="6" transform="translate(330,2)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">6</text>
+                </g>
+                <g class="node" data-id="7" transform="translate(370,-2)">
+                  <circle r="11" fill="#0a2240" stroke="#7dd3fc" stroke-width="1.5"/>
+                  <text text-anchor="middle" y="4" class="mono" fill="#e0f2fe" font-size="10">7</text>
+                </g>
+              </g>
+
+              <text x="210" y="-22" text-anchor="middle" class="mono" fill="#e0f2fe" font-size="12" letter-spacing="1">GOVERNANCE MEMBRANE</text>
+              <text x="210" y="-8" text-anchor="middle" class="hand" fill="#7dd3fc" font-size="12">8.00 ↔ 8.01 INTERSTITIAL</text>
+            </g>
+
+            <!-- Flow arrows up from 8.00 -->
+            <g class="pencil-thin" opacity="0.6">
+              <path d="M 150 385 L 170 315" class="flow-dash" stroke="#7dd3fc"/>
+              <path d="M 210 390 L 210 320" class="flow-dash" stroke="#7dd3fc"/>
+              <path d="M 270 385 L 250 315" class="flow-dash" stroke="#7dd3fc"/>
+            </g>
+
+            <!-- 8.00 Base Plane (Bottom) -->
+            <g id="layer-800" transform="translate(210, 455)">
+              <!-- Perspective plane -->
+              <path d="M -155 25 L -135 -25 L 135 -25 L 155 25 Z" class="pencil-bold" fill="none" stroke="#e0f2fe" filter="url(#pencilTexture)" opacity="0.9"/>
+              <!-- grid -->
+              <g class="pencil-thin" opacity="0.6">
+                <line x1="-145" y1="10" x2="145" y2="10"/>
+                <line x1="-140" y1="-5" x2="140" y2="-5"/>
+                <line x1="-137" y1="-15" x2="137" y2="-15"/>
+                <line x1="-80" y1="25" x2="-70" y2="-25"/>
+                <line x1="-25" y1="25" x2="-22" y2="-25"/>
+                <line x1="25" y1="25" x2="22" y2="-25"/>
+                <line x1="80" y1="25" x2="70" y2="-25"/>
+                <line x1="0" y1="25" x2="0" y2="-25"/>
+              </g>
+              <text x="0" y="55" text-anchor="middle" class="mono" fill="#e0f2fe" font-size="14" letter-spacing="1">8.00</text>
+              <text x="0" y="72" text-anchor="middle" class="hand" fill="#7dd3fc" font-size="13">BASE PLANE</text>
+              <text x="0" y="-38" text-anchor="middle" class="mono" fill="#a5d8ff" font-size="9" opacity="0.7">FOUNDATION PROTOCOL</text>
+            </g>
+
+            <!-- Side annotations -->
+            <text x="45" y="155" class="hand" fill="#7dd3fc" font-size="11" opacity="0.8" transform="rotate(-5 45 155)">twist →</text>
+            <text x="350" y="420" class="hand" fill="#7dd3fc" font-size="11" opacity="0.8" transform="rotate(3 350 420)">stable grid</text>
+          </svg>
+
+          <!-- APPROVED Stamp -->
+          <div class="stamp absolute right-2 md:right-6 top-16 md:top-20 px-4 py-2">
+            <div class="mono text-[10px] leading-none">GOVERNANCE</div>
+            <div class="text-2xl md:text-3xl font-bold leading-none tracking-wider">APPROVED</div>
+            <div class="mono text-[9px] leading-none text-center">42-DUALITY</div>
+          </div>
+        </div>
+
+        <!-- Bottom note -->
+        <div class="mt-6 border-t border-sky-300/15 pt-4 flex flex-wrap gap-x-8 gap-y-2 mono text-[10px] text-sky-200/60">
+          <span>MEMBRANE THICKNESS: 0.005</span>
+          <span>FILTER: 7-PRINCIPLE VALIDATION</span>
+          <span>STATE: ACTIVE</span>
+        </div>
+      </section>
+
+      <!-- Right Principles -->
+      <aside class="xl:col-span-3 space-y-4 order-3">
+        <h2 class="hand text-sky-300 text-lg mb-3 tracking-wide xl:opacity-0 select-none">.</h2>
+        
+        <article class="principle p-4 cursor-pointer" data-p="5">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">5</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">Loop bounds prevent infinite</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">All recursive cycles have Vⁿ termination conditions. Max depth enforced at membrane.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="principle p-4 cursor-pointer" data-p="6">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">6</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">Fairness mirror</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">System reflects bias back to source. Output scored against input distribution before 8.01 entry.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="principle p-4 cursor-pointer" data-p="7">
+          <div class="flex gap-3">
+            <span class="mono text-sky-300 text-xl leading-none">7</span>
+            <div>
+              <h3 class="text-sky-100 text-[15px] leading-tight">Transparency of V superscripts</h3>
+              <p class="mono text-[10px] text-sky-200/50 mt-2 leading-snug">Every version increment V¹, V²… documented in public ledger with diff and attribution.</p>
+            </div>
+          </div>
+        </article>
+
+        <div class="mt-6 p-4 border border-dashed border-sky-300/30 bg-black/20">
+          <p class="hand text-sky-200 text-[14px] leading-snug">Note: Membrane is not a barrier — it's a differential filter. Allows constructive interference, blocks extraction.</p>
+          <p class="mono text-[10px] text-sky-300/60 mt-3">— Chief Architect, 42 System</p>
+        </div>
+
+        <div class="hidden xl:block">
+          <svg viewBox="0 0 200 60" class="w-full opacity-40">
+            <path d="M10 30 H190 M10 20 L20 30 L10 40 M190 20 L180 30 L190 40" class="pencil-thin"/>
+            <text x="100" y="34" text-anchor="middle" class="mono" fill="#7dd3fc" font-size="8">8.00 → 8.01 TRANSIT</text>
+          </svg>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Footer Title Block -->
+    <footer class="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 border-t-2 border-sky-300/30 pt-4">
+      <div class="mono text-[10px] text-sky-200/60 leading-relaxed">
+        <p class="text-sky-200/80">MATERIAL: Open Governance Protocol</p>
+        <p>FINISH: Pencil on Blueprint</p>
+        <p>TOLERANCE: ±0.001 duality</p>
+      </div>
+      <div class="mono text-[10px] text-sky-200/60 leading-relaxed">
+        <p>DRN: A. Lovelace</p>
+        <p>CHK: K. Zuse</p>
+        <p>APP: 42 Council</p>
+      </div>
+      <div class="text-right">
+        <p class="hand text-sky-300 text-[15px]">Keep the workbench open.</p>
+        <p class="mono text-[10px] text-sky-200/50 mt-1">GOVERNANCE LAYER 8.00-8.01 SPECIFICATION</p>
+      </div>
+    </footer>
+  </div>
+</main>
+
+<script>
+const principles = document.querySelectorAll('.principle');
+const nodes = document.querySelectorAll('.node');
+
+function activate(id) {
+  principles.forEach(p => p.classList.toggle('active', p.dataset.p === id));
+  nodes.forEach(n => n.classList.toggle('active', n.dataset.id === id));
+}
+
+function clearAll() {
+  principles.forEach(p => p.classList.remove('active'));
+  nodes.forEach(n => n.classList.remove('active'));
+}
+
+principles.forEach(p => {
+  p.addEventListener('mouseenter', () => activate(p.dataset.p));
+  p.addEventListener('mouseleave', clearAll);
+  p.addEventListener('click', () => {
+    const id = p.dataset.p;
+    const isActive = p.classList.contains('active');
+    clearAll();
+    if (!isActive) activate(id);
+  });
+});
+
+nodes.forEach(n => {
+  n.addEventListener('mouseenter', () => activate(n.dataset.id));
+  n.addEventListener('mouseleave', clearAll);
+  n.addEventListener('click', () => {
+    document.querySelector(`.principle[data-p="${n.dataset.id}"]`)?.scrollIntoView({behavior:'smooth', block:'nearest'});
+    activate(n.dataset.id);
+    setTimeout(clearAll, 2000);
+  });
+});
+
+// Subtle parallax on mouse
+const diagram = document.querySelector('svg');
+document.addEventListener('mousemove', (e) => {
+  if (window.innerWidth < 1024) return;
+  const x = (e.clientX / window.innerWidth - 0.5) * 4;
+  const y = (e.clientY / window.innerHeight - 0.5) * 4;
+  diagram.style.transform = `translate(${x}px, ${y}px)`;
+});
+</script>
+</body>
+</html>

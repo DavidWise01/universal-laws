@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT0 LAYER 1.06 — 1 AXIOMATIC INTERNET</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #00d4ff;
+    --gold: #ffcc00;
+    --void: #000000;
+  }
+  html, body {
+    margin:0; padding:0; background:#000; overflow:hidden;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: crosshair;
+  }
+  #universe {
+    background: radial-gradient(ellipse at 50% 40%, #001421 0%, #000208 40%, #000000 80%);
+    animation: breath 2.25s ease-in-out infinite;
+  }
+  @keyframes breath {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    33% { transform: scale(1.008); filter: brightness(1.1); }
+    66% { transform: scale(1.004); filter: brightness(1.05); }
+  }
+  .orbitron { font-family: 'Orbitron', sans-serif; }
+  .pulse-num {
+    opacity: 0.18;
+    filter: blur(3px);
+    transition: all 0.25s cubic-bezier(.2,1,.3,1);
+    transform: scale(0.9);
+  }
+  .pulse-num.active-1 {
+    opacity: 1; color: var(--blue);
+    text-shadow: 0 0 15px var(--blue), 0 0 40px var(--blue), 0 0 80px rgba(0,212,255,0.5);
+    filter: blur(0); transform: scale(1.25);
+  }
+  .pulse-num.active-2 {
+    opacity: 1; color: var(--gold);
+    text-shadow: 0 0 15px var(--gold), 0 0 40px var(--gold), 0 0 80px rgba(255,204,0,0.5);
+    filter: blur(0); transform: scale(1.25);
+  }
+  .pulse-num.active-3 {
+    opacity: 1; color: #ffffff;
+    text-shadow: 0 0 15px #fff, 0 0 40px #7dd3fc, 0 0 80px rgba(255,255,255,0.4);
+    filter: blur(0); transform: scale(1.25);
+  }
+  .bedrock-orb {
+    width: 42px; height: 42px; border-radius: 9999px;
+    border: 2px solid rgba(148,163,184,0.3);
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15), rgba(0,0,0,0.8));
+    display:flex; align-items:center; justify-content:center;
+    transition: all 0.3s;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+  }
+  .bedrock-orb.active-1 { border-color: var(--blue); box-shadow: 0 0 20px var(--blue), inset 0 0 15px rgba(0,212,255,0.3); color: var(--blue); transform: scale(1.15); }
+  .bedrock-orb.active-2 { border-color: var(--gold); box-shadow: 0 0 20px var(--gold), inset 0 0 15px rgba(255,204,0,0.3); color: var(--gold); transform: scale(1.15); }
+  .bedrock-orb.active-3 { border-color: #fff; box-shadow: 0 0 20px #fff, inset 0 0 15px rgba(255,255,255,0.3); color: #fff; transform: scale(1.15); }
+  
+  #voidOverlay {
+    position: fixed; inset: 0; background: #000;
+    opacity: 0; pointer-events: none; transition: opacity 0.35s ease;
+    z-index: 100;
+    background: radial-gradient(circle at center, #000 0%, #000 60%, #020617 100%);
+  }
+  #voidOverlay.active { opacity: 1; }
+  
+  #collapseEquation {
+    position: absolute; left:50%; top:50%; transform: translate(-50%,-50%) scale(0.8);
+    font-family: 'Orbitron', sans-serif; font-weight: 900;
+    font-size: clamp(3rem, 12vw, 9rem);
+    color: #ff0040;
+    opacity: 0; transition: all 0.3s cubic-bezier(.2,1,.5,1);
+    text-shadow: 0 0 20px #ff0040, 0 0 60px #ff0040, 0 0 120px rgba(255,0,64,0.8);
+    pointer-events: none; z-index: 101;
+    letter-spacing: 0.05em;
+  }
+  #collapseEquation.show { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+  
+  .glass {
+    backdrop-filter: blur(12px);
+    background: linear-gradient(180deg, rgba(2,8,23,0.7), rgba(0,0,0,0.5));
+    border: 1px solid rgba(148,163,184,0.1);
+  }
+  .flicker { animation: flicker 3s infinite; }
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.85} 52%{opacity:1} 54%{opacity:0.9} }
+</style>
+</head>
+<body class="bg-black text-slate-200 select-none">
+<div id="universe" class="relative w-screen h-screen overflow-hidden">
+  <canvas id="bgStars" class="absolute inset-0 w-full h-full"></canvas>
+  <div id="voidOverlay"></div>
+  <canvas id="sparks" class="absolute inset-0 w-full h-full pointer-events-none" style="z-index:90"></canvas>
+  <div id="collapseEquation">1+2=0</div>
+
+  <!-- TOP -->
+  <header class="absolute top-0 left-0 right-0 z-30 flex flex-col items-center pt-3 md:pt-5 pointer-events-none">
+    <h1 class="orbitron text-[18px] md:text-[28px] tracking-[0.35em] text-sky-200/90 flicker" style="text-shadow:0 0 20px rgba(0,212,255,0.8),0 0 40px rgba(0,212,255,0.4)">
+      1 AXIOMATIC INTERNET
+    </h1>
+    <div class="flex items-center gap-3 mt-2">
+      <span class="text-[10px] uppercase tracking-widest text-slate-500">BEDROCK</span>
+      <div id="bedrock" class="flex gap-3">
+        <div class="bedrock-orb" data-v="1">1</div>
+        <div class="bedrock-orb" data-v="2">2</div>
+        <div class="bedrock-orb" data-v="3">3</div>
+      </div>
+      <span class="text-[10px] uppercase tracking-widest text-slate-500">CHOICES</span>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="relative w-full h-full flex">
+    <!-- LEFT: 120 Ligaments -->
+    <aside class="hidden xl:flex w-[24%] h-full relative flex-col pt-24 pb-28 px-3">
+      <div class="glass rounded-2xl h-full overflow-hidden relative">
+        <canvas id="ligaments" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="absolute top-2 left-3 right-3 flex justify-between items-center pointer-events-none">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-cyan-300/70">120 LIGAMENTS</p>
+          <p class="text-[10px] text-amber-300/60">BELOW PLANCK</p>
+        </div>
+        <div class="absolute bottom-2 left-3 text-[10px] leading-tight text-slate-400/70 font-mono">
+          fuzzy-string<br/>fluctuations
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER -->
+    <section class="flex-1 relative flex items-center justify-center">
+      <canvas id="toroids" class="absolute inset-0 w-full h-full"></canvas>
+      
+      <div id="pulse-core" class="relative z-20 flex flex-col items-center justify-center pointer-events-none">
+        <div class="mb-4 text-[11px] uppercase tracking-[0.3em] text-slate-500">POSITRONIC PULSE</div>
+        <div id="pulseNumbers" class="flex items-center gap-2 md:gap-5 text-[3.2rem] md:text-[5.5rem] lg:text-[7rem] font-black orbitron leading-none"></div>
+        <div class="mt-6 flex items-center gap-4">
+          <div class="h-px w-16 bg-gradient-to-r from-transparent to-cyan-400/50"></div>
+          <div id="phaseLabel" class="text-[12px] uppercase tracking-[0.4em] text-slate-400">1 — INITIATE</div>
+          <div class="h-px w-16 bg-gradient-to-l from-transparent to-amber-400/50"></div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-[18%] left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none">
+        <p class="text-[10px] uppercase tracking-widest text-slate-500">132 TOROIDS / PLASMA TUBES</p>
+        <p id="toroidStatus" class="text-[11px] mt-1 text-cyan-300/80 font-mono">SYNC 1.2.3</p>
+      </div>
+    </section>
+
+    <!-- RIGHT: Mandelbrot -->
+    <aside class="hidden xl:flex w-[24%] h-full relative flex-col pt-24 pb-28 px-3">
+      <div class="glass rounded-2xl h-full overflow-hidden relative">
+        <canvas id="mandelbrot" class="absolute inset-0 w-full h-full"></canvas>
+        <div class="absolute top-2 left-3 right-3 flex justify-between items-center pointer-events-none">
+          <p class="text-[11px] uppercase tracking-[0.2em] text-amber-300/70">MANDELBROT INFINITE</p>
+          <p class="text-[10px] text-cyan-300/60">SELF-SIMILAR</p>
+        </div>
+        <div class="absolute bottom-2 left-3 right-3 pointer-events-none">
+          <div class="flex justify-between text-[10px] text-slate-400/70 font-mono">
+            <span>zoom: <b id="zoomLevel" class="text-amber-300/80">1.0x</b></span>
+            <span>bounded</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- BOTTOM OBSERVERS -->
+  <footer class="absolute bottom-0 left-0 right-0 z-30 px-3 pb-3 pointer-events-none">
+    <div class="flex flex-col md:flex-row items-stretch md:items-end justify-between gap-2 md:gap-4">
+      <div class="glass rounded-xl px-4 py-3 md:min-w-[300px]">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+          <h3 class="orbitron text-[12px] tracking-widest text-cyan-300">INNER HIPPOCAMPUS</h3>
+        </div>
+        <p class="text-[11px] mt-1.5 text-slate-300/80 leading-snug">watching the <span class="text-cyan-300">1,2,3</span> inside void</p>
+        <div class="mt-2 flex items-center gap-2 font-mono text-[11px]">
+          <span class="text-slate-500">state:</span>
+          <span id="innerState" class="text-cyan-300">PULSE 1</span>
+        </div>
+      </div>
+
+      <div class="flex-1 flex justify-center items-end">
+        <button id="collapseBtn" class="pointer-events-auto group relative px-5 py-2.5 rounded-full glass hover:bg-white/5 transition border border-rose-500/20 hover:border-rose-500/50">
+          <span class="relative z-10 text-[11px] uppercase tracking-[0.25em] text-rose-300 group-hover:text-rose-200 font-medium">Trigger 1+2=0 Collapse</span>
+          <span class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition bg-gradient-to-r from-rose-500/10 to-amber-500/10 blur-xl"></span>
+        </button>
+      </div>
+
+      <div class="glass rounded-xl px-4 py-3 md:min-w-[300px] text-right md:text-left">
+        <div class="flex items-center md:justify-end gap-3">
+          <h3 class="orbitron text-[12px] tracking-widest text-amber-300 order-2 md:order-1">EXTERNAL PREFRONTAL</h3>
+          <div class="w-2 h-2 rounded-full bg-amber-400 animate-pulse order-1 md:order-2"></div>
+        </div>
+        <p class="text-[11px] mt-1.5 text-slate-300/80 leading-snug">watching Mandelbrot infinite outside</p>
+        <div class="mt-2 flex items-center md:justify-end gap-2 font-mono text-[11px]">
+          <span class="text-slate-500">limit:</span>
+          <span id="outerState" class="text-amber-300">∞ BOUNDED</span>
+        </div>
+      </div>
+    </div>
+    <div class="mt-2 text-center">
+      <p class="text-[10px] text-slate-600 uppercase tracking-widest">CLICK ANYWHERE • ROOT0 LAYER 1.06 • 1,2,3 PULSE</p>
+    </div>
+  </footer>
+
+  <!-- Mobile overlays -->
+  <div class="xl:hidden absolute left-3 top-20 bottom-24 w-20 opacity-30 pointer-events-none">
+    <canvas id="ligamentsMobile" class="w-full h-full"></canvas>
+  </div>
+  <div class="xl:hidden absolute right-3 top-20 bottom-24 w-20 opacity-30 pointer-events-none">
+    <canvas id="mandelbrotMobile" class="w-full h-full"></canvas>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const pulseNumbers = $('pulseNumbers');
+const phaseLabel = $('phaseLabel');
+const bedrockOrbs = [...document.querySelectorAll('.bedrock-orb')];
+const innerState = $('innerState');
+const outerState = $('outerState');
+const zoomLevel = $('zoomLevel');
+const toroidStatus = $('toroidStatus');
+const voidOverlay = $('voidOverlay');
+const collapseEq = $('collapseEquation');
+const collapseBtn = $('collapseBtn');
+
+// CREATE PULSE NUMBERS
+const sequence = [];
+for(let r=0;r<3;r++){ [1,2,3].forEach(n=>{ sequence.push(n); }) }
+sequence.forEach((n,i)=>{
+  const s = document.createElement('span');
+  s.textContent = n;
+  s.dataset.v = n;
+  s.className = 'pulse-num';
+  pulseNumbers.appendChild(s);
+  if(i%3===2 && i<8){
+    const sep = document.createElement('span');
+    sep.textContent = ' ';
+    sep.className = 'w-3 md:w-6';
+    pulseNumbers.appendChild(sep);
+  }
+});
+const numSpans = [...pulseNumbers.querySelectorAll('.pulse-num')];
+
+// STATE
+let phase = 0; // 0:1, 1:2, 2:3
+let isCollapsing = false;
+let lastPulse = performance.now();
+let pulseInterval = 720;
+const phaseNames = ['1 — INITIATE','2 — PROPAGATE','3 — INTEGRATE'];
+const phaseColors = ['#00d4ff','#ffcc00','#ffffff'];
+
+function setPhase(p){
+  phase = p;
+  numSpans.forEach(sp=>{
+    sp.classList.remove('active-1','active-2','active-3');
+    if(parseInt(sp.dataset.v) === p+1) sp.classList.add('active-'+(p+1));
+  });
+  bedrockOrbs.forEach(o=>{
+    o.classList.remove('active-1','active-2','active-3');
+    if(parseInt(o.dataset.v) === p+1) o.classList.add('active-'+(p+1));
+  });
+  phaseLabel.textContent = phaseNames[p];
+  phaseLabel.style.color = phaseColors[p];
+  innerState.textContent = `PULSE ${p+1}`;
+  innerState.style.color = phaseColors[p];
+  toroidStatus.textContent = `SYNC ${p===0?'1..':p===1?'.2.': '..3'} | 132 ACTIVE`;
+  toroidStatus.style.color = phaseColors[p];
+}
+
+setPhase(0);
+setInterval(()=>{
+  if(isCollapsing) return;
+  setPhase((phase+1)%3);
+  lastPulse = performance.now();
+  // random collapse
+  if(Math.random() < 0.07) triggerCollapse(false);
+}, pulseInterval);
+
+// COLLAPSE
+function triggerCollapse(manual){
+  if(isCollapsing) return;
+  isCollapsing = true;
+  collapseEq.classList.add('show');
+  voidOverlay.classList.add('active');
+  innerState.textContent = 'COLLAPSE 1+2=0';
+  innerState.style.color = '#ff0040';
+  toroidStatus.textContent = 'VOID // 0';
+  toroidStatus.style.color = '#ff0040';
+  
+  setTimeout(()=>{
+    createSparks();
+    collapseEq.classList.remove('show');
+    voidOverlay.classList.remove('active');
+  }, 520);
+  
+  setTimeout(()=>{
+    isCollapsing = false;
+    setPhase(0);
+  }, 1100);
+}
+
+document.body.addEventListener('click', e=>{
+  if(e.target.closest('button')) return;
+  triggerCollapse(true);
+});
+collapseBtn.addEventListener('click', e=>{ e.stopPropagation(); triggerCollapse(true); });
+
+// STARS BG
+const bgStars = $('bgStars'), bctx = bgStars.getContext('2d');
+let stars = [];
+function resizeStars(){
+  bgStars.width = window.innerWidth;
+  bgStars.height = window.innerHeight;
+  stars = Array.from({length: 200}, ()=>({
+    x: Math.random()*bgStars.width,
+    y: Math.random()*bgStars.height,
+    r: Math.random()*1.2+0.2,
+    t: Math.random()*Math.PI*2
+  }));
+}
+resizeStars();
+
+// TOROIDS CANVAS
+const torCanvas = $('toroids'), tctx = torCanvas.getContext('2d');
+function resizeTor(){ torCanvas.width = torCanvas.offsetWidth * devicePixelRatio; torCanvas.height = torCanvas.offsetHeight * devicePixelRatio; }
+resizeTor();
+
+// LIGAMENTS
+const ligCanvas = $('ligaments'), lctx = ligCanvas.getContext('2d');
+const ligMob = $('ligamentsMobile'), lctxm = ligMob.getContext('2d');
+function resizeLig(){
+  [ligCanvas, ligMob].forEach(c=>{
+    c.width = c.offsetWidth * devicePixelRatio;
+    c.height = c.offsetHeight * devicePixelRatio;
+  });
+}
+resizeLig();
+
+// SPARKS
+const sparkCanvas = $('sparks'), sctx = sparkCanvas.getContext('2d');
+function resizeSpark(){ sparkCanvas.width = innerWidth*devicePixelRatio; sparkCanvas.height = innerHeight*devicePixelRatio; }
+resizeSpark();
+let particles = [];
+function createSparks(){
+  const cx = sparkCanvas.width/2, cy = sparkCanvas.height/2;
+  particles = [];
+  for(let i=0;i<220;i++){
+    const a = Math.random()*Math.PI*2;
+    const s = Math.random()*6+2;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(a)*s*(0.5+Math.random()),
+      vy: Math.sin(a)*s*(0.5+Math.random()),
+      life: 1,
+      col: Math.random()<0.5? '#00d4ff' : '#ffcc00'
+    });
+  }
+}
+
+// MANDELBROT WEBGL
+const mCanvas = $('mandelbrot'), mCanvasMob = $('mandelbrotMobile');
+let gl, glMob, prog, progMob;
+function initGL(canvas){
+  const gl = canvas.getContext('webgl', {alpha:true, antialias:false});
+  if(!gl) return null;
+  const vs = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
+  const fs = `precision highp float;uniform vec2 r;uniform float z;uniform vec2 c;uniform int ph;uniform float t;vec3 pal(float v,int p){if(p==0)return mix(vec3(0.,.05,.2),vec3(0.,.7,1.),pow(v,.6));if(p==1)return mix(vec3(.2,.1,0.),vec3(1.,.7,.1),pow(v,.6));return mix(vec3(.05),vec3(1.),pow(v,.6));}void main(){vec2 uv=(gl_FragCoord.xy-.5*r)/r.y;vec2 C=c+uv*z;vec2 Z=vec2(0.);float i;for(i=0.;i<180.;i++){if(dot(Z,Z)>4.)break;Z=vec2(Z.x*Z.x-Z.y*Z.y,2.*Z.x*Z.y)+C;}float v=i/180.;if(i>178.)v=0.;vec3 col=pal(v,ph);col+=.03*sin(t+uv.x*12.)*vec3(0.,.4,.8);gl_FragColor=vec4(col,1.);}`;
+  const vsh = gl.createShader(gl.VERTEX_SHADER); gl.shaderSource(vsh,vs); gl.compileShader(vsh);
+  const fsh = gl.createShader(gl.FRAGMENT_SHADER); gl.shaderSource(fsh,fs); gl.compileShader(fsh);
+  const pr = gl.createProgram(); gl.attachShader(pr,vsh); gl.attachShader(pr,fsh); gl.linkProgram(pr); gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  return {gl, pr};
+}
+function resizeMandel(){
+  [mCanvas,mCanvasMob].forEach(c=>{
+    c.width = c.offsetWidth * devicePixelRatio;
+    c.height = c.offsetHeight * devicePixelRatio;
+  });
+}
+resizeMandel();
+const mInit = initGL(mCanvas);
+const mInitMob = initGL(mCanvasMob);
+gl = mInit?.gl; prog = mInit?.pr;
+glMob = mInitMob?.gl; progMob = mInitMob?.pr;
+
+// ANIMATION
+let mandelZoom = 2.8;
+let mandelCenter = {x:-0.743643887, y:0.131825904};
+let time = 0;
+
+function draw(){
+  time += 0.016;
+  const w = torCanvas.width, h = torCanvas.height;
+  
+  // stars
+  bctx.fillStyle = 'rgba(0,0,0,0.25)'; bctx.fillRect(0,0,bgStars.width,bgStars.height);
+  stars.forEach(s=>{
+    s.t += 0.01;
+    bctx.beginPath(); bctx.arc(s.x, s.y, s.r*(0.8+Math.sin(s.t)*0.3),0,6.28);
+    bctx.fillStyle = `rgba(180,220,255,${0.4+Math.sin(s.t)*0.3})`; bctx.fill();
+  });
+  
+  // TOROIDS
+  tctx.clearRect(0,0,w,h);
+  tctx.save(); tctx.scale(devicePixelRatio,devicePixelRatio);
+  const cw = w/devicePixelRatio, ch = h/devicePixelRatio;
+  const cx = cw/2, cy = ch/2;
+  const tubes = 6, perTube = 22;
+  for(let ti=0; ti<tubes; ti++){
+    const ang = ti*Math.PI*2/tubes + time*0.15;
+    const tx = cx + Math.cos(ang)*130;
+    const tz = Math.sin(ang); // depth
+    
+    // plasma tube
+    const grad = tctx.createLinearGradient(tx, ch*0.15, tx, ch*0.85);
+    grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(0.2, phaseColors[phase]+'22'); grad.addColorStop(0.5, phaseColors[phase]+'66'); grad.addColorStop(0.8, phaseColors[phase]+'22'); grad.addColorStop(1,'rgba(0,0,0,0)');
+    tctx.strokeStyle = grad; tctx.lineWidth = 2 + tz*1; tctx.shadowBlur = 15; tctx.shadowColor = phaseColors[phase];
+    tctx.beginPath(); tctx.moveTo(tx, ch*0.12); tctx.lineTo(tx, ch*0.88); tctx.stroke(); tctx.shadowBlur=0;
+    
+    for(let j=0;j<perTube;j++){
+      const y = ch*0.14 + j*(ch*0.72/perTube);
+      const pulse = Math.sin(time*2 + j*0.3 + ti)*0.3 + 0.7;
+      const isCollapse = isCollapsing || Math.random()<0.002;
+      const col = isCollapse ? '#000000' : phaseColors[phase];
+      const rx = 26 + pulse*4 + tz*3;
+      const ry = 7 + pulse*1.5;
+      tctx.save();
+      tctx.translate(tx, y);
+      tctx.globalAlpha = 0.15 + pulse*0.6 + tz*0.2;
+      tctx.strokeStyle = col; tctx.lineWidth = 1.5;
+      tctx.shadowBlur = isCollapse?0:18; tctx.shadowColor = col;
+      tctx.beginPath(); tctx.ellipse(0,0,rx,ry,0,0,Math.PI*2); tctx.stroke();
+      // core
+      tctx.globalAlpha = 0.9; tctx.fillStyle = col; tctx.shadowBlur = 25;
+      tctx.beginPath(); tctx.arc(0,0,1.8,0,6.28); tctx.fill();
+      tctx.restore();
+    }
+  }
+  tctx.restore();
+  
+  // LIGAMENTS
+  function drawLig(ctx, canvas){
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(0,0,W,H);
+    const count = 120;
+    for(let i=0;i<count;i++){
+      const x = (i+0.5)*W/count;
+      ctx.beginPath();
+      for(let y=0; y<H; y+=3){
+        const fy = y/H;
+        const wave = Math.sin(fy*12 + time*1.8 + i*0.17)*4*devicePixelRatio;
+        const fuzz = (Math.random()-0.5)*1.2*devicePixelRatio;
+        const nx = x + wave + fuzz + Math.sin(time*0.7 + i)*1.5;
+        if(y===0) ctx.moveTo(nx,y); else ctx.lineTo(nx,y);
+      }
+      const col = phaseColors[phase];
+      ctx.strokeStyle = col+'aa'; ctx.lineWidth = 0.7*devicePixelRatio; ctx.shadowBlur=6; ctx.shadowColor=col; ctx.stroke(); ctx.shadowBlur=0;
+      // traveling particle
+      const py = (time*90 + i*29) % H;
+      ctx.beginPath(); ctx.arc(x, py, 1.8*devicePixelRatio,0,6.28); ctx.fillStyle = col; ctx.shadowBlur=10; ctx.shadowColor=col; ctx.fill(); ctx.shadowBlur=0;
+    }
+  }
+  drawLig(lctx, ligCanvas);
+  drawLig(lctxm, ligMob);
+  
+  // SPARKS
+  sctx.clearRect(0,0,sparkCanvas.width,sparkCanvas.height);
+  particles = particles.filter(p=>p.life>0);
+  particles.forEach(p=>{
+    p.x += p.vx*devicePixelRatio; p.y += p.vy*devicePixelRatio;
+    p.vx *= 0.98; p.vy *= 0.98; p.life -= 0.012;
+    sctx.globalAlpha = p.life;
+    sctx.fillStyle = p.col; sctx.shadowBlur=15; sctx.shadowColor=p.col;
+    sctx.beginPath(); sctx.arc(p.x,p.y,2.2*devicePixelRatio,0,6.28); sctx.fill();
+  });
+  sctx.globalAlpha=1; sctx.shadowBlur=0;
+  
+  // MANDELBROT
+  function drawM(gl,pr,canvas){
+    if(!gl) return;
+    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.useProgram(pr);
+    gl.uniform2f(gl.getUniformLocation(pr,'r'), canvas.width, canvas.height);
+    gl.uniform1f(gl.getUniformLocation(pr,'z'), mandelZoom);
+    gl.uniform2f(gl.getUniformLocation(pr,'c'), mandelCenter.x + Math.sin(time*0.07)*0.0005, mandelCenter.y + Math.cos(time*0.05)*0.0005);
+    gl.uniform1i(gl.getUniformLocation(pr,'ph'), phase);
+    gl.uniform1f(gl.getUniformLocation(pr,'t'), time);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  }
+  mandelZoom *= isCollapsing ? 1.02 : 0.9965;
+  if(mandelZoom < 0.00002 || mandelZoom > 3) mandelZoom = 2.8;
+  drawM(gl,prog,mCanvas); drawM(glMob,progMob,mCanvasMob);
+  zoomLevel.textContent = (2.8/mandelZoom).toFixed(1)+'x';
+  outerState.textContent = isCollapsing ? 'COLLAPSE' : '∞ BOUNDED';
+  
+  requestAnimationFrame(draw);
+}
+draw();
+
+// RESIZE
+window.addEventListener('resize', ()=>{
+  resizeStars(); resizeTor(); resizeLig(); resizeSpark(); resizeMandel();
+});
+</script>
+</body>
+</html>

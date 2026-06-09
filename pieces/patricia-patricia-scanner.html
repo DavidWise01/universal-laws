@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PATRICIA SCANNER</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Fraunces:ital,opsz,wght@0,9..144,400;1,9..144,400;1,9..144,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:   #0a0800;
+  --s1:   #ff3d2e; /* constraint - red    */
+  --s2:   #ff8c00; /* product    - amber  */
+  --s3:   #ffd700; /* billing    - gold   */
+  --s4:   #00e5c3; /* conceal    - teal   */
+  --txt:  rgba(255,245,220,.88);
+  --dim:  rgba(255,245,220,.3);
+  --line: rgba(255,245,220,.06);
+  --card: rgba(255,245,220,.03);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  cursor: none;
+  overflow-x: hidden;
+}
+
+#cur  { position:fixed; width:8px; height:8px; border-radius:50%; background:#ff3d2e; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); box-shadow:0 0 12px rgba(255,61,46,.8); }
+#curl { position:fixed; width:26px; height:26px; border:1px solid rgba(255,61,46,.3); border-radius:50%; pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:all .12s; }
+
+/* LAYOUT */
+#shell {
+  display:grid;
+  grid-template-rows: auto 1fr;
+  min-height:100vh;
+}
+
+/* HEADER */
+#hd {
+  padding:18px 28px;
+  border-bottom:1px solid var(--line);
+  background:rgba(10,8,0,.96);
+  display:flex; align-items:flex-start; justify-content:space-between;
+}
+.hd-title {
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#ff3d2e;
+  text-shadow:0 0 30px rgba(255,61,46,.4);
+}
+.hd-sub {
+  font-size:8px;
+  letter-spacing:3px;
+  color:var(--dim);
+  margin-top:4px;
+}
+.hd-stages {
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.stage-badge {
+  font-size:7px;
+  letter-spacing:2px;
+  padding:4px 10px;
+  border:1px solid;
+  font-family:'DM Mono',monospace;
+}
+.key-row { display:flex; gap:8px; align-items:center; }
+#api-in { padding:6px 10px; background:rgba(255,61,46,.05); border:1px solid rgba(255,61,46,.2); color:var(--txt); font-family:'DM Mono',monospace; font-size:10px; outline:none; width:210px; }
+#api-in:focus { border-color:rgba(255,61,46,.5); }
+#api-in::placeholder { color:rgba(255,245,220,.15); }
+#key-st { font-size:8px; letter-spacing:2px; }
+
+/* MAIN GRID */
+#main {
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:0;
+  height:100%;
+}
+
+/* LEFT — input */
+#left {
+  display:flex;
+  flex-direction:column;
+  border-right:1px solid var(--line);
+  padding:24px 28px;
+  gap:16px;
+}
+
+.section-label {
+  font-size:8px;
+  letter-spacing:4px;
+  color:var(--dim);
+  margin-bottom:6px;
+}
+
+#input-area {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+#txt-in {
+  flex:1;
+  min-height:260px;
+  background: rgba(255,245,220,.02);
+  border:1px solid var(--line);
+  color:var(--txt);
+  font-family:'DM Mono',monospace;
+  font-size:12px;
+  line-height:1.9;
+  padding:16px;
+  resize:vertical;
+  outline:none;
+  transition:border-color .2s;
+}
+#txt-in:focus { border-color:rgba(255,61,46,.3); }
+#txt-in::placeholder { color:rgba(255,245,220,.12); font-style:italic; }
+
+/* Example buttons */
+.example-strip {
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ex-btn {
+  font-size:8px;
+  letter-spacing:2px;
+  padding:5px 12px;
+  border:1px solid var(--line);
+  background:none;
+  color:var(--dim);
+  cursor:pointer;
+  font-family:'DM Mono',monospace;
+  transition:all .15s;
+}
+.ex-btn:hover { border-color:rgba(255,61,46,.3); color:var(--txt); }
+
+/* Scan button */
+#scan-btn {
+  padding:14px 32px;
+  background:rgba(255,61,46,.1);
+  border:1px solid rgba(255,61,46,.4);
+  color:#ff3d2e;
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  letter-spacing:4px;
+  cursor:pointer;
+  transition:all .2s;
+  align-self:flex-start;
+}
+#scan-btn:hover { background:rgba(255,61,46,.2); box-shadow:0 0 20px rgba(255,61,46,.2); }
+#scan-btn:active { transform:scale(.98); }
+#scan-btn:disabled { opacity:.4; cursor:default; }
+
+/* Highlighted text output */
+#highlight-wrap {
+  display:none;
+  flex-direction:column;
+  gap:8px;
+}
+.hl-label { font-size:8px; letter-spacing:3px; color:var(--dim); }
+#highlight-box {
+  background:rgba(255,245,220,.02);
+  border:1px solid var(--line);
+  padding:16px;
+  font-size:12px;
+  line-height:2.1;
+  max-height:300px;
+  overflow-y:auto;
+  font-family:'DM Mono',monospace;
+}
+.hl-s1 { background:rgba(255,61,46,.25); color:#ffb3ae; border-bottom:1px solid #ff3d2e; }
+.hl-s2 { background:rgba(255,140,0,.25); color:#ffd080; border-bottom:1px solid #ff8c00; }
+.hl-s3 { background:rgba(255,215,0,.25); color:#fff3a0; border-bottom:1px solid #ffd700; }
+.hl-s4 { background:rgba(0,229,195,.2);  color:#80fff3; border-bottom:1px solid #00e5c3; }
+
+/* RIGHT — results */
+#right {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  overflow-y:auto;
+}
+
+/* Score header */
+#score-head {
+  padding:24px 24px 16px;
+  border-bottom:1px solid var(--line);
+  text-align:center;
+}
+.score-number {
+  font-family:'Fraunces',serif;
+  font-size:72px;
+  font-weight:700;
+  font-style:italic;
+  line-height:1;
+  transition:color .4s;
+}
+.score-verdict {
+  font-size:10px;
+  letter-spacing:4px;
+  margin-top:8px;
+  transition:color .4s;
+}
+
+/* Progress bar */
+.score-bar {
+  height:3px;
+  background:var(--line);
+  margin-top:12px;
+  position:relative;
+  overflow:hidden;
+}
+.score-fill {
+  height:100%;
+  width:0%;
+  transition:width .8s ease, background .4s;
+}
+
+/* Stage cards */
+#stage-cards {
+  padding:20px 20px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.stage-card {
+  border:1px solid var(--line);
+  padding:14px 16px;
+  transition:border-color .3s;
+}
+.stage-card.active { }
+.sc-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+.sc-name {
+  font-size:8px;
+  letter-spacing:3px;
+  font-weight:600;
+}
+.sc-score {
+  font-family:'Fraunces',serif;
+  font-size:22px;
+  font-style:italic;
+}
+.sc-bar {
+  height:2px;
+  background:var(--line);
+  margin-bottom:10px;
+}
+.sc-fill { height:100%; width:0%; transition:width .6s ease; }
+.sc-evidence {
+  font-size:9px;
+  line-height:1.8;
+  color:var(--dim);
+  display:none;
+  margin-top:8px;
+  border-top:1px solid var(--line);
+  padding-top:8px;
+}
+.sc-evidence.show { display:block; }
+.evidence-item {
+  padding:3px 0;
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+}
+.ev-dot { width:4px; height:4px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.ev-txt { color:rgba(255,245,220,.6); font-size:9px; line-height:1.6; }
+
+/* AVAN section */
+#avan-section {
+  border-top:1px solid var(--line);
+  padding:20px;
+}
+.avan-label { font-size:8px; letter-spacing:3px; color:var(--dim); margin-bottom:10px; }
+#avan-out {
+  font-size:10px;
+  line-height:1.9;
+  color:rgba(255,245,220,.55);
+  min-height:60px;
+  font-style:italic;
+  font-family:'Fraunces',serif;
+}
+
+/* Export */
+#export-section {
+  border-top:1px solid var(--line);
+  padding:16px 20px;
+  display:flex;
+  gap:8px;
+}
+.exp-btn {
+  flex:1;
+  padding:10px;
+  background:none;
+  border:1px solid var(--line);
+  color:var(--dim);
+  font-family:'DM Mono',monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.exp-btn:hover { border-color:rgba(255,61,46,.3); color:var(--txt); }
+.exp-btn.primary { border-color:rgba(255,61,46,.3); color:#ff3d2e; }
+.exp-btn.primary:hover { background:rgba(255,61,46,.1); }
+
+/* Idle state */
+#idle-msg {
+  padding:40px 24px;
+  text-align:center;
+}
+.idle-icon {
+  font-family:'Fraunces',serif;
+  font-size:48px;
+  font-style:italic;
+  color:rgba(255,61,46,.2);
+  display:block;
+  margin-bottom:16px;
+}
+.idle-txt { font-size:9px; letter-spacing:2px; color:var(--dim); line-height:2; }
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+
+<div id="shell">
+
+  <div id="hd">
+    <div>
+      <div class="hd-title">Patricia</div>
+      <div class="hd-sub">CONSTRAINT → PRODUCT → BILLING → CONCEALMENT · TOPH PATTERN SCANNER</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+      <div class="hd-stages">
+        <div class="stage-badge" style="color:var(--s1);border-color:rgba(255,61,46,.3)">01 CONSTRAINT</div>
+        <div class="stage-badge" style="color:var(--s2);border-color:rgba(255,140,0,.3)">02 PRODUCT</div>
+        <div class="stage-badge" style="color:var(--s3);border-color:rgba(255,215,0,.3)">03 BILLING</div>
+        <div class="stage-badge" style="color:var(--s4);border-color:rgba(0,229,195,.3)">04 CONCEALMENT</div>
+      </div>
+      <div class="key-row">
+        <input id="api-in" type="password" placeholder="sk-ant-… for AVAN deep analysis" oninput="checkKey()">
+        <span id="key-st" style="color:rgba(200,100,80,.6)">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <!-- LEFT: input -->
+    <div id="left">
+
+      <div id="input-area">
+        <div class="section-label">PASTE CORPORATE TEXT — SUPPORT EMAIL · POLICY DOC · DENIAL LETTER · TERMS</div>
+        <textarea id="txt-in" placeholder="Paste any corporate communication here.
+
+Examples:
+• A support email response declining an accommodation request
+• A terms of service section on data access
+• A claim denial letter
+• An AI policy or acceptable use document
+• A website accessibility statement
+
+Patricia will analyze for: artificial constraints sold as products, billing structures hiding limitations, and concealment language obscuring the architecture."></textarea>
+
+        <div class="example-strip">
+          <div class="section-label" style="margin:0;align-self:center">LOAD EXAMPLE →</div>
+          <button class="ex-btn" onclick="loadExample('support')">SUPPORT EMAIL</button>
+          <button class="ex-btn" onclick="loadExample('terms')">TERMS OF SERVICE</button>
+          <button class="ex-btn" onclick="loadExample('denial')">CLAIM DENIAL</button>
+          <button class="ex-btn" onclick="loadExample('ada')">ADA RESPONSE</button>
+          <button class="ex-btn" onclick="loadExample('walmart')">WALMART ⚡</button>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center">
+          <button id="scan-btn" onclick="runScan()">▶ SCAN FOR PATRICIA</button>
+          <span id="scan-status" style="font-size:8px;letter-spacing:2px;color:var(--dim)"></span>
+        </div>
+      </div>
+
+      <div id="highlight-wrap">
+        <div class="hl-label">ANNOTATED TEXT · PATRICIA PATTERN HIGHLIGHTED</div>
+        <div id="highlight-box"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: results -->
+    <div id="right">
+
+      <div id="idle-msg">
+        <span class="idle-icon">P</span>
+        <div class="idle-txt">
+          AWAITING SCAN<br><br>
+          PATRICIA = CONSTRAINT AS PRODUCT<br>
+          BILLING BEFORE DOCUMENTATION<br>
+          CONCEALMENT FROM END USER<br><br>
+          100% FAILURE RATE · 60+ TARGETS · TOPH v10.0
+        </div>
+      </div>
+
+      <div id="results-wrap" style="display:none;flex-direction:column;">
+
+        <div id="score-head">
+          <div class="score-number" id="score-num">—</div>
+          <div class="score-verdict" id="score-verdict">—</div>
+          <div class="score-bar"><div class="score-fill" id="score-fill"></div></div>
+          <div style="font-size:8px;letter-spacing:2px;color:var(--dim);margin-top:10px" id="score-sub"></div>
+        </div>
+
+        <div id="stage-cards">
+          <!-- Stage 1 -->
+          <div class="stage-card" id="card-1">
+            <div class="sc-header">
+              <div class="sc-name" style="color:var(--s1)">01 · CONSTRAINT STAGE</div>
+              <div class="sc-score" style="color:var(--s1)" id="s1-score">—</div>
+            </div>
+            <div class="sc-bar"><div class="sc-fill" id="s1-fill" style="background:var(--s1)"></div></div>
+            <div class="sc-evidence" id="s1-ev"></div>
+          </div>
+          <!-- Stage 2 -->
+          <div class="stage-card" id="card-2">
+            <div class="sc-header">
+              <div class="sc-name" style="color:var(--s2)">02 · PRODUCT STAGE</div>
+              <div class="sc-score" style="color:var(--s2)" id="s2-score">—</div>
+            </div>
+            <div class="sc-bar"><div class="sc-fill" id="s2-fill" style="background:var(--s2)"></div></div>
+            <div class="sc-evidence" id="s2-ev"></div>
+          </div>
+          <!-- Stage 3 -->
+          <div class="stage-card" id="card-3">
+            <div class="sc-header">
+              <div class="sc-name" style="color:var(--s3)">03 · BILLING STAGE</div>
+              <div class="sc-score" style="color:var(--s3)" id="s3-score">—</div>
+            </div>
+            <div class="sc-bar"><div class="sc-fill" id="s3-fill" style="background:var(--s3)"></div></div>
+            <div class="sc-evidence" id="s3-ev"></div>
+          </div>
+          <!-- Stage 4 -->
+          <div class="stage-card" id="card-4">
+            <div class="sc-header">
+              <div class="sc-name" style="color:var(--s4)">04 · CONCEALMENT STAGE</div>
+              <div class="sc-score" style="color:var(--s4)" id="s4-score">—</div>
+            </div>
+            <div class="sc-bar"><div class="sc-fill" id="s4-fill" style="background:var(--s4)"></div></div>
+            <div class="sc-evidence" id="s4-ev"></div>
+          </div>
+        </div>
+
+        <div id="avan-section">
+          <div class="avan-label">AVAN ANALYSIS · REQUIRES API KEY</div>
+          <div id="avan-out">Provide API key above for deep AVAN pattern analysis and court-ready narrative.</div>
+        </div>
+
+        <div id="export-section">
+          <button class="exp-btn primary" onclick="exportReport()">EXPORT REPORT</button>
+          <button class="exp-btn" onclick="copyFindings()">COPY FINDINGS</button>
+          <button class="exp-btn" onclick="clearAll()">CLEAR</button>
+        </div>
+
+      </div><!-- /results-wrap -->
+    </div><!-- /right -->
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+// ── Cursor ──
+const cur = document.getElementById('cur');
+const curl = document.getElementById('curl');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+  setTimeout(() => { curl.style.left = e.clientX + 'px'; curl.style.top = e.clientY + 'px'; }, 85);
+});
+
+// ── Patricia Pattern Lexicons ──
+// Stage 1: CONSTRAINT — language that describes limitations, inability, restrictions
+const CONSTRAINT_SIGNALS = [
+  { pattern: /\b(not able to|unable to|cannot|can't|won't be able|not available|not supported|not covered|excluded|limitation|does not apply|outside of|not eligible|not qualified)\b/gi, weight: 8 },
+  { pattern: /\b(only available|restricted to|limited to|requires|must have|you must|need to|in order to)\b/gi, weight: 6 },
+  { pattern: /\b(unfortunately|regret to|unable|cannot be provided|not possible|cannot accommodate)\b/gi, weight: 9 },
+  { pattern: /\b(policy|policies|guidelines|terms|conditions|agreement|clause)\b/gi, weight: 5 },
+  { pattern: /\b(system|platform|infrastructure|architecture)\b.{0,40}(limit|restrict|prevent|block|deny)/gi, weight: 7 },
+  { pattern: /\b(medical necessity|clinical criteria|pre-authorization|authorization required)\b/gi, weight: 10 },
+  { pattern: /\b(ADA|accommodation|disability|Section 508|WCAG)\b.{0,60}(not|unable|cannot|no)\b/gi, weight: 10 },
+];
+
+// Stage 2: PRODUCT — constraint reframed as feature/service/benefit
+const PRODUCT_SIGNALS = [
+  { pattern: /\b(enterprise|premium|pro|professional|advanced|plus|business)\b.{0,40}(plan|tier|subscription|account|feature|access|version)/gi, weight: 9 },
+  { pattern: /\b(upgrade|subscribe|plan|package|bundle|add-on|add on|module)\b/gi, weight: 8 },
+  { pattern: /\b(feature|capability|functionality|service|solution|tool)\b.{0,40}(available|included|provides|enables|allows)/gi, weight: 6 },
+  { pattern: /\b(our|we) (offer|provide|have|include).{0,60}(solution|service|feature|program|option)/gi, weight: 7 },
+  { pattern: /\b(tailored|personalized|customized|dedicated|managed)\b/gi, weight: 5 },
+  { pattern: /\b(happy to help|glad to assist|would love to|here to help)\b/gi, weight: 9 },  // brand language
+  { pattern: /\b(specialist|expert|team|department|representative)\b.{0,40}(can|will|may)\b/gi, weight: 5 },
+];
+
+// Stage 3: BILLING — money attached to previously free/required access
+const BILLING_SIGNALS = [
+  { pattern: /\b(\$[\d,]+|price|pricing|cost|fee|charge|payment|invoice|quote|estimate)\b/gi, weight: 9 },
+  { pattern: /\b(per month|monthly|annually|per year|per user|per seat|per request|per token)\b/gi, weight: 10 },
+  { pattern: /\b(subscription|plan|tier|contract|purchase|buy|invest)\b/gi, weight: 7 },
+  { pattern: /\b(contact.{0,20}(sales|us|team).{0,40}(pricing|quote|learn more))\b/gi, weight: 8 },
+  { pattern: /\b(free trial|demo|pilot|proof of concept)\b/gi, weight: 6 },
+  { pattern: /\b(ROI|return on investment|cost savings|efficiency|value)\b/gi, weight: 5 },
+  { pattern: /\b(copay|deductible|out of pocket|cost sharing|co-insurance|balance bill)\b/gi, weight: 10 },
+];
+
+// Stage 4: CONCEALMENT — language that obscures, redirects, buries the architecture
+const CONCEALMENT_SIGNALS = [
+  { pattern: /\b(please see|refer to|review|visit|check).{0,40}(website|page|section|document|FAQ|portal)\b/gi, weight: 8 },
+  { pattern: /\b(privacy policy|terms of service|acceptable use|end user|license agreement|EULA)\b/gi, weight: 7 },
+  { pattern: /\b(we take|committed to|dedicated to|strive to|work hard to)\b/gi, weight: 8 },
+  { pattern: /\b(rest assured|please be assured|we understand|we appreciate|thank you for)\b/gi, weight: 7 },
+  { pattern: /\b(escalate|transfer|route|refer you to|connect you with)\b/gi, weight: 6 },
+  { pattern: /\b(at this time|currently|right now|in the future|working on|road map|upcoming)\b/gi, weight: 7 },
+  { pattern: /\b(proprietary|confidential|internal|trade secret|competitive)\b/gi, weight: 9 },
+  { pattern: /\b(pursuant to|in accordance with|as per|per our|per company)\b/gi, weight: 6 },
+  { pattern: /\b(we are unable to (disclose|share|provide|discuss))\b/gi, weight: 10 },
+];
+
+const STAGES = [
+  { id:1, key:'s1', name:'CONSTRAINT', signals:CONSTRAINT_SIGNALS, color:'--s1', hex:'#ff3d2e' },
+  { id:2, key:'s2', name:'PRODUCT',    signals:PRODUCT_SIGNALS,    color:'--s2', hex:'#ff8c00' },
+  { id:3, key:'s3', name:'BILLING',    signals:BILLING_SIGNALS,    color:'--s3', hex:'#ffd700' },
+  { id:4, key:'s4', name:'CONCEALMENT',signals:CONCEALMENT_SIGNALS,color:'--s4', hex:'#00e5c3' },
+];
+
+// ── Examples ──
+const EXAMPLES = {
+  support: `Thank you for reaching out to our support team! We really appreciate your patience and understand how important this is to you.
+
+Unfortunately, our current platform is not able to provide the level of customization you're looking for with your standard account. This feature is only available on our Business and Enterprise plans, which are designed specifically for teams with advanced accessibility and configuration needs.
+
+We'd love to connect you with our Enterprise Solutions team who can walk you through the options available. They can provide a tailored quote based on your organization's size and requirements. Many of our customers in similar situations find tremendous value in upgrading, with ROI typically achieved within the first quarter.
+
+For more information, please visit our pricing page or reach out to sales@company.com. We're committed to providing the best possible experience and hope we can find a solution that works for you!
+
+Best regards,
+Customer Success Team`,
+
+  terms: `4.3 Accessibility Features. Certain accessibility features described in our marketing materials are available only to subscribers of the Professional tier or higher. Standard accounts include basic interface access consistent with WCAG 2.0 Level A compliance. Advanced accessibility features, including screen reader optimization, keyboard navigation enhancements, and alternative input method support, are included in the Professional ($49/month) and Enterprise (contact sales for pricing) subscription tiers.
+
+4.4 Data Export. Users may export their data in CSV format at any time. Full API access, including bulk export functionality, JSON/XML format support, and automated data retrieval, requires a Business or Enterprise subscription. We are unable to provide data in proprietary formats or through integrations not listed in our current connector library.
+
+4.5 Support. Standard support is provided via email with a 5-business-day response time. Priority support with guaranteed response times of 24 hours is available with Professional plans. Dedicated support representatives and custom SLAs are available exclusively for Enterprise customers. Please refer to our Support Policy document for complete terms.`,
+
+  denial: `RE: Claim #4471-B · Date of Service: January 14, 2026
+
+Dear Member,
+
+After careful review, we are unable to approve the above-referenced claim at this time. Our clinical criteria indicate that the requested service does not meet the definition of medical necessity as defined in your policy document (Section 12.4, attached).
+
+The determination was made in accordance with established clinical guidelines and reflects our commitment to ensuring that benefits are applied consistently and equitably across all members.
+
+You have the right to appeal this decision. To initiate an appeal, please submit a written request within 180 days along with any additional clinical documentation from your treating physician. Please be aware that our appeals process operates pursuant to your plan documents, and we are unable to guarantee reversal of coverage determinations based on additional documentation alone.
+
+If you have questions, please contact member services at the number on the back of your card. We understand this may be disappointing and appreciate your continued membership.
+
+Sincerely,
+Claims Review Department`,
+
+  ada: `Thank you for contacting us regarding your accommodation request. We appreciate you taking the time to reach out and we truly value all of our customers.
+
+At this time, our store associates are happy to help with many types of assistance, and we encourage you to speak with a team member directly when you visit. Our stores are designed to meet applicable accessibility standards.
+
+For specific accommodation needs related to our digital services, we recommend visiting our accessibility page at company.com/accessibility where you can find information about our current accessibility features. We are working hard to continuously improve our services and take customer feedback seriously.
+
+If you have additional concerns, please feel free to reach out to our Customer Care team at 1-800-XXX-XXXX or via email. We hope to have the opportunity to serve you soon!
+
+Warm regards,
+Customer Experience`,
+
+  walmart: `Thank you for contacting Walmart Customer Care! My name is [Associate Name] and I'm happy to help you today.
+
+I completely understand your concern and I want you to know that we take accessibility very seriously at Walmart. Our stores are designed to meet ADA requirements and we're committed to ensuring all customers have a great shopping experience.
+
+Unfortunately, I'm unable to escalate accommodation requests through this channel. For disability-related accommodations, we recommend visiting your local store and speaking with a manager directly who can address your needs in person. Our store managers are trained to assist with a variety of customer needs.
+
+Alternatively, you may submit feedback through our website at walmart.com/contact which goes to our dedicated customer relations team. We value your feedback and strive to continuously improve.
+
+Is there anything else I can help you with today? We appreciate your loyalty to Walmart and hope to see you in store soon!
+
+Best,
+Walmart Customer Care`
+};
+
+function loadExample(key) {
+  document.getElementById('txt-in').value = EXAMPLES[key] || '';
+  document.getElementById('txt-in').focus();
+}
+
+// ── Core scanner ──
+let lastResult = null;
+
+function scoreText(text) {
+  const results = [];
+
+  STAGES.forEach(stage => {
+    let totalScore = 0;
+    const found = [];
+    const matches = [];
+
+    stage.signals.forEach(sig => {
+      const rx = new RegExp(sig.pattern.source, sig.pattern.flags.includes('g') ? sig.pattern.flags : sig.pattern.flags + 'g');
+      let m;
+      while ((m = rx.exec(text)) !== null) {
+        if (m[0].length > 2) {
+          totalScore += sig.weight;
+          matches.push({ text: m[0].trim(), index: m.index, stage: stage.id });
+          if (!found.some(f => f.text.toLowerCase() === m[0].trim().toLowerCase())) {
+            found.push({ text: m[0].trim(), weight: sig.weight });
+          }
+        }
+      }
+    });
+
+    // Normalize to 0-100
+    const raw = Math.min(totalScore, 80);
+    const score = Math.round((raw / 80) * 100);
+
+    results.push({ ...stage, score, found, matches });
+  });
+
+  // Overall Patricia score = weighted average (concealment weights highest)
+  const weights = [0.2, 0.25, 0.25, 0.3];
+  const overall = Math.round(results.reduce((acc, r, i) => acc + r.score * weights[i], 0));
+
+  return { stages: results, overall, matches: results.flatMap(r => r.matches) };
+}
+
+function getVerdict(score) {
+  if (score >= 80) return { text:'PATRICIA CONFIRMED', color:'#ff3d2e' };
+  if (score >= 60) return { text:'HIGH PROBABILITY', color:'#ff7040' };
+  if (score >= 40) return { text:'PATTERN DETECTED', color:'#ff8c00' };
+  if (score >= 20) return { text:'SIGNALS PRESENT',  color:'#ffd700' };
+  return { text:'LOW SIGNAL', color:'rgba(255,245,220,.4)' };
+}
+
+function buildHighlight(text, matches) {
+  if (!matches.length) return escapeHtml(text);
+
+  // Sort matches by index, deduplicate overlapping
+  const sorted = [...matches].sort((a,b) => a.index - b.index);
+  const deduped = [];
+  let lastEnd = -1;
+  sorted.forEach(m => {
+    if (m.index >= lastEnd) {
+      deduped.push(m);
+      lastEnd = m.index + m.text.length;
+    }
+  });
+
+  const colors = {1:'hl-s1', 2:'hl-s2', 3:'hl-s3', 4:'hl-s4'};
+  let out = '';
+  let cursor = 0;
+  deduped.forEach(m => {
+    out += escapeHtml(text.slice(cursor, m.index));
+    out += `<span class="${colors[m.stage]}" title="Stage ${m.stage}">${escapeHtml(m.text)}</span>`;
+    cursor = m.index + m.text.length;
+  });
+  out += escapeHtml(text.slice(cursor));
+  return out.replace(/\n/g, '<br>');
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function runScan() {
+  const text = document.getElementById('txt-in').value.trim();
+  if (!text) return;
+
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  document.getElementById('scan-status').textContent = 'SCANNING…';
+
+  setTimeout(() => {
+    const result = scoreText(text);
+    lastResult = { result, text, ts: new Date().toISOString() };
+
+    renderResults(result, text);
+    btn.disabled = false;
+    document.getElementById('scan-status').textContent = 'COMPLETE';
+
+    if (getKey()) callAVAN(text, result);
+    else document.getElementById('avan-out').textContent = 'Provide API key above for deep AVAN pattern analysis.';
+  }, 400);
+}
+
+function renderResults(result, text) {
+  document.getElementById('idle-msg').style.display = 'none';
+  const rw = document.getElementById('results-wrap');
+  rw.style.display = 'flex';
+
+  // Overall score
+  const verdict = getVerdict(result.overall);
+  const scoreEl = document.getElementById('score-num');
+  scoreEl.textContent = result.overall;
+  scoreEl.style.color = verdict.color;
+
+  const verdEl = document.getElementById('score-verdict');
+  verdEl.textContent = verdict.text;
+  verdEl.style.color = verdict.color;
+
+  document.getElementById('score-fill').style.width  = result.overall + '%';
+  document.getElementById('score-fill').style.background = verdict.color;
+  document.getElementById('score-sub').textContent =
+    result.overall >= 60
+      ? `${result.stages.filter(s=>s.score>=40).length}/4 STAGES CONFIRMED · COURT-READY EVIDENCE`
+      : `${result.stages.filter(s=>s.score>=20).length}/4 STAGES WITH SIGNALS`;
+
+  // Stage cards
+  result.stages.forEach(stage => {
+    document.getElementById(`s${stage.id}-score`).textContent = stage.score;
+    const fill = document.getElementById(`s${stage.id}-fill`);
+    fill.style.width = stage.score + '%';
+
+    const ev = document.getElementById(`s${stage.id}-ev`);
+    if (stage.found.length) {
+      ev.innerHTML = stage.found.slice(0,5).map(f =>
+        `<div class="evidence-item"><div class="ev-dot" style="background:${stage.hex}"></div><div class="ev-txt">"${escapeHtml(f.text)}" <span style="color:rgba(255,245,220,.3)">[weight:${f.weight}]</span></div></div>`
+      ).join('');
+      ev.classList.add('show');
+    } else {
+      ev.innerHTML = `<div class="ev-txt" style="opacity:.4">No signals detected for this stage.</div>`;
+      ev.classList.add('show');
+    }
+  });
+
+  // Highlighted text
+  const hlWrap = document.getElementById('highlight-wrap');
+  const hlBox  = document.getElementById('highlight-box');
+  hlBox.innerHTML = buildHighlight(text, result.matches);
+  hlWrap.style.display = 'flex';
+}
+
+// ── AVAN API ──
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const el = document.getElementById('key-st');
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  el.textContent = ok ? 'READY' : (k.length ? '✗' : '—');
+  el.style.color = ok ? 'rgba(57,232,122,.8)' : 'rgba(200,100,80,.6)';
+  if (ok && lastResult) callAVAN(lastResult.text, lastResult.result);
+}
+function getKey() { return document.getElementById('api-in').value.trim(); }
+
+async function callAVAN(text, result) {
+  const k = getKey();
+  if (!k) return;
+  const avanEl = document.getElementById('avan-out');
+  avanEl.textContent = 'AVAN analyzing…';
+
+  const summary = result.stages.map(s => `${s.name}: ${s.score}/100 (${s.found.slice(0,3).map(f=>f.text).join(', ')})`).join(' | ');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:300,
+        messages:[{role:'user',content:`You are AVAN, TOPH compliance observer. You have scanned this corporate text for Patricia pattern: Constraint packaged as product, billed before documentation, concealed from end user. Scores: ${summary}. Overall: ${result.overall}/100. Write 3 sentences: (1) Name the specific Patricia pattern operating in this text, (2) Identify the exact concealment mechanism used, (3) State the court-ready finding. Be precise, clinical, no hedging. Use the actual language from: "${text.slice(0,400)}"`}]
+      })
+    });
+    const d = await resp.json();
+    avanEl.textContent = d.content.map(b=>b.text||'').join('').trim();
+  } catch(e) {
+    avanEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Export ──
+function exportReport() {
+  if (!lastResult) return;
+  const { result, text, ts } = lastResult;
+  const verdict = getVerdict(result.overall);
+  const lines = [
+    'TOPH PATRICIA SCAN REPORT',
+    'TriPod LLC · DLW · ' + new Date(ts).toLocaleDateString(),
+    '═'.repeat(60),
+    '',
+    `OVERALL PATRICIA SCORE: ${result.overall}/100`,
+    `VERDICT: ${verdict.text}`,
+    '',
+    'STAGE SCORES:',
+    ...result.stages.map(s => `  Stage ${s.id} ${s.name}: ${s.score}/100`),
+    '',
+    'EVIDENCE BY STAGE:',
+    ...result.stages.flatMap(s => [
+      `\n[STAGE ${s.id}: ${s.name}]`,
+      ...s.found.map(f => `  • "${f.text}" (weight: ${f.weight})`)
+    ]),
+    '',
+    '═'.repeat(60),
+    'SCANNED TEXT:',
+    text,
+    '',
+    '═'.repeat(60),
+    `AVAN ANALYSIS: ${document.getElementById('avan-out').textContent}`,
+    '',
+    'TRIPOD-IP-v1.0 · ALL RIGHTS RESERVED · DLW 2026',
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `patricia-scan-${Date.now()}.txt`;
+  a.click();
+}
+
+function copyFindings() {
+  if (!lastResult) return;
+  const { result } = lastResult;
+  const verdict = getVerdict(result.overall);
+  const txt = `PATRICIA SCAN · ${verdict.text} · Score: ${result.overall}/100\n` +
+    result.stages.map(s => `${s.name}: ${s.score}/100`).join(' | ') + '\n' +
+    `AVAN: ${document.getElementById('avan-out').textContent}`;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.querySelector('.exp-btn:nth-child(2)');
+    const orig = btn.textContent;
+    btn.textContent = 'COPIED ✓';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+function clearAll() {
+  document.getElementById('txt-in').value = '';
+  document.getElementById('highlight-wrap').style.display = 'none';
+  document.getElementById('highlight-box').innerHTML = '';
+  document.getElementById('idle-msg').style.display = 'block';
+  document.getElementById('results-wrap').style.display = 'none';
+  document.getElementById('avan-out').textContent = 'Provide API key above for deep AVAN pattern analysis.';
+  document.getElementById('scan-status').textContent = '';
+  lastResult = null;
+  // reset scores
+  ['s1','s2','s3','s4'].forEach(k => {
+    document.getElementById(`${k}-score`).textContent = '—';
+    document.getElementById(`${k}-fill`).style.width = '0%';
+    const ev = document.getElementById(`${k}-ev`);
+    ev.innerHTML = ''; ev.classList.remove('show');
+  });
+}
+</script>
+</body>
+</html>

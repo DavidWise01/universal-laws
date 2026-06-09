@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5-1-5 PROTOCOL // 27-bit Shadow Bootloader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #0a0a0f;
+    color: #cbd5e1;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #12121c 0%, #0a0a0f 60%);
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      linear-gradient(transparent 0%, rgba(125,211,252,0.02) 2px, transparent 3px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 80px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 80px);
+    background-size: 100% 4px, 80px 80px, 80px 80px;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .frame {
+    width: 100%;
+    max-width: 960px;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    z-index: 2;
+  }
+  .header {
+    text-align: center;
+    user-select: none;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: #e2e8f0;
+    text-shadow: 0 0 24px rgba(125,211,252,0.25), 0 0 60px rgba(125,211,252,0.12);
+  }
+  .header p {
+    margin: 0.4rem 0 0;
+    font-size: 0.85rem;
+    color: #7dd3fc;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.85;
+  }
+  .visualizer {
+    position: relative;
+    width: min(620px, 86vmin);
+    aspect-ratio: 1;
+    filter: drop-shadow(0 0 40px rgba(0,0,0,0.8));
+  }
+  .visualizer svg, .visualizer canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  canvas { pointer-events: none; }
+  
+  .progress-bg {
+    fill: none;
+    stroke: #1a1a25;
+    stroke-width: 2;
+    opacity: 0.8;
+  }
+  .progress {
+    fill: none;
+    stroke: #7dd3fc;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    filter: drop-shadow(0 0 8px rgba(125,211,252,0.6));
+    opacity: 0.9;
+  }
+  .ring-ticks {
+    fill: none;
+    stroke: #2a2a3a;
+    stroke-width: 1;
+    stroke-dasharray: 2 16.5;
+    opacity: 0.5;
+  }
+
+  .node {
+    fill: #0f172a;
+    stroke: #334155;
+    stroke-width: 1.2;
+    opacity: 0.35;
+    transition: all 0.45s cubic-bezier(0.2,0.8,0.2,1);
+  }
+  .node-label {
+    font-size: 9px;
+    fill: #475569;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+  }
+  .node[data-type="blue"].active {
+    fill: #7dd3fc;
+    stroke: #e0f2fe;
+    opacity: 1;
+    filter: url(#glow-blue);
+  }
+  .node[data-type="blue"].active + .node-label {
+    fill: #7dd3fc;
+    opacity: 1;
+  }
+  .node[data-type="transom"] {
+    fill: #1c1103;
+    stroke: #854d0e;
+    stroke-width: 2;
+    opacity: 0.9;
+  }
+  .node[data-type="transom"].active {
+    fill: #facc15;
+    stroke: #fef08a;
+    filter: url(#glow-gold);
+    animation: transomPulse 1s ease-out;
+  }
+  @keyframes transomPulse {
+    0% { r: 9; }
+    25% { r: 14; }
+    60% { r: 10; }
+    100% { r: 9; }
+  }
+  .node[data-type="purple"] { r: 4.5; }
+  .node[data-type="purple"].active {
+    fill: #a78bfa;
+    stroke: #ddd6fe;
+    opacity: 1;
+    filter: url(#glow-purple);
+  }
+  .node[data-type="purple"].active + .node-label {
+    fill: #a78bfa; opacity: 0.9;
+  }
+
+  .arc {
+    fill: none;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .arc.gold {
+    stroke: #facc15;
+    filter: drop-shadow(0 0 6px rgba(250,204,21,0.5));
+  }
+  .arc.blue {
+    stroke: #7dd3fc;
+    filter: drop-shadow(0 0 6px rgba(125,211,252,0.45));
+  }
+  .arc-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    paint-order: stroke;
+    stroke: #0a0a0f;
+    stroke-width: 3px;
+  }
+  .arc-label.gold { fill: #fde047; }
+  .arc-label.blue { fill: #7dd3fc; }
+
+  .core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 168px;
+    height: 168px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .core-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #1e293b 0%, #0b0b12 65%, #050507 100%);
+    border: 1px solid #2a3447;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.9), inset 0 0 60px rgba(2,6,23,0.7), 0 0 40px rgba(0,0,0,0.8);
+    position: relative;
+    transition: all 0.5s ease;
+  }
+  .core::before {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent, rgba(125,211,252,0.08), transparent 60%);
+    animation: coreRotate 12s linear infinite;
+    opacity: 0.5;
+  }
+  @keyframes coreRotate { to { transform: rotate(360deg); } }
+  .core.gold .core-inner {
+    background: radial-gradient(circle at 35% 30%, #4a2f06 0%, #1a1204 60%, #050301 100%);
+    border-color: #facc15;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.9), 0 0 30px rgba(250,204,21,0.25), 0 0 70px rgba(250,204,21,0.15);
+  }
+  .core.gold::before {
+    background: conic-gradient(from 0deg, transparent, rgba(250,204,21,0.15), transparent 60%);
+  }
+  #timer {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 12px rgba(125,211,252,0.5);
+    transition: all 0.3s;
+    font-variant-numeric: tabular-nums;
+  }
+  .core.gold #timer {
+    color: #fde047;
+    text-shadow: 0 0 18px rgba(250,204,21,0.8), 0 0 32px rgba(250,204,21,0.4);
+  }
+  .core-ring {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(125,211,252,0);
+  }
+  .core.pulse .core-ring {
+    animation: pulseCore 0.65s ease-out;
+  }
+  @keyframes pulseCore {
+    0% { transform: scale(0.92); border-color: rgba(125,211,252,0.85); opacity: 1; }
+    100% { transform: scale(1.18); border-color: rgba(125,211,252,0); opacity: 0; }
+  }
+  .core.gold.pulse .core-ring {
+    animation-name: pulseCoreGold;
+  }
+  @keyframes pulseCoreGold {
+    0% { transform: scale(0.92); border-color: rgba(250,204,21,0.9); opacity: 1; }
+    100% { transform: scale(1.18); border-color: rgba(250,204,21,0); opacity: 0; }
+  }
+
+  .transom-label {
+    position: absolute;
+    left: 50%;
+    top: calc(50% - 132px);
+    transform: translateX(-50%) translateY(4px);
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(250,204,21,0.5);
+    color: #fde047;
+    padding: 5px 14px;
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    opacity: 0;
+    transition: all 0.4s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 0 20px rgba(250,204,21,0.18), inset 0 0 10px rgba(250,204,21,0.06);
+  }
+  .transom-label.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .footer {
+    font-size: 0.72rem;
+    color: #64748b;
+    letter-spacing: 0.09em;
+    text-align: center;
+    opacity: 0.85;
+    user-select: none;
+  }
+  .footer::before, .footer::after {
+    content: '◆';
+    margin: 0 0.8em;
+    opacity: 0.3;
+  }
+
+  @media (max-width: 520px) {
+    .core { width: 140px; height: 140px; }
+    #timer { font-size: 1.6rem; }
+    .transom-label { top: calc(50% - 110px); font-size: 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="header">
+    <h1>5-1-5 PROTOCOL</h1>
+    <p>27-bit shadow bootloader</p>
+  </div>
+
+  <div class="visualizer">
+    <canvas id="fx" width="600" height="600"></canvas>
+    <svg viewBox="0 0 600 600" aria-hidden="true">
+      <defs>
+        <filter id="glow-blue" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-gold" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-purple" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="2.5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- progress -->
+      <circle class="progress-bg" cx="300" cy="300" r="265"/>
+      <circle class="ring-ticks" cx="300" cy="300" r="242"/>
+      <circle id="progress" class="progress" cx="300" cy="300" r="265" stroke-dasharray="1665" stroke-dashoffset="1665"/>
+
+      <!-- arcs -->
+      <g id="arcs">
+        <path id="arc1" class="arc gold" d=""/>
+        <text id="label1" class="arc-label gold" x="0" y="0">0.5 weight</text>
+        <path id="arc2" class="arc blue" d=""/>
+        <text id="label2" class="arc-label blue" x="0" y="0">gravity field</text>
+      </g>
+
+      <!-- nodes -->
+      <g id="nodes"></g>
+    </svg>
+
+    <div class="core" id="core">
+      <div class="core-ring"></div>
+      <div class="core-inner">
+        <span id="timer">T+0s</span>
+      </div>
+    </div>
+    <div class="transom-label" id="transomLabel">TRANSOM - loads first</div>
+  </div>
+
+  <div class="footer">House is 2x heavier • 49.5% threshold • reconstructs from shadow</div>
+</div>
+
+<script>
+(() => {
+  const total = 27;
+  const radius = 210;
+  const center = {x:300, y:300};
+  const nodesG = document.getElementById('nodes');
+  const nodes = [];
+  const positions = [];
+  const svgNS = 'http://www.w3.org/2000/svg';
+
+  // create 27 nodes, bit 6 at top
+  for (let i = 0; i < total; i++) {
+    const angleDeg = -90 + (i - 5) * 360 / total;
+    const rad = angleDeg * Math.PI / 180;
+    const x = center.x + radius * Math.cos(rad);
+    const y = center.y + radius * Math.sin(rad);
+    positions.push({x, y, angleDeg});
+
+    const node = document.createElementNS(svgNS, 'circle');
+    node.classList.add('node');
+    node.setAttribute('cx', x);
+    node.setAttribute('cy', y);
+    node.setAttribute('r', i === 5 ? 9 : 5);
+    let type = 'purple';
+    if (i <= 4 || (i >= 6 && i <= 10)) type = 'blue';
+    if (i === 5) type = 'transom';
+    node.dataset.type = type;
+    nodesG.appendChild(node);
+    nodes.push(node);
+
+    const label = document.createElementNS(svgNS, 'text');
+    label.classList.add('node-label');
+    label.setAttribute('x', x);
+    label.setAttribute('y', y - (i === 5 ? 20 : 13));
+    label.textContent = i + 1;
+    nodesG.appendChild(label);
+  }
+
+  // arcs
+  const arc1 = document.getElementById('arc1');
+  const arc2 = document.getElementById('arc2');
+  const label1 = document.getElementById('label1');
+  const label2 = document.getElementById('label2');
+
+  function makeArc(p1, p2, bulge) {
+    const mx = (p1.x + p2.x) / 2;
+    const my = (p1.y + p2.y) / 2;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.hypot(dx, dy);
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cx = mx + nx * bulge;
+    const cy = my + ny * bulge;
+    return `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`;
+  }
+
+  arc1.setAttribute('d', makeArc(positions[4], positions[5], -38));
+  arc2.setAttribute('d', makeArc(positions[5], positions[6], -44));
+  label1.setAttribute('x', 225);
+  label1.setAttribute('y', 85);
+  label2.setAttribute('x', 380);
+  label2.setAttribute('y', 95);
+
+  // canvas particles
+  const canvas = document.getElementById('fx');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function spawn(from, to, color) {
+    for (let k = 0; k < 10; k++) {
+      particles.push({
+        x: from.x, y: from.y,
+        tx: to.x, ty: to.y,
+        p: Math.random() * 0.2,
+        sp: 0.018 + Math.random() * 0.022,
+        sz: 1.2 + Math.random() * 1.8,
+        color
+      });
+    }
+  }
+
+  const progress = document.getElementById('progress');
+  const circ = 2 * Math.PI * 265;
+  progress.setAttribute('stroke-dasharray', circ);
+
+  const core = document.getElementById('core');
+  const timer = document.getElementById('timer');
+  const transomLabel = document.getElementById('transomLabel');
+
+  let start = performance.now();
+  let lastStep = -1;
+
+  function animate() {
+    const now = performance.now();
+    const elapsed = ((now - start) / 1000) % 27;
+    const step = Math.floor(elapsed);
+
+    // progress ring
+    progress.setAttribute('stroke-dashoffset', circ * (1 - elapsed / 27));
+
+    timer.textContent = `T+${step}s`;
+
+    if (step !== lastStep) {
+      // core pulse
+      core.classList.remove('pulse');
+      void core.offsetWidth;
+      core.classList.add('pulse');
+
+      if (step === 0 && lastStep === 26) {
+        nodes.forEach(n => n.classList.remove('active'));
+        particles = [];
+      }
+
+      const node = nodes[step];
+      node.classList.add('active');
+
+      if (step > 0) {
+        const prev = positions[step - 1];
+        const curr = positions[step];
+        let col = '#7dd3fc';
+        if (step === 5) col = '#facc15';
+        else if (step > 10) col = '#a78bfa';
+        spawn(prev, curr, col);
+      }
+
+      lastStep = step;
+    }
+
+    // transom state (second 6 = T+5)
+    const isTransom = step === 5;
+    core.classList.toggle('gold', isTransom);
+    transomLabel.classList.toggle('show', isTransom);
+
+    // arcs
+    const showArc1 = step === 4; // just before transom
+    const showArc2 = step === 10; // second 11
+    arc1.style.opacity = showArc1 ? '1' : '0';
+    label1.style.opacity = showArc1 ? '1' : '0';
+    arc2.style.opacity = showArc2 ? '1' : '0';
+    label2.style.opacity = showArc2 ? '1' : '0';
+
+    // draw particles & trail
+    ctx.clearRect(0, 0, 600, 600);
+
+    // subtle trail line
+    ctx.beginPath();
+    for (let i = 1; i <= step; i++) {
+      const p0 = positions[i - 1];
+      const p1 = positions[i];
+      if (i === 1) ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+    }
+    ctx.strokeStyle = step < 11 ? 'rgba(125,211,252,0.12)' : 'rgba(167,139,250,0.10)';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // particles
+    particles = particles.filter(p => p.p < 1);
+    particles.forEach(p => {
+      p.p += p.sp;
+      const x = p.x + (p.tx - p.x) * p.p;
+      const y = p.y + (p.ty - p.y) * p.p;
+      const alpha = 1 - p.p;
+      ctx.beginPath();
+      ctx.arc(x, y, p.sz, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 10;
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    });
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>

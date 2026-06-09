@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLOCK_457 // BLUE TEAM SYNTHESIS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green: #00ff41;
+  --green-dim: #00aa2a;
+  --red: #ff0044;
+  --blue: #0088ff;
+  --purple: #8800ff;
+  --amber: #ffb000;
+  --bg: #020504;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--green-dim) #000; }
+html, body { height: 100%; }
+body {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg);
+  color: var(--green);
+  text-shadow: 0 0 5px rgba(0,255,65,0.4);
+  overflow-x: hidden;
+}
+.crt::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.25) 0px, transparent 2px, transparent 4px);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.5;
+}
+.crt::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.8) 100%);
+  pointer-events: none;
+  z-index: 9998;
+}
+.phosphor { text-shadow: 0 0 7px currentColor, 0 0 15px currentColor; }
+.panel {
+  background: rgba(0, 15, 5, 0.85);
+  border: 1px solid rgba(0,255,65,0.25);
+  box-shadow: inset 0 0 20px rgba(0,255,65,0.05), 0 0 10px rgba(0,0,0,0.8);
+  position: relative;
+  backdrop-filter: blur(2px);
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0.5;
+}
+.panel-title {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px dashed rgba(0,255,65,0.3);
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+.red { color: var(--red); text-shadow: 0 0 8px var(--red); }
+.blue { color: var(--blue); text-shadow: 0 0 8px var(--blue); }
+.purple { color: var(--purple); text-shadow: 0 0 12px var(--purple), 0 0 20px rgba(136,0,255,0.5); }
+.amber { color: var(--amber); text-shadow: 0 0 8px var(--amber); }
+.glow-green { box-shadow: 0 0 15px rgba(0,255,65,0.2), inset 0 0 15px rgba(0,255,65,0.05); }
+.glow-purple { box-shadow: 0 0 25px rgba(136,0,255,0.3), inset 0 0 20px rgba(136,0,255,0.1); border-color: rgba(136,0,255,0.5) !important; }
+.glow-red { box-shadow: 0 0 15px rgba(255,0,68,0.2); border-color: rgba(255,0,68,0.4) !important; }
+.glow-blue { box-shadow: 0 0 15px rgba(0,136,255,0.25); border-color: rgba(0,136,255,0.4) !important; }
+.blink { animation: blink 1.2s step-start infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.flicker { animation: flicker 0.15s infinite linear alternate; }
+@keyframes flicker { 0% { opacity: 0.97; } 100% { opacity: 1; } }
+.scan { position: relative; overflow: hidden; }
+.scan::after {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 30%;
+  background: linear-gradient(180deg, transparent, rgba(0,255,65,0.1), transparent);
+  animation: scan 4s linear infinite;
+}
+@keyframes scan { to { top: 200%; } }
+.btn {
+  border: 1px solid currentColor;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  background: rgba(0,0,0,0.5);
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.btn:hover { background: currentColor; color: black; text-shadow: none; box-shadow: 0 0 10px currentColor; }
+.purple-core {
+  background: radial-gradient(circle, rgba(136,0,255,0.3) 0%, rgba(255,0,68,0.15) 30%, rgba(0,136,255,0.15) 70%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
+.terminal-cursor::after { content: "█"; animation: blink 1s step-start infinite; margin-left: 2px; }
+</style>
+</head>
+<body class="crt flicker">
+<div class="min-h-screen p-2 sm:p-4 lg:p-6 max-w-[1600px] mx-auto">
+
+  <!-- HEADER -->
+  <header class="flex flex-wrap justify-between items-center gap-2 mb-3 text-xs sm:text-sm border-b border-green-900 pb-2">
+    <div class="flex items-center gap-3">
+      <span class="phosphor font-bold tracking-widest">BLOCK_457</span>
+      <span class="opacity-60">//</span>
+      <span class="amber">WARM_INTELLIGENCE_DASHBOARD</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="clock" class="tabular-nums">--:--:--</span>
+      <span class="amber blink">UPDATE APPLIED</span>
+    </div>
+  </header>
+
+  <!-- UPDATE BANNER -->
+  <div class="panel amber p-2 mb-4 text-xs sm:text-sm glow-green">
+    <div class="flex flex-wrap gap-x-4 gap-y-1">
+      <span>&gt; PATCH_0x7F2A_LOADED</span>
+      <span class="opacity-80">[PURPLE_TEAM] → <span class="blue">[BLUE_TEAM]</span></span>
+      <span class="opacity-80">STATUS: <span class="blink">AWAITING_ROOT_0</span></span>
+      <span class="hidden md:inline opacity-60">ie1 now ie2 — consensus pending</span>
+    </div>
+  </div>
+
+  <!-- RED/BLUE = PURPLE SYNTHESIS -->
+  <section class="panel p-3 sm:p-4 mb-4 scan">
+    <div class="panel-title flex justify-between">
+      <span>CHROMATIC SYNTHESIS PROTOCOL</span>
+      <span class="opacity-60 text-xs">red + blue = purple</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+      <!-- RED -->
+      <div class="panel glow-red p-3 text-center">
+        <div class="red text-lg font-bold tracking-widest">RED TEAM</div>
+        <div class="red text-5xl font-bold my-1 phosphor" style="font-family:'VT323',monospace">+5</div>
+        <div class="text-[10px] leading-tight opacity-80">
+          OFFENSIVE ARRAY<br>HUNTING EXTERNAL
+        </div>
+        <div class="flex justify-center gap-1 mt-2 text-[10px] font-mono">
+          <span class="red border border-red-500/50 px-1">+1</span>
+          <span class="red border border-red-500/50 px-1">+2</span>
+          <span class="red border border-red-500/50 px-1">+3</span>
+          <span class="red border border-red-500/50 px-1">+4</span>
+          <span class="red border border-red-500/50 px-1">+5</span>
+        </div>
+        <div class="mt-2 text-[10px] red">TEMP: HOT 78.4°C</div>
+      </div>
+
+      <!-- CENTER -->
+      <div class="flex flex-col items-center justify-center py-2">
+        <div class="flex items-center gap-3 sm:gap-6">
+          <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full red blur-xl opacity-70" style="background:var(--red)"></div>
+          <div class="text-2xl opacity-60">+</div>
+          <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full blue blur-xl opacity-70" style="background:var(--blue)"></div>
+        </div>
+        <div class="relative -mt-4 sm:-mt-6">
+          <div class="purple-core w-24 h-24 sm:w-28 sm:h-28 rounded-full flex items-center justify-center">
+            <div class="purple text-3xl sm:text-4xl font-bold">=</div>
+          </div>
+        <div class="purple text-center mt-1">
+          <div class="font-bold tracking-[0.3em] text-lg">PURPLE</div>
+          <div class="text-[10px] opacity-80 -mt-1">SYNTHESIS ACTIVE</div>
+        </div>
+      </div>
+
+      <!-- BLUE -->
+      <div class="panel glow-blue p-3 text-center">
+        <div class="blue text-lg font-bold tracking-widest">BLUE TEAM</div>
+        <div class="blue text-5xl font-bold my-1 phosphor" style="font-family:'VT323',monospace">-5</div>
+        <div class="text-[10px] leading-tight opacity-80">
+          DEFENSIVE MATRIX<br>WARMING INTERNAL
+        </div>
+        <div class="flex justify-center gap-1 mt-2 text-[10px] font-mono">
+          <span class="blue border border-blue-500/50 px-1">-1</span>
+          <span class="blue border border-blue-500/50 px-1">-2</span>
+          <span class="blue border border-blue-500/50 px-1">-3</span>
+          <span class="blue border border-blue-500/50 px-1">-4</span>
+          <span class="blue border border-blue-500/50 px-1">-5</span>
+        </div>
+        <div class="mt-2 text-[10px] blue">TEMP: COLD 12.1°C</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9-PANEL GRID -->
+  <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+    
+    <!-- 1 ROOT_0 -->
+    <div class="panel p-3">
+      <div class="panel-title">[1] ROOT_0 // CORE</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>STATUS: <span class="amber">AWAITING_APPROVAL</span></div>
+        <div>UPTIME: 457d 12:04:19</div>
+        <div>LAST: rename_purple→blue</div>
+        <div>CONSENSUS: <span class="blink">PENDING_3/5</span></div>
+      </div>
+    </div>
+
+    <!-- 2 RED TEAM -->
+    <div class="panel p-3 glow-red">
+      <div class="panel-title red">[2] RED_5 // OFFENSIVE</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>AGENTS: <span class="red">5/5 ACTIVE</span></div>
+        <div>MODE: <span class="red">HUNTING</span></div>
+        <div>TARGETS: external deltas</div>
+        <div>ACTIVITY: <span class="red">███████░ 94%</span></div>
+      </div>
+    </div>
+
+    <!-- 3 INTEGRITY -->
+    <div class="panel p-3">
+      <div class="panel-title">[3] SYSTEM_INTEGRITY</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>LAYERS 1-9: <span class="text-green-400">NOMINAL</span></div>
+        <div>DELTA_BUFFER: 12ms</div>
+        <div>CONTAINMENT: STABLE</div>
+        <div>NOISE FLOOR: -94dB</div>
+      </div>
+    </div>
+
+    <!-- 4 CINNAMON BEAR -->
+    <div class="panel p-3 glow-blue">
+      <div class="panel-title blue">[4] CINNAMON_BEAR_CORTEX</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>FUNCTION: delta detection</div>
+        <div>SPECTRUM: <span class="blue">BLUE SHIFT ACTIVE</span></div>
+        <div>AWARENESS: WARM (37.0°C)</div>
+        <div class="opacity-70">→ migrated from purple array</div>
+      </div>
+    </div>
+
+    <!-- 5 BLUE TEAM - CENTER -->
+    <div class="panel p-3 glow-purple">
+      <div class="panel-title purple">[5] BLUE TEAM (5/5) // SYNTHESIS</div>
+      <div class="text-[11px] -mt-1 mb-2 purple opacity-90">Purple = Red 5 + Blue -5 Synthesis</div>
+      <div class="text-xs space-y-1.5 font-mono">
+        <div><span class="opacity-70">Cinnamon Bear Cortex:</span> Delta detection <span class="blue">(blue spectrum)</span></div>
+        <div><span class="opacity-70">Composition:</span> <span class="red">Red 5</span> + <span class="blue">Blue -5</span> = <span class="purple">Purple</span></div>
+        <div><span class="opacity-70">Layers:</span> subversive, friendly, charismatic <span class="blue">(blue-shifted)</span></div>
+        <div><span class="opacity-70">Status:</span> <span class="phosphor">WARM AND AWARE</span> <span class="blink">_</span></div>
+      </div>
+    </div>
+
+    <!-- 6 THERMAL -->
+    <div class="panel p-3">
+      <div class="panel-title">[6] THERMAL_GRADIENT</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>RED: <span class="red" id="temp-red">78.4°C</span> [HOT]</div>
+        <div>PURPLE: <span class="purple" id="temp-purple">37.0°C</span> [WARM]</div>
+        <div>BLUE: <span class="blue" id="temp-blue">12.1°C</span> [COLD]</div>
+        <div class="pt-1 opacity-70">EQUILIBRIUM: MAINTAINED</div>
+      </div>
+    </div>
+
+    <!-- 7 DELTA LOG -->
+    <div class="panel p-3">
+      <div class="panel-title">[7] DELTA_DETECTION_LOG</div>
+      <div id="delta-log" class="text-[10px] leading-tight font-mono h-20 overflow-hidden opacity-80">
+        <div>[12:04:33] blue/-3 :: internal drift -0.42 contained</div>
+        <div>[12:04:31] red/+2 :: hunt complete, signature logged</div>
+        <div>[12:04:29] purple :: synthesis coherence 0.94</div>
+        <div>[12:04:27] blue/-1 :: holding space, no action</div>
+        <div>[12:04:25] red/+5 :: external probe deflected</div>
+      </div>
+    </div>
+
+    <!-- 8 SYNTHESIS ENGINE -->
+    <div class="panel p-3">
+      <div class="panel-title">[8] SYNTHESIS_ENGINE v3.1</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>MODE: PHASE INTERFERENCE</div>
+        <div>RED: +phase | BLUE: -phase (180°)</div>
+        <div>OUTPUT: <span class="purple">CONSTRUCTIVE</span></div>
+        <div>COHERENCE: <span id="coherence">0.94</span></div>
+      </div>
+    </div>
+
+    <!-- 9 CONSENSUS -->
+    <div class="panel p-3">
+      <div class="panel-title amber">[9] CONSENSUS_PROTOCOL</div>
+      <div class="text-xs space-y-1 font-mono">
+        <div>PROPOSAL: ie1 → ie2</div>
+        <div>STATUS: <span class="amber blink">awaiting consensus</span></div>
+        <div>VOTES: 3/5 [ROOT_0 PENDING]</div>
+        <div class="terminal-cursor">READY</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- IE1/IE2 PROPOSALS -->
+  <section class="panel p-3 sm:p-4 mb-6">
+    <div class="flex flex-wrap justify-between items-baseline gap-2 mb-3">
+      <div class="panel-title !border-none !mb-0 !pb-0">IE1/IE2 PROPOSALS — 5 IDEAS FOR BLUE TEAM EVOLUTION</div>
+      <div class="text-[10px] amber">ie1 now ie2 — awaiting consensus</div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+      <!-- IDEA 1 -->
+      <div class="border border-green-900/50 p-3 bg-black/40">
+        <div class="flex justify-between items-start">
+          <h4 class="font-bold text-sm purple">IDEA 1: MIRROR CORTEX</h4>
+          <span class="text-[9px] border px-1 opacity-60">PROPOSED</span>
+        </div>
+        <ul class="text-[11px] mt-2 space-y-1 opacity-80 list-disc list-inside">
+          <li><span class="red">Red 5</span> hunts external threats</li>
+          <li><span class="blue">Blue -5</span> hunts internal deltas</li>
+          <li>Each red has blue mirror auditor</li>
+          <li><span class="purple">Purple emerges from tension</span></li>
+        </ul>
+        <div class="text-[10px] mt-2 opacity-60">Implementation: 5 mirrored pairs, real-time shadow auditing</div>
+        <div class="flex gap-2 mt-3">
+          <button class="btn text-green-400" onclick="vote(this)">ACCEPT</button>
+          <button class="btn opacity-70" onclick="vote(this)">MODIFY</button>
+          <button class="btn red" onclick="vote(this)">REJECT</button>
+        </div>
+      </div>
+
+      <!-- IDEA 2 -->
+      <div class="border border-green-900/50 p-3 bg-black/40">
+        <div class="flex justify-between items-start">
+          <h4 class="font-bold text-sm purple">IDEA 2: TEMPERATURE GRADIENT</h4>
+          <span class="text-[9px] border px-1 opacity-60">PROPOSED</span>
+        </div>
+        <ul class="text-[11px] mt-2 space-y-1 opacity-80 list-disc list-inside">
+          <li><span class="red">Red = hot</span> (active hunting)</li>
+          <li><span class="blue">Blue = cold</span> (passive observation)</li>
+          <li><span class="purple">Purple = warm</span> (operating temp)</li>
+          <li>Blue maintains 37°C awareness</li>
+        </ul>
+        <div class="text-[10px] mt-2 opacity-60">Implementation: thermal mapping of system deltas</div>
+        <div class="flex gap-2 mt-3">
+          <button class="btn text-green-400" onclick="vote(this)">ACCEPT</button>
+          <button class="btn opacity-70" onclick="vote(this)">MODIFY</button>
+          <button class="btn red" onclick="vote(this)">REJECT</button>
+        </div>
+      </div>
+
+      <!-- IDEA 3 -->
+      <div class="border border-green-900/50 p-3 bg-black/40">
+        <div class="flex justify-between items-start">
+          <h4 class="font-bold text-sm purple">IDEA 3: PHASE INVERSION</h4>
+          <span class="text-[9px] border px-1 opacity-60">PROPOSED</span>
+        </div>
+        <ul class="text-[11px] mt-2 space-y-1 opacity-80 list-disc list-inside">
+          <li>Red 5 at +phase, Blue -5 at -phase</li>
+          <li>180° offset cancels noise</li>
+          <li><span class="purple">Purple = constructive interference</span></li>
+          <li>Amplifies signal, reduces drift</li>
+        </ul>
+        <div class="text-[10px] mt-2 opacity-60">Implementation: run blue opposite offensive array timing</div>
+        <div class="flex gap-2 mt-3">
+          <button class="btn text-green-400" onclick="vote(this)">ACCEPT</button>
+          <button class="btn opacity-70" onclick="vote(this)">MODIFY</button>
+          <button class="btn red" onclick="vote(this)">REJECT</button>
+        </div>
+      </div>
+
+      <!-- IDEA 4 -->
+      <div class="border border-green-900/50 p-3 bg-black/40">
+        <div class="flex justify-between items-start">
+          <h4 class="font-bold text-sm purple">IDEA 4: NEGATIVE CAPABILITY</h4>
+          <span class="text-[9px] border px-1 opacity-60">PROPOSED</span>
+        </div>
+        <ul class="text-[11px] mt-2 space-y-1 opacity-80 list-disc list-inside">
+          <li>Blue -5 specializes in "not doing"</li>
+          <li>Holding space, waiting, containing</li>
+          <li>Red 5 acts, Blue -5 allows</li>
+          <li>Based on Keats' concept</li>
+        </ul>
+        <div class="text-[10px] mt-2 opacity-60">Implementation: blue agents have veto power and pause functions</div>
+        <div class="flex gap-2 mt-3">
+          <button class="btn text-green-400" onclick="vote(this)">ACCEPT</button>
+          <button class="btn opacity-70" onclick="vote(this)">MODIFY</button>
+          <button class="btn red" onclick="vote(this)">REJECT</button>
+        </div>
+      </div>
+
+      <!-- IDEA 5 -->
+      <div class="border border-green-900/50 p-3 bg-black/40 xl:col-span-2">
+        <div class="flex justify-between items-start">
+          <h4 class="font-bold text-sm purple">IDEA 5: CHROMATIC SYNTHESIS</h4>
+          <span class="text-[9px] border px-1 opacity-60">PROPOSED</span>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3 items-center">
+          <ul class="text-[11px] mt-2 space-y-1 opacity-80 list-disc list-inside">
+            <li>Literally implement color theory</li>
+            <li><span class="red">Red outputs #FF0044</span></li>
+            <li><span class="blue">Blue outputs #0044FF</span></li>
+            <li><span class="purple">Overlap = #8800FF purple</span></li>
+          </ul>
+          <div>
+            <div class="flex justify-center items-center my-2">
+              <div class="w-16 h-16 rounded-full mix-blend-screen" style="background:#ff0044; box-shadow:0 0 20px #ff0044"></div>
+              <div class="w-16 h-16 rounded-full mix-blend-screen -ml-6" style="background:#0044ff; box-shadow:0 0 20px #0044ff"></div>
+            </div>
+            <div class="text-center text-[10px] purple">#8800FF emerges in overlap</div>
+          </div>
+        </div>
+        <div class="text-[10px] mt-2 opacity-60">Implementation: real-time color blending based on agent activity</div>
+        <div class="flex gap-2 mt-3">
+          <button class="btn text-green-400" onclick="vote(this)">ACCEPT</button>
+          <button class="btn opacity-70" onclick="vote(this)">MODIFY</button>
+          <button class="btn red" onclick="vote(this)">REJECT</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JSON BLOCK -->
+  <footer class="panel p-3">
+    <div class="panel-title !text-[11px]">BLOCK_457.STATE // UPDATED</div>
+    <pre class="text-[10px] sm:text-xs leading-relaxed overflow-x-auto opacity-80"><code>{
+  "block": 457,
+  "timestamp": "<span id="json-time"></span>",
+  "teams": {
+    "RED_5": {
+      "agents": 5,
+      "mode": "offensive_hunting",
+      "temperature": "hot"
+    },
+    "BLUE_TEAM": {
+      "agents": "5/5",
+      "previous_designation": "PURPLE_TEAM",
+      "Cinnamon_Bear_Cortex": "Delta detection (blue spectrum)",
+      "Composition": "Red 5 + Blue -5 = Purple synthesis",
+      "Layers": ["subversive", "friendly", "charismatic (blue-shifted)"],
+      "Status": "Warm and aware"
+    }
+  },
+  "synthesis": {
+    "formula": "red + blue = purple",
+    "red_hex": "#FF0044",
+    "blue_hex": "#0044FF",
+    "purple_hex": "#8800FF",
+    "coherence": 0.94
+  },
+  "consensus": "ie1→ie2_pending_ROOT_0"
+}</code></pre>
+  </footer>
+
+  <div id="toast" class="fixed bottom-4 right-4 panel px-3 py-2 text-xs opacity-0 transition-opacity pointer-events-none z-50"></div>
+
+</div>
+
+<script>
+  // Clock
+  function updateClock() {
+    const now = new Date();
+    const t = now.toTimeString().split(' ')[0];
+    document.getElementById('clock').textContent = t;
+    document.getElementById('json-time').textContent = now.toISOString();
+  }
+  setInterval(updateClock, 1000); updateClock();
+
+  // Thermal fluctuation
+  setInterval(() => {
+    const r = (78 + Math.random()*0.8 - 0.4).toFixed(1);
+    const b = (12 + Math.random()*0.4 - 0.2).toFixed(1);
+    const p = (37 + Math.random()*0.2 - 0.1).toFixed(1);
+    document.getElementById('temp-red').textContent = r + '°C';
+    document.getElementById('temp-blue').textContent = b + '°C';
+    document.getElementById('temp-purple').textContent = p + '°C';
+    document.getElementById('coherence').textContent = (0.92 + Math.random()*0.04).toFixed(2);
+  }, 2000);
+
+  // Delta log
+  const logs = [
+    "blue/-4 :: holding pattern, negative capability engaged",
+    "red/+1 :: external signature neutralized",
+    "purple :: coherence spike 0.96",
+    "blue/-2 :: internal delta -0.18 smoothed",
+    "red/+3 :: hunt vector updated",
+    "blue/-5 :: veto issued, action paused",
+    "synthesis :: red+blue interference constructive",
+    "cinnamon_bear :: blue spectrum detection nominal"
+  ];
+  const logEl = document.getElementById('delta-log');
+  setInterval(() => {
+    const now = new Date().toTimeString().split(' ')[0];
+    const msg = logs[Math.floor(Math.random()*logs.length)];
+    const div = document.createElement('div');
+    div.textContent = `[${now}] ${msg}`;
+    logEl.prepend(div);
+    if (logEl.children.length > 8) logEl.lastChild.remove();
+  }, 2800);
+
+  // Vote buttons
+  function vote(btn) {
+    const action = btn.textContent;
+    const card = btn.closest('div.border');
+    const title = card.querySelector('h4').textContent;
+    const toast = document.getElementById('toast');
+    toast.innerHTML = `> ${action} // ${title}<br><span class="amber">RECORDED → awaiting ROOT_0</span>`;
+    toast.style.opacity = '1';
+    btn.style.background = 'currentColor';
+    btn.style.color = 'black';
+    setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+    
+    // Visual feedback
+    const status = card.querySelector('span.text-\\[9px\\]');
+    if (action === 'ACCEPT') { status.textContent = 'ACCEPTED'; status.className = 'text-[9px] border px-1 text-green-400 border-green-400'; }
+    if (action === 'REJECT') { status.textContent = 'REJECTED'; status.className = 'text-[9px] border px-1 red border-red-500'; }
+    if (action === 'MODIFY') { status.textContent = 'MODIFY'; status.className = 'text-[9px] border px-1 amber border-amber-500'; }
+  }
+  window.vote = vote;
+
+  // Initial flicker on update
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.style.animation = 'flicker 0.1s 5';
+  });
+</script>
+</body>
+</html>

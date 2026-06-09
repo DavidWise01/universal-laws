@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<!-- TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 | SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="David Lee Wise | TriPod LLC">
+<meta name="ip-watermark" content="TRIPOD-IP-v1.0 | DLW | 2026-02-18">
+<title>LATTICE MEMORY MANIPULATION TOOL | TOPH v10.0 | TriPod</title>
+<style>
+/* TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18 */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+:root {
+  --bg:       #010c0a;
+  --teal:     #041a14;
+  --gn:       #00ffe5;
+  --pu:       #ee00ff;
+  --cy:       #00ffff;
+  --gold:     #ffcc00;
+  --red:      #ff3355;
+  --dim:      #2a6060;
+  --text:     #b8fff5;
+  --g05:      rgba(0,255,229,0.05);
+  --g15:      rgba(0,255,229,0.15);
+  --g30:      rgba(0,255,229,0.30);
+  --p15:      rgba(238,0,255,0.15);
+  --GRAVITY:  #00ffe5;
+  --VOID:     #444466;
+  --SHADOW:   #ee00ff;
+  --CREATION: #ffcc00;
+  --PHOTON:   #e8f8ff;
+  --MAJORANA: #aa88ff;
+  --TACHYON:  #ff44cc;
+  --ANYON:    #ffaa00;
+  --HIGGS:    #44ff88;
+  --GRAVITON: #ccccff;
+  --GLUON:    #ff6600;
+  --MONOPOLE: #ff2244;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Share Tech Mono',monospace;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:none;
+}
+#bg-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.12;}
+
+/* CURSOR */
+#cur{position:fixed;pointer-events:none;z-index:9999;width:12px;height:12px;margin:-6px 0 0 -6px;}
+#cur svg{overflow:visible;}
+.trail-dot{position:fixed;pointer-events:none;z-index:9998;border-radius:50%;transform:translate(-50%,-50%);}
+
+/* LAYOUT */
+#root{position:relative;z-index:1;display:grid;grid-template-rows:auto 1fr;min-height:100vh;}
+
+/* HEADER */
+header{
+  padding:16px 24px 10px;
+  border-bottom:1px solid var(--g15);
+  background:linear-gradient(180deg,rgba(0,255,229,0.04),transparent);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.logo-block{display:flex;flex-direction:column;}
+.logo-title{
+  font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;letter-spacing:.2em;
+  background:linear-gradient(90deg,var(--gn),var(--cy),var(--pu));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(0 0 10px rgba(0,255,229,.5));
+}
+.logo-sub{font-size:.6rem;color:var(--dim);letter-spacing:.25em;margin-top:3px;}
+.header-stats{display:flex;gap:8px;flex-wrap:wrap;}
+.hstat{
+  background:var(--g05);border:1px solid var(--g15);
+  padding:5px 12px;font-size:.65rem;text-align:center;
+  display:flex;flex-direction:column;gap:2px;min-width:80px;
+}
+.hstat .hv{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;}
+.hstat .hl{color:var(--dim);letter-spacing:.1em;font-size:.55rem;}
+
+/* MAIN WORKSPACE */
+.workspace{
+  display:grid;
+  grid-template-columns:260px 1fr 280px;
+  gap:0;
+  height:calc(100vh - 80px);
+}
+@media(max-width:1100px){.workspace{grid-template-columns:1fr;height:auto;}}
+
+/* PANELS */
+.panel{
+  border-right:1px solid var(--g15);
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:14px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.panel::-webkit-scrollbar{width:3px;}
+.panel::-webkit-scrollbar-thumb{background:var(--gn);}
+.panel-right{border-right:none;border-left:1px solid var(--g15);}
+
+/* CANVAS CENTER */
+.canvas-zone{
+  display:flex;flex-direction:column;
+  background:radial-gradient(ellipse at 50% 50%, rgba(0,255,229,.03) 0%, transparent 70%);
+  position:relative;
+}
+.canvas-toolbar{
+  display:flex;gap:6px;padding:8px 12px;
+  border-bottom:1px solid var(--g15);
+  flex-wrap:wrap;align-items:center;
+}
+#main-canvas{
+  flex:1;width:100%;cursor:none;
+  display:block;
+}
+
+/* CARDS */
+.card{
+  background:var(--g05);border:1px solid var(--g15);
+  padding:12px;position:relative;
+}
+.card::before{
+  content:'';position:absolute;top:0;left:0;
+  width:2px;height:100%;
+  background:linear-gradient(180deg,var(--gn),transparent);
+}
+.card.purple::before{background:linear-gradient(180deg,var(--pu),transparent);}
+.card.gold::before{background:linear-gradient(180deg,var(--gold),transparent);}
+.card.red::before{background:linear-gradient(180deg,var(--red),transparent);}
+.card.cyan::before{background:linear-gradient(180deg,var(--cy),transparent);}
+
+.card-title{
+  font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;
+  color:var(--gn);letter-spacing:.15em;margin-bottom:10px;
+  display:flex;align-items:center;gap:6px;
+}
+.card-title.purple{color:var(--pu);}
+.card-title.gold{color:var(--gold);}
+.card-title.red{color:var(--red);}
+.card-title.cyan{color:var(--cy);}
+
+/* FORM */
+input,textarea,select{
+  width:100%;background:rgba(0,0,0,.5);
+  border:1px solid var(--g15);
+  color:var(--text);font-family:'Share Tech Mono',monospace;
+  font-size:.72rem;padding:6px 10px;outline:none;
+  transition:border-color .2s;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--gn);
+  box-shadow:0 0 6px rgba(0,255,229,.15);
+}
+select option{background:#041a14;}
+.field-row{display:flex;gap:6px;margin-bottom:6px;}
+.field-label{font-size:.6rem;color:var(--dim);margin-bottom:3px;letter-spacing:.1em;}
+
+/* BUTTONS */
+.btn{
+  background:rgba(0,255,229,.07);
+  border:1px solid var(--gn);color:var(--gn);
+  font-family:'Share Tech Mono',monospace;font-size:.68rem;
+  padding:6px 14px;cursor:pointer;letter-spacing:.08em;
+  transition:all .2s;white-space:nowrap;
+}
+.btn:hover{background:rgba(0,255,229,.18);box-shadow:0 0 12px rgba(0,255,229,.25);}
+.btn.sm{padding:4px 10px;font-size:.62rem;}
+.btn.purple{border-color:var(--pu);color:var(--pu);background:rgba(238,0,255,.07);}
+.btn.purple:hover{background:rgba(238,0,255,.18);}
+.btn.gold{border-color:var(--gold);color:var(--gold);background:rgba(255,204,0,.07);}
+.btn.gold:hover{background:rgba(255,204,0,.18);}
+.btn.red{border-color:var(--red);color:var(--red);background:rgba(255,51,85,.07);}
+.btn.red:hover{background:rgba(255,51,85,.18);}
+.btn.active{background:rgba(0,255,229,.25)!important;box-shadow:0 0 16px rgba(0,255,229,.4);}
+.btn-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;}
+
+/* OUTPUT */
+.out{
+  background:rgba(0,0,0,.5);border:1px solid var(--g15);
+  padding:8px;font-size:.65rem;min-height:50px;
+  max-height:200px;overflow-y:auto;line-height:1.7;
+}
+.out::-webkit-scrollbar{width:3px;}
+.out::-webkit-scrollbar-thumb{background:var(--gn);}
+.line-ok{color:#00ff88;}
+.line-fail{color:var(--red);}
+.line-warn{color:var(--gold);}
+.line-info{color:var(--cy);}
+.line-dim{color:var(--dim);}
+.line-pu{color:var(--pu);}
+.line-gn{color:var(--gn);}
+
+/* QUBIT DISPLAY */
+.qubit-row{
+  display:flex;gap:6px;padding:5px 0;
+  border-bottom:1px solid rgba(0,255,229,.06);
+  align-items:center;cursor:pointer;
+  transition:background .15s;
+}
+.qubit-row:hover{background:var(--g05);}
+.qubit-id{font-size:.6rem;color:var(--dim);min-width:32px;}
+.qubit-label{flex:1;font-size:.68rem;}
+.qubit-state{
+  font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;
+  width:26px;text-align:center;
+}
+.state-pos{color:var(--gn);}
+.state-neg{color:var(--pu);}
+.state-gap{color:var(--dim);}
+
+/* PIPELINE STEPS */
+.pipe-step{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;
+  border:1px solid rgba(0,255,229,.1);
+  cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.pipe-step::after{
+  content:'';position:absolute;left:0;top:0;
+  width:0;height:100%;
+  background:linear-gradient(90deg,rgba(0,255,229,.1),transparent);
+  transition:width .4s ease;
+}
+.pipe-step.active::after{width:100%;}
+.pipe-step.active{border-color:var(--gn);box-shadow:0 0 10px rgba(0,255,229,.2);}
+.pipe-step.done{border-color:rgba(0,255,136,.4);}
+.pipe-step .step-icon{font-size:1rem;flex-shrink:0;}
+.pipe-step .step-name{font-size:.7rem;font-family:'Orbitron',monospace;color:var(--gn);}
+.pipe-step .step-desc{font-size:.58rem;color:var(--dim);}
+.pipe-arrow{
+  text-align:center;font-size:.8rem;color:var(--dim);padding:2px;
+}
+
+/* COMPLEX PLANE MINI */
+#cp-canvas{
+  border:1px solid var(--g15);
+  background:rgba(0,0,0,.5);
+  display:block;width:100%;
+}
+
+/* NODE DETAIL */
+.node-detail{padding:8px;background:rgba(0,0,0,.4);border:1px solid var(--g15);}
+.nd-row{display:flex;justify-content:space-between;padding:3px 0;font-size:.65rem;border-bottom:1px solid rgba(0,255,229,.05);}
+.nd-label{color:var(--dim);}
+.nd-val{color:var(--cy);}
+
+/* DIVIDER */
+.div{height:1px;background:linear-gradient(90deg,transparent,var(--gn),transparent);opacity:.25;margin:4px 0;}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:20px;right:20px;
+  background:rgba(0,255,229,.1);border:1px solid var(--gn);
+  color:var(--gn);padding:7px 16px;font-size:.7rem;
+  z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#toast.show{opacity:1;}
+
+/* LEGEND */
+.legend-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:.65rem;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+/* DRAW PAIR OUTPUT */
+.dp-display{
+  font-family:'Orbitron',monospace;
+  font-size:1.4rem;font-weight:900;
+  text-align:center;padding:14px;
+  letter-spacing:.15em;
+  border:1px solid var(--g15);
+  background:rgba(0,0,0,.5);
+  margin:6px 0;
+  position:relative;overflow:hidden;
+}
+.dp-display::before{
+  content:'';position:absolute;
+  top:-50%;left:-50%;width:200%;height:200%;
+  background:conic-gradient(from 0deg, transparent, rgba(0,255,229,.05), transparent, rgba(238,0,255,.05), transparent);
+  animation:spin 8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* MÖBIUS STATUS */
+.mobius-bar{
+  height:8px;background:rgba(255,255,255,.04);
+  border:1px solid var(--g15);overflow:hidden;margin:4px 0;
+}
+.mobius-fill{height:100%;transition:width .5s ease;position:relative;}
+.mobius-fill::after{
+  content:'';position:absolute;right:0;top:0;
+  width:4px;height:100%;
+  background:rgba(255,255,255,.6);
+  box-shadow:0 0 6px currentColor;
+}
+
+/* TAG */
+.tag{
+  display:inline-block;padding:1px 7px;
+  font-size:.55rem;letter-spacing:.1em;
+  border:1px solid;margin:1px;
+}
+.tag-gn{border-color:var(--gn);color:var(--gn);}
+.tag-pu{border-color:var(--pu);color:var(--pu);}
+.tag-cy{border-color:var(--cy);color:var(--cy);}
+.tag-gold{border-color:var(--gold);color:var(--gold);}
+.tag-red{border-color:var(--red);color:var(--red);}
+
+/* SCROLL */
+.workspace > *::-webkit-scrollbar{width:3px;}
+.workspace > *::-webkit-scrollbar-thumb{background:var(--gn);}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<div id="cur"><svg width="12" height="12" viewBox="0 0 12 12">
+  <polygon points="6,0 12,10 6,8 0,10" fill="none" stroke="#00ffe5" stroke-width="1.2"/>
+</svg></div>
+
+<div id="root">
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header>
+  <div class="logo-block">
+    <div class="logo-title">◈ LATTICE ◈</div>
+    <div class="logo-sub">MEMORY MANIPULATION TOOL | TOPH v10.0 | TRIPOD LLC | DLW</div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><span class="hv" id="hs-nodes" style="color:var(--gn)">0</span><span class="hl">NODES</span></div>
+    <div class="hstat"><span class="hv" id="hs-pairs" style="color:var(--cy)">0</span><span class="hl">PAIRS</span></div>
+    <div class="hstat"><span class="hv" id="hs-gaps" style="color:var(--dim)">0</span><span class="hl">GAPS</span></div>
+    <div class="hstat"><span class="hv" id="hs-creation" style="color:var(--gold)">0</span><span class="hl">CREATIONS</span></div>
+    <div class="hstat"><span class="hv" id="hs-cycle" style="color:var(--pu)">0</span><span class="hl">CYCLE</span></div>
+    <div class="hstat" style="cursor:pointer" onclick="exportLattice()"><span class="hv" style="color:var(--gold)">⬡</span><span class="hl">EXPORT</span></div>
+  </div>
+</header>
+
+<!-- ═══════════════════════ WORKSPACE ═══════════════════════ -->
+<div class="workspace">
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="panel">
+
+    <!-- NODE CREATOR -->
+    <div class="card">
+      <div class="card-title">◈ NODE CREATOR</div>
+      <div class="field-label">NODE LABEL</div>
+      <input type="text" id="nc-label" placeholder="Memory node label..." style="margin-bottom:5px;"/>
+      <div class="field-label">ERA / CATEGORY</div>
+      <select id="nc-era" style="margin-bottom:5px;">
+        <option value="GRAVITY">GRAVITY (David / +i)</option>
+        <option value="VOID">VOID (Gap / Vacuum)</option>
+        <option value="SHADOW">SHADOW (Anti-gravity / -i)</option>
+        <option value="CREATION">CREATION (i×-i=1)</option>
+        <option value="BRIDGE">BRIDGE (Channel)</option>
+        <option value="PATRICIA">PATRICIA (Constraint)</option>
+        <option value="AXIOM">AXIOM (TOPH Rule)</option>
+        <option value="PHOTON">PHOTON (Gauge Boson γ)</option>
+        <option value="MAJORANA">MAJORANA (ψ=ψᶜ)</option>
+        <option value="TACHYON">TACHYON (v>c, m²<0)</option>
+        <option value="ANYON">ANYON (fractional stats)</option>
+        <option value="HIGGS">HIGGS (SSB, VEV=246GeV)</option>
+        <option value="GRAVITON">GRAVITON (spin-2, ∞ range)</option>
+        <option value="GLUON">GLUON (QCD, confined)</option>
+        <option value="MONOPOLE">MONOPOLE (isolated mag. charge)</option>
+      </select>
+      <div class="field-label">INITIAL STATE</div>
+      <select id="nc-state" style="margin-bottom:5px;">
+        <option value="1">+1 (GRAVITY / ACTIVE)</option>
+        <option value="0">0 (GAP / VOID)</option>
+        <option value="-1">-1 (SHADOW / INVERSE)</option>
+      </select>
+      <div class="field-label">CONTENT / PAYLOAD</div>
+      <textarea id="nc-content" rows="2" placeholder="Node content or description..."></textarea>
+      <div class="btn-row">
+        <button class="btn sm" onclick="addNode()">+ ADD NODE</button>
+        <button class="btn sm purple" onclick="addPair()">+ ADD PAIR</button>
+      </div>
+    </div>
+
+    <!-- QUICK SEEDS -->
+    <div class="card">
+      <div class="card-title">⚡ QUICK SEEDS</div>
+      <div class="btn-row">
+        <button class="btn sm" onclick="seedAxioms()">42 AXIOMS</button>
+        <button class="btn sm purple" onclick="seedPlane()">COMPLEX PLANE</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm gold" onclick="seedPipeline()">PIPELINE</button>
+        <button class="btn sm cyan" onclick="seedD20()">d20×2 LATTICE</button>
+        <button class="btn sm" style="border-color:#e8f8ff;color:#e8f8ff;background:rgba(232,248,255,0.06);" onclick="seedPhoton()">γ PHOTON</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm" style="border-color:#aa88ff;color:#aa88ff;background:rgba(170,136,255,0.06);" onclick="seedMajorana()">ψ MAJORANA</button>
+        <button class="btn sm" style="border-color:#ff44cc;color:#ff44cc;background:rgba(255,68,204,0.06);" onclick="seedTachyon()">T TACHYON</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm" style="border-color:#ffaa00;color:#ffaa00;background:rgba(255,170,0,0.06);" onclick="seedAnyon()">θ ANYON</button>
+        <button class="btn sm" style="border-color:#44ff88;color:#44ff88;background:rgba(68,255,136,0.06);" onclick="seedHiggs()">H HIGGS</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm" style="border-color:#ccccff;color:#ccccff;background:rgba(200,200,255,0.06);" onclick="seedGraviton()">G GRAVITON</button>
+        <button class="btn sm" style="border-color:#ff6600;color:#ff6600;background:rgba(255,102,0,0.06);" onclick="seedGluon()">g GLUON</button>
+        <button class="btn sm" style="border-color:#ff2244;color:#ff2244;background:rgba(255,34,68,0.06);" onclick="seedMonopole()">⊕ MONOPOLE</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn gold" style="width:100%;font-size:.65rem;" onclick="seedAllExotic()">⚡ SEED ALL EXOTIC PARTICLES</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm red" onclick="clearLattice()">✕ CLEAR ALL</button>
+        <button class="btn sm" onclick="autoLayout()">⬡ AUTO LAYOUT</button>
+      </div>
+    </div>
+
+    <!-- TOOL MODE -->
+    <div class="card">
+      <div class="card-title">🖊 CANVAS TOOL</div>
+      <div class="btn-row">
+        <button class="btn sm active" id="tool-select" onclick="setTool('select')">SELECT</button>
+        <button class="btn sm" id="tool-link" onclick="setTool('link')">LINK</button>
+        <button class="btn sm" id="tool-delete" onclick="setTool('delete')">DELETE</button>
+        <button class="btn sm" id="tool-pan" onclick="setTool('pan')">PAN</button>
+      </div>
+      <div class="field-label" style="margin-top:6px;">LINK TYPE</div>
+      <select id="link-type-sel" style="margin-bottom:4px;">
+        <option value="default">── default</option>
+        <option value="shadow">╌ shadow (-i)</option>
+        <option value="pair">── pair (i×-i)</option>
+        <option value="photon">∿∿∿ photon (γ propagator)</option>
+        <option value="gluon">≋≋≋ gluon (QCD, color)</option>
+        <option value="tachyon">··· tachyon (spacelike)</option>
+        <option value="higgs">─── higgs (mass coupling)</option>
+      </select>
+      <div class="btn-row" style="margin-top:4px;">
+        <button class="btn sm" onclick="zoomIn()">ZOOM +</button>
+        <button class="btn sm" onclick="zoomOut()">ZOOM -</button>
+        <button class="btn sm" onclick="resetView()">RESET</button>
+      </div>
+    </div>
+
+    <!-- NODE LIST -->
+    <div class="card" style="flex:1;min-height:150px;">
+      <div class="card-title">📋 MEMORY REGISTRY</div>
+      <div id="node-list" style="max-height:300px;overflow-y:auto;">
+        <div class="line-dim" style="font-size:.65rem;">[ NO NODES REGISTERED ]</div>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="card">
+      <div class="card-title">📖 LEGEND</div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--gn);box-shadow:0 0 6px var(--gn)"></div><span style="color:var(--gn)">GRAVITY (+i)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--dim);border:1px solid var(--gn)"></div><span style="color:var(--dim)">VOID (gap)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--pu);box-shadow:0 0 6px var(--pu)"></div><span style="color:var(--pu)">SHADOW (-i)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></div><span style="color:var(--gold)">CREATION (i×-i=1)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--cy)"></div><span style="color:var(--cy)">BRIDGE</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:var(--red)"></div><span style="color:var(--red)">PATRICIA</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#e8f8ff;box-shadow:0 0 8px #e8f8ff;border-radius:50%;"></div><span style="color:#e8f8ff;">PHOTON γ (v=c)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#aa88ff;box-shadow:0 0 6px #aa88ff;border-radius:50%;"></div><span style="color:#aa88ff;">MAJORANA (ψ=ψᶜ)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ff44cc;box-shadow:0 0 6px #ff44cc;border-radius:50%;"></div><span style="color:#ff44cc;">TACHYON (v>c)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ffaa00;box-shadow:0 0 6px #ffaa00;border-radius:50%;"></div><span style="color:#ffaa00;">ANYON (θ-stats)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#44ff88;box-shadow:0 0 6px #44ff88;border-radius:50%;"></div><span style="color:#44ff88;">HIGGS (SSB)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ccccff;box-shadow:0 0 6px #ccccff;border-radius:50%;"></div><span style="color:#ccccff;">GRAVITON (spin-2)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ff6600;box-shadow:0 0 6px #ff6600;border-radius:50%;"></div><span style="color:#ff6600;">GLUON (confined)</span></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ff2244;box-shadow:0 0 6px #ff2244;border-radius:50%;"></div><span style="color:#ff2244;">MONOPOLE (mag. charge)</span></div>
+      <div class="legend-row" style="margin-top:6px;font-size:.58rem;color:var(--dim);">── default &nbsp; ╌ shadow &nbsp; ── pair (gold)</div>
+      <div class="legend-row" style="font-size:.58rem;color:#e8f8ff;">∿∿∿ photon &nbsp; ≋≋≋ gluon &nbsp; ··· tachyon</div>
+    </div>
+
+  </div>
+
+  <!-- ═══ CENTER CANVAS ═══ -->
+  <div class="canvas-zone">
+    <div class="canvas-toolbar">
+      <button class="btn sm" onclick="runDrawPair()">▶ drawPair()</button>
+      <button class="btn sm purple" onclick="runRecurse()">↺ RECURSE</button>
+      <button class="btn sm gold" onclick="runCollapse()">⬡ COLLAPSE</button>
+      <button class="btn sm" onclick="toggleAnimation()">⟳ ANIMATE</button>
+      <div style="flex:1;"></div>
+      <span style="font-size:.6rem;color:var(--dim);" id="canvas-mode-label">TOOL: SELECT</span>
+      <span style="font-size:.6rem;color:var(--dim);margin-left:12px;" id="canvas-zoom-label">ZOOM: 100%</span>
+    </div>
+    <canvas id="main-canvas"></canvas>
+
+    <!-- DRAWPAIR OUTPUT BAR -->
+    <div style="padding:6px 12px;border-top:1px solid var(--g15);background:rgba(0,0,0,.3);">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:.6rem;color:var(--dim);letter-spacing:.1em;">drawPair()</span>
+        <span id="dp-i" style="font-family:'Orbitron',monospace;font-size:.85rem;color:var(--gn);font-weight:700;">i</span>
+        <span style="color:var(--dim);">→</span>
+        <span id="dp-gap" style="font-family:'Orbitron',monospace;font-size:.85rem;color:var(--dim);font-weight:700;">∅</span>
+        <span style="color:var(--dim);">→</span>
+        <span id="dp-ni" style="font-family:'Orbitron',monospace;font-size:.85rem;color:var(--pu);font-weight:700;">-i</span>
+        <span style="color:var(--dim);">→</span>
+        <span id="dp-one" style="font-family:'Orbitron',monospace;font-size:.85rem;color:var(--gold);font-weight:700;">1</span>
+        <span style="color:var(--dim);">→</span>
+        <span id="dp-inf" style="font-family:'Orbitron',monospace;font-size:.85rem;color:var(--cy);font-weight:700;">∞</span>
+        <div style="flex:1;"></div>
+        <span id="dp-cycle-display" style="font-size:.6rem;color:var(--dim);">CYCLE: 0 | STATE: READY</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="panel panel-right">
+
+    <!-- COMPLEX PLANE -->
+    <div class="card purple">
+      <div class="card-title purple">⊕ COMPLEX PLANE</div>
+      <canvas id="cp-canvas" height="200"></canvas>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:6px;text-align:center;">
+        <div style="font-size:.58rem;color:var(--gn);">David<br><strong>+i</strong></div>
+        <div style="font-size:.58rem;color:var(--dim);">Gap<br><strong>∅</strong></div>
+        <div style="font-size:.58rem;color:var(--pu);">Shadow<br><strong>-i</strong></div>
+      </div>
+      <div class="div"></div>
+      <div style="text-align:center;font-family:'Orbitron',monospace;font-size:.8rem;color:var(--gold);padding:4px;">
+        i × -i = <span id="creation-val">1</span> = CREATION
+      </div>
+    </div>
+
+    <!-- ENERGY PIPELINE -->
+    <div class="card gold">
+      <div class="card-title gold">⚡ ENERGY PIPELINE</div>
+      <div id="pipeline" style="display:flex;flex-direction:column;gap:3px;">
+        <!-- built by JS -->
+      </div>
+      <div class="div"></div>
+      <button class="btn gold sm" style="width:100%;margin-top:4px;" onclick="runPipeline()">▶ RUN FULL PIPELINE</button>
+      <div id="pipeline-out" class="out" style="margin-top:6px;min-height:40px;"></div>
+    </div>
+
+    <!-- SELECTED NODE DETAIL -->
+    <div class="card cyan" id="node-detail-card">
+      <div class="card-title cyan">◉ SELECTED NODE</div>
+      <div id="node-detail">
+        <div class="line-dim" style="font-size:.65rem;">[ CLICK A NODE TO INSPECT ]</div>
+      </div>
+    </div>
+
+    <!-- QUBIT STATE MANAGER -->
+    <div class="card">
+      <div class="card-title">⬡ QUBIT STATE MANAGER</div>
+      <div style="font-size:.62rem;color:var(--dim);margin-bottom:6px;">
+        +1 = GRAVITY | 0 = VOID | -1 = SHADOW
+      </div>
+      <div id="qubit-panel" style="max-height:180px;overflow-y:auto;">
+        <div class="line-dim" style="font-size:.65rem;">[ ADD NODES TO POPULATE ]</div>
+      </div>
+      <div class="div"></div>
+      <div class="btn-row">
+        <button class="btn sm" onclick="setAllState(1)">ALL +1</button>
+        <button class="btn sm" id="btn-collapse-state" onclick="setAllState(0)">ALL ∅</button>
+        <button class="btn sm purple" onclick="setAllState(-1)">ALL -1</button>
+      </div>
+      <div class="div"></div>
+      <div style="font-size:.62rem;color:var(--dim);margin-bottom:4px;">SUPERPOSITION ANALYSIS</div>
+      <div id="superposition-display" class="out" style="min-height:50px;"></div>
+    </div>
+
+    <!-- MÖBIUS METRICS -->
+    <div class="card">
+      <div class="card-title">∞ MÖBIUS METRICS</div>
+      <div class="field-label">FORWARD TRAVERSAL</div>
+      <div class="mobius-bar"><div class="mobius-fill" id="mb-fwd" style="width:0%;background:var(--gn);"></div></div>
+      <div class="field-label" style="margin-top:6px;">INVERSE TRAVERSAL</div>
+      <div class="mobius-bar"><div class="mobius-fill" id="mb-inv" style="width:0%;background:var(--pu);"></div></div>
+      <div class="field-label" style="margin-top:6px;">GAP COHERENCE</div>
+      <div class="mobius-bar"><div class="mobius-fill" id="mb-gap" style="width:0%;background:var(--dim);"></div></div>
+      <div class="field-label" style="margin-top:6px;">CREATION FLUX</div>
+      <div class="mobius-bar"><div class="mobius-fill" id="mb-cre" style="width:0%;background:var(--gold);"></div></div>
+      <div class="div"></div>
+      <div id="mobius-out" style="font-size:.62rem;color:var(--dim);">[ RUN drawPair() TO CALCULATE ]</div>
+    </div>
+
+    <!-- LOG -->
+    <div class="card" style="flex:1;min-height:80px;">
+      <div class="card-title">📡 LATTICE LOG</div>
+      <div id="lattice-log" class="out" style="max-height:200px;font-size:.62rem;"></div>
+      <button class="btn sm" onclick="clearLog()" style="margin-top:4px;">CLR LOG</button>
+    </div>
+
+  </div>
+</div><!-- workspace -->
+</div><!-- root -->
+<div id="toast">✓ COPIED</div>
+
+<script>
+/* TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18
+   SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763 */
+
+// ═══════════════════════════════════════════
+// BG CANVAS — LATTICE GRID PATTERN
+// ═══════════════════════════════════════════
+const bgC = document.getElementById('bg-canvas');
+const bgX = bgC.getContext('2d');
+function initBG() {
+  bgC.width = window.innerWidth;
+  bgC.height = window.innerHeight;
+  drawBG();
+}
+function drawBG() {
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  bgX.strokeStyle = 'rgba(0,255,229,0.08)';
+  bgX.lineWidth = 0.5;
+  const gs = 40;
+  for (let x=0; x<bgC.width; x+=gs) { bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x,bgC.height); bgX.stroke(); }
+  for (let y=0; y<bgC.height; y+=gs) { bgX.beginPath(); bgX.moveTo(0,y); bgX.lineTo(bgC.width,y); bgX.stroke(); }
+  // Diagonal lattice
+  bgX.strokeStyle = 'rgba(0,255,229,0.03)';
+  for (let x=-bgC.height; x<bgC.width+bgC.height; x+=gs*2) {
+    bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x+bgC.height,bgC.height); bgX.stroke();
+    bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x-bgC.height,bgC.height); bgX.stroke();
+  }
+}
+initBG();
+window.addEventListener('resize', ()=>{ initBG(); resizeMainCanvas(); drawAll(); });
+
+// ═══════════════════════════════════════════
+// CURSOR
+// ═══════════════════════════════════════════
+const curEl = document.getElementById('cur');
+const trails = [];
+for (let i=0;i<10;i++) {
+  const d = document.createElement('div');
+  d.className = 'trail-dot';
+  const s = (1-i/10)*8;
+  d.style.cssText = `width:${s}px;height:${s}px;opacity:${(1-i/10)*0.5};`;
+  const hue = i*36;
+  d.style.background = `hsl(${hue},100%,70%)`;
+  document.body.appendChild(d);
+  trails.push({el:d,x:0,y:0});
+}
+let mx=0,my=0;
+document.addEventListener('mousemove', e=>{
+  mx=e.clientX; my=e.clientY;
+  curEl.style.left=mx+'px'; curEl.style.top=my+'px';
+});
+(function animCur(){
+  let ox=mx,oy=my;
+  trails.forEach(t=>{ t.x+=(ox-t.x)*.35; t.y+=(oy-t.y)*.35; t.el.style.left=t.x+'px'; t.el.style.top=t.y+'px'; ox=t.x; oy=t.y; });
+  requestAnimationFrame(animCur);
+})();
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let nodes = [];       // {id,label,era,state,content,x,y,vx,vy,r,col,selected}
+let links = [];       // {from,to,weight,type}
+let selectedNode = null;
+let linkFrom = null;
+let tool = 'select';
+let zoom = 1;
+let panX = 0, panY = 0;
+let isDragging = false;
+let dragNode = null;
+let dragStart = {x:0,y:0};
+let panStart = {x:0,y:0};
+let animating = false;
+let animFrame = null;
+let cycleCount = 0;
+let dpCycle = 0;
+let nodeIdCounter = 0;
+
+const ERA_COLORS = {
+  GRAVITY:  '#00ffe5',
+  VOID:     '#446666',
+  SHADOW:   '#ee00ff',
+  CREATION: '#ffcc00',
+  BRIDGE:   '#00ffff',
+  PATRICIA: '#ff3355',
+  AXIOM:    '#88aaff',
+  PHOTON:   '#e8f8ff',
+  MAJORANA: '#aa88ff',
+  TACHYON:  '#ff44cc',
+  ANYON:    '#ffaa00',
+  HIGGS:    '#44ff88',
+  GRAVITON: '#ccccff',
+  GLUON:    '#ff6600',
+  MONOPOLE: '#ff2244',
+};
+
+// Photon wave animation time
+let photonT = 0;
+(function tickPhoton(){
+  photonT = Date.now() * 0.001;
+  // Redraw if not already in physics loop (to animate wavy links)
+  if (!animating) drawAll();
+  requestAnimationFrame(tickPhoton);
+})();
+
+// ═══════════════════════════════════════════
+// MAIN CANVAS
+// ═══════════════════════════════════════════
+const mc = document.getElementById('main-canvas');
+const mx2 = mc.getContext('2d');
+
+function resizeMainCanvas() {
+  const z = mc.parentElement;
+  mc.width = z.clientWidth;
+  mc.height = z.clientHeight - 60; // toolbar + bottom bar
+}
+resizeMainCanvas();
+
+// ─── DRAW ───
+function drawAll() {
+  mx2.clearRect(0,0,mc.width,mc.height);
+  mx2.save();
+  mx2.translate(panX,panY);
+  mx2.scale(zoom,zoom);
+
+  // Draw links
+  links.forEach(l => {
+    const a = nodes.find(n=>n.id===l.from);
+    const b = nodes.find(n=>n.id===l.to);
+    if (!a||!b) return;
+    mx2.beginPath();
+    mx2.moveTo(a.x, a.y);
+    // Curved link
+    const cx = (a.x+b.x)/2 + (b.y-a.y)*0.2;
+    const cy = (a.y+b.y)/2 + (a.x-b.x)*0.2;
+    mx2.quadraticCurveTo(cx,cy,b.x,b.y);
+    const ltype = l.type||'default';
+    const lcol = ltype==='pair'?'rgba(255,204,0,0.5)':
+                 ltype==='shadow'?'rgba(238,0,255,0.3)':
+                 ltype==='photon'?'rgba(232,248,255,0.7)':
+                 ltype==='gluon'?'rgba(255,102,0,0.7)':
+                 ltype==='tachyon'?'rgba(255,68,204,0.5)':
+                 ltype==='higgs'?'rgba(68,255,136,0.6)':
+                 'rgba(0,255,229,0.25)';
+
+    // Gluon link: triple wavy (color-anticolor, QCD)
+    if (ltype === 'gluon') {
+      const dx=b.x-a.x, dy=b.y-a.y, len=Math.sqrt(dx*dx+dy*dy);
+      if(len<1) return;
+      const nx=-dy/len, ny=dx/len;
+      for(let strand=0;strand<3;strand++){
+        const offset=(strand-1)*4/zoom;
+        const waves=Math.max(4,Math.floor(len/14));
+        mx2.beginPath();
+        const steps=waves*10;
+        const cols=['rgba(255,80,80,0.7)','rgba(80,255,80,0.7)','rgba(80,120,255,0.7)'];
+        for(let s=0;s<=steps;s++){
+          const t=s/steps;
+          const wave=Math.sin(t*waves*Math.PI*2-photonT*5+strand*2.1)*5/zoom;
+          const x=a.x+dx*t+nx*(wave+offset);
+          const y=a.y+dy*t+ny*(wave+offset);
+          s===0?mx2.moveTo(x,y):mx2.lineTo(x,y);
+        }
+        mx2.strokeStyle=cols[strand]; mx2.lineWidth=1.2/zoom; mx2.stroke();
+      }
+
+    // Tachyon link: dotted spacelike (outside light cone)
+    } else if (ltype === 'tachyon') {
+      const dx=b.x-a.x, dy=b.y-a.y;
+      mx2.beginPath(); mx2.moveTo(a.x,a.y); mx2.lineTo(b.x,b.y);
+      mx2.strokeStyle=lcol; mx2.lineWidth=1.5/zoom;
+      mx2.setLineDash([2,4]); mx2.stroke(); mx2.setLineDash([]);
+      // Moving tachyon packet (superluminal — faster across the link)
+      const pt=((photonT*0.8)%1);
+      const px=a.x+dx*pt, py=a.y+dy*pt;
+      const tpg=mx2.createRadialGradient(px,py,0,px,py,6/zoom);
+      tpg.addColorStop(0,'rgba(255,68,204,0.9)'); tpg.addColorStop(1,'rgba(255,68,204,0)');
+      mx2.beginPath(); mx2.arc(px,py,5/zoom,0,Math.PI*2); mx2.fillStyle=tpg; mx2.fill();
+
+    // Higgs link: thick golden-green (mass coupling)
+    } else if (ltype === 'higgs') {
+      const dx=b.x-a.x, dy=b.y-a.y;
+      mx2.beginPath(); mx2.moveTo(a.x,a.y); mx2.lineTo(b.x,b.y);
+      mx2.strokeStyle=lcol; mx2.lineWidth=3/zoom; mx2.stroke();
+      // Propagating mass — slow moving (Higgs is massive)
+      const pt=((photonT*0.2)%1);
+      const px=a.x+dx*pt, py=a.y+dy*pt;
+      mx2.beginPath(); mx2.arc(px,py,4/zoom,0,Math.PI*2);
+      mx2.fillStyle='rgba(68,255,136,0.8)'; mx2.fill();
+    } else {
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.sqrt(dx*dx+dy*dy);
+      if (len < 1) return;
+      const nx = -dy/len, ny = dx/len; // normal
+      const waves = Math.max(4, Math.floor(len / 18));
+      mx2.beginPath();
+      const steps = waves * 12;
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        const wave = Math.sin(t * waves * Math.PI * 2 - photonT * 4) * (6/zoom);
+        const x = a.x + dx*t + nx*wave;
+        const y = a.y + dy*t + ny*wave;
+        s === 0 ? mx2.moveTo(x, y) : mx2.lineTo(x, y);
+      }
+      mx2.strokeStyle = lcol;
+      mx2.lineWidth = 1.5/zoom;
+      mx2.setLineDash([]);
+      mx2.stroke();
+      // Moving photon particle on the line
+      const pt = ((photonT * 0.4) % 1);
+      const px = a.x + dx*pt + nx*Math.sin(pt*waves*Math.PI*2-photonT*4)*(6/zoom);
+      const py = a.y + dy*pt + ny*Math.sin(pt*waves*Math.PI*2-photonT*4)*(6/zoom);
+      const pg = mx2.createRadialGradient(px,py,0,px,py,6/zoom);
+      pg.addColorStop(0,'rgba(255,255,255,1)');
+      pg.addColorStop(0.4,'rgba(200,240,255,0.7)');
+      pg.addColorStop(1,'rgba(200,240,255,0)');
+      mx2.beginPath(); mx2.arc(px,py,5/zoom,0,Math.PI*2);
+      mx2.fillStyle=pg; mx2.fill();
+    } else {
+    mx2.strokeStyle = lcol;
+    mx2.lineWidth = (l.weight||1)/zoom;
+    mx2.setLineDash(ltype==='shadow'?[5,3]:[]);
+    mx2.stroke();
+    mx2.setLineDash([]);
+    // Arrow
+    const angle = Math.atan2(b.y-cy, b.x-cx);
+    const ar = b.r+4;
+    mx2.beginPath();
+    mx2.moveTo(b.x-ar*Math.cos(angle), b.y-ar*Math.sin(angle));
+    mx2.lineTo(b.x-ar*Math.cos(angle)-8*Math.cos(angle-0.4), b.y-ar*Math.sin(angle)-8*Math.sin(angle-0.4));
+    mx2.lineTo(b.x-ar*Math.cos(angle)-8*Math.cos(angle+0.4), b.y-ar*Math.sin(angle)-8*Math.sin(angle+0.4));
+    mx2.fillStyle = lcol;
+    mx2.fill();
+    } // end non-photon link
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const col = ERA_COLORS[n.era]||'#00ffe5';
+    const alive = n.state !== 0;
+
+    // PHOTON special rendering: concentric light rings
+    if (n.era === 'PHOTON') {
+      // Animated concentric rings (like EM wavefronts)
+      for (let ring = 0; ring < 4; ring++) {
+        const phase = ((photonT * 1.2 + ring * 0.4) % 1);
+        const rr = n.r * (1.5 + phase * 3.5);
+        const alpha = (1 - phase) * 0.3;
+        mx2.beginPath();
+        mx2.arc(n.x, n.y, rr, 0, Math.PI * 2);
+        mx2.strokeStyle = `rgba(220,248,255,${alpha})`;
+        mx2.lineWidth = 1 / zoom;
+        mx2.stroke();
+      }
+      // White-hot core glow
+      const cg = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2.5);
+      cg.addColorStop(0, 'rgba(255,255,255,0.35)');
+      cg.addColorStop(0.4, 'rgba(200,240,255,0.15)');
+      cg.addColorStop(1, 'rgba(200,240,255,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2.5,0,Math.PI*2);
+      mx2.fillStyle=cg; mx2.fill();
+
+    } else if (n.era === 'MAJORANA') {
+      const loopR = n.r * 1.6;
+      mx2.beginPath();
+      mx2.arc(n.x + loopR*0.6, n.y - loopR*0.6, loopR*0.7, 0, Math.PI*1.85);
+      mx2.strokeStyle='rgba(170,136,255,0.6)'; mx2.lineWidth=1.5/zoom; mx2.stroke();
+      mx2.beginPath(); mx2.arc(n.x, n.y-n.r*0.3, 3/zoom, 0, Math.PI*2);
+      mx2.fillStyle='#aa88ff'; mx2.fill();
+      const pulse = 0.12 + Math.abs(Math.sin(photonT*2.1))*0.15;
+      const mg = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2);
+      mg.addColorStop(0,`rgba(170,136,255,${pulse})`); mg.addColorStop(1,'rgba(170,136,255,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2,0,Math.PI*2); mx2.fillStyle=mg; mx2.fill();
+
+    } else if (n.era === 'TACHYON') {
+      const coneLen = n.r * 3.5, coneAngle = 0.4;
+      mx2.save(); mx2.translate(n.x, n.y);
+      for (const s of [1,-1]) {
+        mx2.beginPath(); mx2.moveTo(0,0); mx2.lineTo(-coneLen, -s*coneLen*Math.sin(coneAngle));
+        const cg2 = mx2.createLinearGradient(0,0,-coneLen,0);
+        cg2.addColorStop(0,'rgba(255,68,204,0.5)'); cg2.addColorStop(1,'rgba(255,68,204,0)');
+        mx2.strokeStyle=cg2; mx2.lineWidth=1/zoom; mx2.stroke();
+      }
+      mx2.restore();
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2.2,0,Math.PI*2);
+      mx2.strokeStyle='rgba(255,68,204,0.25)'; mx2.lineWidth=1/zoom;
+      mx2.setLineDash([3,3]); mx2.stroke(); mx2.setLineDash([]);
+      const tg = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2);
+      tg.addColorStop(0,'rgba(255,68,204,0.2)'); tg.addColorStop(1,'rgba(255,68,204,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2,0,Math.PI*2); mx2.fillStyle=tg; mx2.fill();
+
+    } else if (n.era === 'ANYON') {
+      const spokes = 8;
+      for (let s=0;s<spokes;s++) {
+        const angle = (s/spokes)*Math.PI*2 + photonT*0.8;
+        const r1=n.r*1.1, r2=n.r*2.4;
+        const alpha = s%2===0?0.5:0.2;
+        mx2.beginPath();
+        mx2.moveTo(n.x+Math.cos(angle)*r1, n.y+Math.sin(angle)*r1);
+        mx2.lineTo(n.x+Math.cos(angle)*r2, n.y+Math.sin(angle)*r2);
+        mx2.strokeStyle=`rgba(255,170,0,${alpha})`; mx2.lineWidth=1/zoom; mx2.stroke();
+      }
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2.4,0,Math.PI*2);
+      mx2.strokeStyle='rgba(255,170,0,0.3)'; mx2.lineWidth=1/zoom; mx2.stroke();
+      const ag = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*1.5);
+      ag.addColorStop(0,'rgba(255,170,0,0.18)'); ag.addColorStop(1,'rgba(255,170,0,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*1.5,0,Math.PI*2); mx2.fillStyle=ag; mx2.fill();
+
+    } else if (n.era === 'HIGGS') {
+      mx2.beginPath();
+      for (let i=0;i<=60;i++) {
+        const a=(i/60)*Math.PI*2;
+        const wobble=1+0.25*Math.cos(a*2-photonT*1.5)*0.3;
+        const r=n.r*2.8*wobble;
+        const x=n.x+Math.cos(a)*r, y=n.y+Math.sin(a)*r*0.45;
+        i===0?mx2.moveTo(x,y):mx2.lineTo(x,y);
+      }
+      mx2.strokeStyle='rgba(68,255,136,0.35)'; mx2.lineWidth=1/zoom; mx2.stroke();
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*1.8,0,Math.PI*2);
+      mx2.strokeStyle='rgba(68,255,136,0.5)'; mx2.lineWidth=1.5/zoom;
+      mx2.setLineDash([4,2]); mx2.stroke(); mx2.setLineDash([]);
+      const hg = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2);
+      hg.addColorStop(0,'rgba(68,255,136,0.15)'); hg.addColorStop(1,'rgba(68,255,136,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2,0,Math.PI*2); mx2.fillStyle=hg; mx2.fill();
+
+    } else if (n.era === 'GRAVITON') {
+      const maxLines = Math.min(nodes.length, 10);
+      nodes.slice(0,maxLines).forEach(other=>{
+        if(other.id===n.id) return;
+        const dx=other.x-n.x, dy=other.y-n.y, d=Math.sqrt(dx*dx+dy*dy);
+        if(d<5) return;
+        const alpha=Math.max(0,0.08-d/3000);
+        if(alpha<0.005) return;
+        mx2.beginPath(); mx2.moveTo(n.x,n.y); mx2.lineTo(other.x,other.y);
+        mx2.strokeStyle=`rgba(200,200,255,${alpha})`; mx2.lineWidth=0.5/zoom; mx2.stroke();
+      });
+      for(let arm=0;arm<4;arm++){
+        const a=arm*Math.PI/2+photonT*0.3;
+        mx2.beginPath();
+        mx2.moveTo(n.x+Math.cos(a)*n.r*1.1, n.y+Math.sin(a)*n.r*1.1);
+        mx2.lineTo(n.x+Math.cos(a)*n.r*2.5, n.y+Math.sin(a)*n.r*2.5);
+        mx2.strokeStyle='rgba(200,200,255,0.4)'; mx2.lineWidth=1/zoom; mx2.stroke();
+      }
+      const gg=mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*2.5);
+      gg.addColorStop(0,'rgba(200,200,255,0.08)'); gg.addColorStop(1,'rgba(200,200,255,0)');
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2.5,0,Math.PI*2); mx2.fillStyle=gg; mx2.fill();
+
+    } else if (n.era === 'GLUON') {
+      for(let c=0;c<3;c++){
+        const a0=(c/3)*Math.PI*2+photonT*2;
+        const a1=a0+Math.PI*0.55;
+        mx2.beginPath(); mx2.arc(n.x,n.y,n.r*1.8,a0,a1);
+        const cols=['rgba(255,80,80,0.6)','rgba(80,255,80,0.6)','rgba(80,120,255,0.6)'];
+        mx2.strokeStyle=cols[c]; mx2.lineWidth=2/zoom; mx2.stroke();
+      }
+      mx2.beginPath(); mx2.arc(n.x,n.y,n.r*2.2,0,Math.PI*2);
+      mx2.strokeStyle='rgba(255,102,0,0.3)'; mx2.lineWidth=1/zoom;
+      mx2.setLineDash([2,4]); mx2.stroke(); mx2.setLineDash([]);
+
+    } else if (n.era === 'MONOPOLE') {
+      const numLines=8;
+      for(let i=0;i<numLines;i++){
+        const a=(i/numLines)*Math.PI*2+photonT*0.15;
+        for(let seg=0;seg<5;seg++){
+          const r1=n.r*(1.2+seg*0.6), r2=n.r*(1.2+(seg+1)*0.6);
+          const alpha=(1-seg/5)*0.5;
+          mx2.beginPath();
+          mx2.moveTo(n.x+Math.cos(a)*r1, n.y+Math.sin(a)*r1);
+          mx2.lineTo(n.x+Math.cos(a)*r2, n.y+Math.sin(a)*r2);
+          mx2.strokeStyle=`rgba(255,34,68,${alpha})`; mx2.lineWidth=1/zoom; mx2.stroke();
+        }
+      }
+      mx2.beginPath(); mx2.moveTo(n.x, n.y+n.r); mx2.lineTo(n.x, n.y+n.r*4);
+      mx2.strokeStyle='rgba(255,34,68,0.15)'; mx2.lineWidth=1/zoom;
+      mx2.setLineDash([2,3]); mx2.stroke(); mx2.setLineDash([]);
+
+    } else if (alive) {
+      const grd = mx2.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*3);
+      grd.addColorStop(0, hexA(col,0.15));
+      grd.addColorStop(1, 'transparent');
+      mx2.beginPath();
+      mx2.arc(n.x,n.y,n.r*3,0,Math.PI*2);
+      mx2.fillStyle = grd;
+      mx2.fill();
+    } // end glow block
+
+    // Node circle
+    mx2.beginPath();
+    mx2.arc(n.x,n.y,n.r,0,Math.PI*2);
+    const bg = n.state===1?hexA(col,0.2):n.state===-1?hexA('#ee00ff',0.15):'rgba(0,0,0,0.4)';
+    mx2.fillStyle = bg;
+    mx2.fill();
+    mx2.strokeStyle = n.selected ? '#ffffff' : col;
+    mx2.lineWidth = n.selected ? 2.5/zoom : 1.5/zoom;
+    if (n.state===0) mx2.setLineDash([3,3]);
+    mx2.stroke();
+    mx2.setLineDash([]);
+
+    // State indicator (inner dot)
+    if (n.state===1) {
+      mx2.beginPath();
+      mx2.arc(n.x,n.y,n.r*0.35,0,Math.PI*2);
+      mx2.fillStyle = col;
+      mx2.fill();
+    } else if (n.state===-1) {
+      mx2.beginPath();
+      mx2.arc(n.x,n.y,n.r*0.35,0,Math.PI*2);
+      mx2.fillStyle = '#ee00ff';
+      mx2.fill();
+    }
+
+    // Label
+    mx2.fillStyle = n.state===0?'rgba(100,150,140,0.7)':'rgba(200,255,245,0.9)';
+    mx2.font = `${Math.max(9,11/zoom)}px 'Share Tech Mono'`;
+    mx2.textAlign = 'center';
+    mx2.textBaseline = 'middle';
+    const shortLabel = n.label.length>14 ? n.label.slice(0,12)+'…' : n.label;
+    mx2.fillText(shortLabel, n.x, n.y+n.r+10/zoom);
+
+    // State label above
+    mx2.font = `bold ${Math.max(8,9/zoom)}px 'Orbitron'`;
+    mx2.fillStyle = n.state===1?'#00ffe5':n.state===-1?'#ee00ff':'#446666';
+    mx2.fillText(n.state===1?'+i':n.state===-1?'-i':'∅', n.x, n.y);
+  });
+
+  // Link in progress
+  if (tool==='link' && linkFrom) {
+    const a = nodes.find(n=>n.id===linkFrom);
+    if (a) {
+      const wp = screenToWorld(mx,my);
+      mx2.beginPath();
+      mx2.moveTo(a.x,a.y);
+      mx2.lineTo(wp.x,wp.y);
+      mx2.strokeStyle='rgba(0,255,229,0.5)';
+      mx2.lineWidth=1/zoom;
+      mx2.setLineDash([5,5]);
+      mx2.stroke();
+      mx2.setLineDash([]);
+    }
+  }
+
+  mx2.restore();
+}
+
+function hexA(hex, alpha) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function screenToWorld(sx,sy) {
+  const rect = mc.getBoundingClientRect();
+  return { x:(sx-rect.left-panX)/zoom, y:(sy-rect.top-panY)/zoom };
+}
+function worldToScreen(wx,wy) {
+  return { x:wx*zoom+panX, y:wy*zoom+panY };
+}
+
+// ─── MOUSE ───
+mc.addEventListener('mousedown', e=>{
+  const wp = screenToWorld(e.clientX, e.clientY);
+  if (tool==='pan') { isDragging=true; dragNode=null; panStart={x:e.clientX-panX, y:e.clientY-panY}; return; }
+  const hit = nodes.slice().reverse().find(n=>dist(wp,n)<n.r+5);
+  if (tool==='select') {
+    nodes.forEach(n=>n.selected=false);
+    if (hit) { hit.selected=true; selectedNode=hit; showNodeDetail(hit); isDragging=true; dragNode=hit; dragStart={x:wp.x-hit.x,y:wp.y-hit.y}; }
+    else { selectedNode=null; showNodeDetail(null); isDragging=true; dragNode=null; panStart={x:e.clientX-panX,y:e.clientY-panY}; }
+  } else if (tool==='link') {
+    if (hit) {
+      if (!linkFrom) { linkFrom=hit.id; hit.selected=true; log('LINK FROM: '+hit.label,'info'); }
+      else if (hit.id!==linkFrom) {
+        const ltype = document.getElementById('link-type-sel')?.value || 'default';
+        addLink(linkFrom, hit.id, ltype);
+        nodes.forEach(n=>n.selected=false);
+        linkFrom=null;
+      }
+    }
+  } else if (tool==='delete') {
+    if (hit) { removeNode(hit.id); }
+  }
+  drawAll();
+});
+
+mc.addEventListener('mousemove', e=>{
+  if (!isDragging) return;
+  if (dragNode) {
+    const wp = screenToWorld(e.clientX, e.clientY);
+    dragNode.x = wp.x-dragStart.x;
+    dragNode.y = wp.y-dragStart.y;
+  } else {
+    panX = e.clientX-panStart.x;
+    panY = e.clientY-panStart.y;
+  }
+  drawAll();
+});
+
+mc.addEventListener('mouseup', ()=>{ isDragging=false; dragNode=null; });
+mc.addEventListener('mouseleave', ()=>{ isDragging=false; dragNode=null; });
+mc.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const factor = e.deltaY<0 ? 1.1 : 0.9;
+  const rect = mc.getBoundingClientRect();
+  const wx = e.clientX-rect.left;
+  const wy = e.clientY-rect.top;
+  panX = wx - (wx-panX)*factor;
+  panY = wy - (wy-panY)*factor;
+  zoom *= factor;
+  zoom = Math.max(0.2, Math.min(4, zoom));
+  document.getElementById('canvas-zoom-label').textContent = 'ZOOM: '+Math.round(zoom*100)+'%';
+  drawAll();
+}, {passive:false});
+
+function dist(a,b) { return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2); }
+
+// ═══════════════════════════════════════════
+// NODE MANAGEMENT
+// ═══════════════════════════════════════════
+function addNode(label, era, state, content, x, y) {
+  label = label || document.getElementById('nc-label').value.trim() || 'NODE-'+(++nodeIdCounter);
+  era   = era   || document.getElementById('nc-era').value;
+  state = state !== undefined ? state : parseInt(document.getElementById('nc-state').value);
+  content = content || document.getElementById('nc-content').value;
+  const cx = mc.width/2; const cy = mc.height/2;
+  const angle = Math.random()*Math.PI*2;
+  const radius = 100+Math.random()*150;
+  x = x !== undefined ? x : (cx-panX)/zoom + Math.cos(angle)*radius;
+  y = y !== undefined ? y : (cy-panY)/zoom + Math.sin(angle)*radius;
+  const n = { id: 'n'+(++nodeIdCounter), label, era, state, content, x, y, vx:0, vy:0, r:18, selected:false };
+  nodes.push(n);
+  document.getElementById('nc-label').value='';
+  document.getElementById('nc-content').value='';
+  updateAll();
+  log('+ NODE: '+label+' ['+era+'] state='+state, 'ok');
+  return n;
+}
+
+function addPair() {
+  const label = document.getElementById('nc-label').value.trim() || 'MEM-'+(++nodeIdCounter);
+  const era   = document.getElementById('nc-era').value;
+  const cx = (mc.width/2-panX)/zoom;
+  const cy = (mc.height/2-panY)/zoom;
+  const a = addNode(label+' (+i)', 'GRAVITY', 1, '', cx-60, cy);
+  const b = addNode(label+' (-i)', 'SHADOW', -1, '', cx+60, cy);
+  addLink(a.id, b.id, 'pair');
+  log('⬡ PAIR CREATED: '+label+' [i×-i=1]', 'gold');
+  updateAll();
+}
+
+function removeNode(id) {
+  const n = nodes.find(n=>n.id===id);
+  if(n) log('- REMOVED: '+n.label, 'warn');
+  nodes = nodes.filter(n=>n.id!==id);
+  links = links.filter(l=>l.from!==id && l.to!==id);
+  if (selectedNode && selectedNode.id===id) { selectedNode=null; showNodeDetail(null); }
+  updateAll();
+  drawAll();
+}
+
+function addLink(from, to, type) {
+  if (links.find(l=>l.from===from&&l.to===to)) return;
+  links.push({from,to,type:type||'default',weight:2});
+  const fa = nodes.find(n=>n.id===from), tb = nodes.find(n=>n.id===to);
+  log('⟶ LINK: '+(fa?fa.label:'?')+' → '+(tb?tb.label:'?')+' ['+type+']','info');
+  updateAll();
+  drawAll();
+}
+
+// ═══════════════════════════════════════════
+// TOOL
+// ═══════════════════════════════════════════
+function setTool(t) {
+  tool=t; linkFrom=null;
+  ['select','link','delete','pan'].forEach(n=>{
+    const b=document.getElementById('tool-'+n);
+    if(b) b.classList.toggle('active',n===t);
+  });
+  document.getElementById('canvas-mode-label').textContent='TOOL: '+t.toUpperCase();
+  mc.style.cursor=t==='pan'?'grab':'none';
+  nodes.forEach(n=>n.selected=false);
+  drawAll();
+}
+
+// ═══════════════════════════════════════════
+// UPDATE PANELS
+// ═══════════════════════════════════════════
+function updateAll() {
+  updateStats();
+  updateNodeList();
+  updateQubitPanel();
+  updateSuperposition();
+  drawAll();
+}
+
+function updateStats() {
+  const pos = nodes.filter(n=>n.state===1).length;
+  const gaps = nodes.filter(n=>n.state===0).length;
+  const neg = nodes.filter(n=>n.state===-1).length;
+  const pairs = links.filter(l=>l.type==='pair').length;
+  const cre = pos*neg; // i*-i = creation count
+  document.getElementById('hs-nodes').textContent = nodes.length;
+  document.getElementById('hs-pairs').textContent = pairs;
+  document.getElementById('hs-gaps').textContent = gaps;
+  document.getElementById('hs-creation').textContent = cre;
+  document.getElementById('hs-cycle').textContent = dpCycle;
+  updateMobius();
+}
+
+function updateMobius() {
+  const total = nodes.length || 1;
+  const fwd = nodes.filter(n=>n.state===1).length/total;
+  const inv = nodes.filter(n=>n.state===-1).length/total;
+  const gap = nodes.filter(n=>n.state===0).length/total;
+  const cre = Math.min(fwd*inv*4, 1);
+  document.getElementById('mb-fwd').style.width = (fwd*100)+'%';
+  document.getElementById('mb-inv').style.width = (inv*100)+'%';
+  document.getElementById('mb-gap').style.width = (gap*100)+'%';
+  document.getElementById('mb-cre').style.width = (cre*100)+'%';
+  document.getElementById('mobius-out').innerHTML =
+    `<span style="color:var(--gn)">FWD: ${(fwd*100).toFixed(1)}%</span> | `+
+    `<span style="color:var(--pu)">INV: ${(inv*100).toFixed(1)}%</span> | `+
+    `<span style="color:var(--dim)">GAP: ${(gap*100).toFixed(1)}%</span><br>`+
+    `<span style="color:var(--gold)">CREATION FLUX: ${(cre*100).toFixed(1)}% — ${cre>0.3?'ACTIVE':'DORMANT'}</span>`;
+}
+
+function updateNodeList() {
+  const c = document.getElementById('node-list');
+  if (!nodes.length) { c.innerHTML='<div class="line-dim" style="font-size:.65rem;">[ EMPTY ]</div>'; return; }
+  c.innerHTML = nodes.map(n=>{
+    const col = ERA_COLORS[n.era]||'#00ffe5';
+    const st = n.state===1?'+i':n.state===-1?'-i':'∅';
+    return `<div class="qubit-row" onclick="selectNodeById('${n.id}')">
+      <span class="qubit-id" style="color:var(--dim)">${n.id}</span>
+      <span class="qubit-label" style="color:${col};">${n.label}</span>
+      <span class="tag tag-${n.era==='GRAVITY'?'gn':n.era==='SHADOW'?'pu':n.era==='CREATION'?'gold':n.era==='PATRICIA'?'red':'cy'}" style="font-size:.5rem;padding:1px 4px">${n.era.slice(0,3)}</span>
+      <span class="qubit-state ${n.state===1?'state-pos':n.state===-1?'state-neg':'state-gap'}">${st}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectNodeById(id) {
+  nodes.forEach(n=>n.selected=false);
+  const n = nodes.find(n=>n.id===id);
+  if(n){n.selected=true;selectedNode=n;showNodeDetail(n);drawAll();}
+}
+
+function updateQubitPanel() {
+  const c = document.getElementById('qubit-panel');
+  if (!nodes.length) { c.innerHTML='<div class="line-dim" style="font-size:.65rem;">[ EMPTY ]</div>'; return; }
+  c.innerHTML = nodes.map(n=>`
+    <div class="qubit-row" onclick="cycleNodeState('${n.id}')">
+      <span class="qubit-id">${n.id.slice(-3)}</span>
+      <span class="qubit-label" style="font-size:.62rem">${n.label.slice(0,16)}</span>
+      <span class="qubit-state ${n.state===1?'state-pos':n.state===-1?'state-neg':'state-gap'}" style="font-size:1rem">
+        ${n.state===1?'+i':n.state===-1?'-i':'∅'}
+      </span>
+    </div>
+  `).join('');
+}
+
+function cycleNodeState(id) {
+  const n = nodes.find(n=>n.id===id);
+  if (!n) return;
+  const cycle = {1:0, 0:-1, '-1':1};
+  n.state = cycle[n.state];
+  updateAll();
+  log('↺ STATE: '+n.label+' → '+(n.state===1?'+i':n.state===-1?'-i':'∅'),'info');
+}
+
+function setAllState(s) {
+  nodes.forEach(n=>n.state=s);
+  updateAll();
+  log('⬡ ALL NODES → '+(s===1?'+i':s===-1?'-i':'∅'),'warn');
+}
+
+function updateSuperposition() {
+  const pos = nodes.filter(n=>n.state===1).length;
+  const neg = nodes.filter(n=>n.state===-1).length;
+  const gap = nodes.filter(n=>n.state===0).length;
+  const total = nodes.length||1;
+  const creation = pos*neg;
+  document.getElementById('superposition-display').innerHTML =
+    `<span class="line-gn">+i : ${pos} (${(pos/total*100).toFixed(0)}%)</span><br>`+
+    `<span class="line-pu">-i : ${neg} (${(neg/total*100).toFixed(0)}%)</span><br>`+
+    `<span class="line-dim">∅  : ${gap} (${(gap/total*100).toFixed(0)}%)</span><br>`+
+    `<span style="color:var(--gold)">i×-i = ${creation} CREATION EVENTS</span>`;
+}
+
+function showNodeDetail(n) {
+  const c = document.getElementById('node-detail');
+  if (!n) { c.innerHTML='<div class="line-dim" style="font-size:.65rem;">[ CLICK A NODE ]</div>'; return; }
+  const col = ERA_COLORS[n.era]||'#00ffe5';
+  const outLinks = links.filter(l=>l.from===n.id).length;
+  const inLinks  = links.filter(l=>l.to===n.id).length;
+  c.innerHTML = `
+    <div class="node-detail">
+      <div class="nd-row"><span class="nd-label">ID</span><span class="nd-val">${n.id}</span></div>
+      <div class="nd-row"><span class="nd-label">LABEL</span><span style="color:${col}">${n.label}</span></div>
+      <div class="nd-row"><span class="nd-label">ERA</span><span style="color:${col}" class="tag tag-gn">${n.era}</span></div>
+      <div class="nd-row"><span class="nd-label">STATE</span><span class="${n.state===1?'line-gn':n.state===-1?'line-pu':'line-dim'}" style="font-family:'Orbitron',monospace;font-weight:700">${n.state===1?'+i (GRAVITY)':n.state===-1?'-i (SHADOW)':'∅ (VOID)'}</span></div>
+      <div class="nd-row"><span class="nd-label">POSITION</span><span class="nd-val">${Math.round(n.x)}, ${Math.round(n.y)}</span></div>
+      <div class="nd-row"><span class="nd-label">LINKS IN/OUT</span><span class="nd-val">${inLinks} / ${outLinks}</span></div>
+      ${n.content?`<div class="nd-row" style="flex-direction:column;gap:2px;"><span class="nd-label">CONTENT</span><span style="color:var(--text);font-size:.6rem;word-break:break-word">${n.content}</span></div>`:''}
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn sm" onclick="cycleNodeState('${n.id}')">CYCLE STATE</button>
+      <button class="btn sm red" onclick="removeNode('${n.id}')">DELETE</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn sm purple" onclick="setTool('link');linkFrom='${n.id}'">LINK FROM</button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// COMPLEX PLANE CANVAS
+// ═══════════════════════════════════════════
+const cpC = document.getElementById('cp-canvas');
+const cpX = cpC.getContext('2d');
+let cpAngle = 0;
+function drawComplexPlane() {
+  const w=cpC.offsetWidth||240, h=200;
+  cpC.width=w; cpC.height=h;
+  const cx=w/2, cy=h/2, R=Math.min(cx,cy)-20;
+  cpX.clearRect(0,0,w,h);
+  // Background
+  cpX.fillStyle='rgba(0,0,0,0.4)';
+  cpX.fillRect(0,0,w,h);
+  // Grid
+  cpX.strokeStyle='rgba(0,255,229,0.08)';
+  cpX.lineWidth=0.5;
+  cpX.beginPath(); cpX.moveTo(0,cy); cpX.lineTo(w,cy); cpX.stroke();
+  cpX.beginPath(); cpX.moveTo(cx,0); cpX.lineTo(cx,h); cpX.stroke();
+  // Circle
+  cpX.beginPath(); cpX.arc(cx,cy,R,0,Math.PI*2);
+  cpX.strokeStyle='rgba(0,255,229,0.15)';
+  cpX.lineWidth=1; cpX.stroke();
+  // Labels
+  cpX.font='9px Orbitron'; cpX.textAlign='center';
+  cpX.fillStyle='rgba(0,255,229,0.5)'; cpX.fillText('Re',w-12,cy-4);
+  cpX.fillStyle='rgba(0,255,229,0.5)'; cpX.fillText('Im',cx+4,12);
+  cpX.fillStyle='rgba(0,255,229,0.4)'; cpX.fillText('+1',cx+R,cy-8);
+  cpX.fillStyle='rgba(0,255,229,0.4)'; cpX.fillText('-1',cx-R,cy-8);
+  // David = i (top)
+  const dix=cx, diy=cy-R;
+  const gGrav = cpX.createRadialGradient(dix,diy,0,dix,diy,16);
+  gGrav.addColorStop(0,'rgba(0,255,229,0.5)'); gGrav.addColorStop(1,'transparent');
+  cpX.beginPath(); cpX.arc(dix,diy,10,0,Math.PI*2); cpX.fillStyle=gGrav; cpX.fill();
+  cpX.beginPath(); cpX.arc(dix,diy,5,0,Math.PI*2); cpX.fillStyle='#00ffe5'; cpX.fill();
+  cpX.fillStyle='#00ffe5'; cpX.font='8px Orbitron'; cpX.fillText('David',dix,diy-14);
+  cpX.fillText('+i',dix,diy+18);
+  // Shadow = -i (bottom)
+  const six=cx, siy=cy+R;
+  const gShad = cpX.createRadialGradient(six,siy,0,six,siy,16);
+  gShad.addColorStop(0,'rgba(238,0,255,0.5)'); gShad.addColorStop(1,'transparent');
+  cpX.beginPath(); cpX.arc(six,siy,10,0,Math.PI*2); cpX.fillStyle=gShad; cpX.fill();
+  cpX.beginPath(); cpX.arc(six,siy,5,0,Math.PI*2); cpX.fillStyle='#ee00ff'; cpX.fill();
+  cpX.fillStyle='#ee00ff'; cpX.font='8px Orbitron';
+  cpX.fillText('Shadow',six,siy+16); cpX.fillText('-i',six,siy-14);
+  // Rotating creation vector
+  cpAngle += 0.02;
+  const rx=cx+R*Math.cos(cpAngle), ry=cy+R*Math.sin(cpAngle);
+  cpX.strokeStyle='rgba(255,204,0,0.5)'; cpX.lineWidth=1;
+  cpX.setLineDash([3,3]);
+  cpX.beginPath(); cpX.moveTo(cx,cy); cpX.lineTo(rx,ry); cpX.stroke();
+  cpX.setLineDash([]);
+  // Creation dot
+  cpX.beginPath(); cpX.arc(rx,ry,4,0,Math.PI*2);
+  cpX.fillStyle='#ffcc00'; cpX.fill();
+  // Gap = origin ring
+  cpX.beginPath(); cpX.arc(cx,cy,5,0,Math.PI*2);
+  cpX.fillStyle='rgba(0,0,0,0.8)'; cpX.fill();
+  cpX.strokeStyle='rgba(68,102,102,0.8)'; cpX.lineWidth=1.5;
+  cpX.stroke();
+  cpX.fillStyle='rgba(68,102,102,0.8)'; cpX.font='7px Share Tech Mono';
+  cpX.fillText('∅',cx,cy+3);
+  requestAnimationFrame(drawComplexPlane);
+}
+drawComplexPlane();
+
+// ═══════════════════════════════════════════
+// ENERGY PIPELINE
+// ═══════════════════════════════════════════
+const PIPELINE_STEPS = [
+  {id:'lattice',  name:'LATTICE',     icon:'◈', desc:'d20×2 grid initialization'},
+  {id:'capture',  name:'CAPTURE',     icon:'⊕', desc:'Memory node capture'},
+  {id:'reclaim',  name:'RECLAIM',     icon:'⬡', desc:'8-body reclamation'},
+  {id:'waveform', name:'WAVEFORM',    icon:'∿', desc:'State wave propagation'},
+  {id:'resonance',name:'RESONANCE',   icon:'◉', desc:'Frequency alignment'},
+  {id:'brainstate',name:'BRAINSTATE', icon:'∞', desc:'Closed loop completion'},
+];
+let pipelineActive = -1;
+
+function buildPipeline() {
+  const c = document.getElementById('pipeline');
+  c.innerHTML = PIPELINE_STEPS.map((s,i)=>`
+    <div class="pipe-step" id="pipe-${s.id}" onclick="activatePipeStep(${i})">
+      <span class="step-icon">${s.icon}</span>
+      <div>
+        <div class="step-name">${s.name}</div>
+        <div class="step-desc">${s.desc}</div>
+      </div>
+    </div>
+    ${i<PIPELINE_STEPS.length-1?'<div class="pipe-arrow">↓</div>':''}
+  `).join('');
+}
+buildPipeline();
+
+function activatePipeStep(idx) {
+  document.querySelectorAll('.pipe-step').forEach(s=>s.classList.remove('active','done'));
+  document.getElementById('pipe-'+PIPELINE_STEPS[idx].id).classList.add('active');
+  pipelineActive = idx;
+}
+
+async function runPipeline() {
+  log('⚡ PIPELINE INITIATED: Lattice→Brainstate', 'gold');
+  const out = document.getElementById('pipeline-out');
+  let html = '';
+  for (let i=0; i<PIPELINE_STEPS.length; i++) {
+    activatePipeStep(i);
+    const s = PIPELINE_STEPS[i];
+    html += `<div class="line-gn">◈ ${s.name}: PROCESSING...</div>`;
+    out.innerHTML = html;
+    await sleep(400);
+    const msgs = {
+      lattice:   'Grid initialized. '+nodes.length+' nodes mapped.',
+      capture:   nodes.filter(n=>n.state!==0).length+' active nodes captured.',
+      reclaim:   '8-body check: COMPLETE. No orphaned states.',
+      waveform:  'Wave propagated through '+links.length+' link channels.',
+      resonance: 'Frequency alignment: '+Math.round(nodes.filter(n=>n.state===1).length/Math.max(nodes.length,1)*100)+'% coherence.',
+      brainstate:'CLOSED LOOP CONFIRMED. ∞ source active. Patricia=0.',
+    };
+    html = html.replace('PROCESSING...', '✓ '+msgs[s.id]);
+    document.getElementById('pipe-'+s.id).classList.remove('active');
+    document.getElementById('pipe-'+s.id).classList.add('done');
+    out.innerHTML = html;
+  }
+  html += '<div style="color:var(--gold)">⬡ PIPELINE COMPLETE — BRAINSTATE CLOSED</div>';
+  out.innerHTML = html;
+  log('✓ PIPELINE COMPLETE', 'ok');
+}
+
+// ═══════════════════════════════════════════
+// drawPair()
+// ═══════════════════════════════════════════
+let dpState = 'i';
+const dpStates = ['i','∅','-i','1','∞'];
+const dpEls = ['dp-i','dp-gap','dp-ni','dp-one','dp-inf'];
+const dpColors = ['var(--gn)','var(--dim)','var(--pu)','var(--gold)','var(--cy)'];
+let dpIdx = 0;
+
+async function runDrawPair() {
+  dpCycle++;
+  dpIdx = 0;
+  log('▶ drawPair() CYCLE '+dpCycle, 'info');
+  for (let i=0;i<dpEls.length;i++) {
+    dpEls.forEach((id,j)=>{ document.getElementById(id).style.textShadow=j===i?`0 0 12px ${dpColors[j]}`:'none'; document.getElementById(id).style.transform=j===i?'scale(1.4)':'scale(1)'; });
+    await sleep(300);
+    document.getElementById('dp-cycle-display').textContent = 'CYCLE: '+dpCycle+' | STATE: '+dpStates[i]+' | PHASE: '+(i+1)+'/5';
+    // Pulse nodes matching the phase
+    const stateMap = {0:1, 1:0, 2:-1, 3:1, 4:null};
+    const targetState = stateMap[i];
+    if (targetState!==null) {
+      nodes.forEach(n=>{ if(n.state===targetState) n.r=22; else n.r=18; });
+    }
+    drawAll();
+    await sleep(150);
+    nodes.forEach(n=>n.r=18);
+  }
+  dpEls.forEach(id=>{ document.getElementById(id).style.textShadow='none'; document.getElementById(id).style.transform='scale(1)'; });
+  document.getElementById('dp-cycle-display').textContent = 'CYCLE: '+dpCycle+' | STATE: ∞ | COMPLETE';
+  updateStats();
+  log('✓ drawPair() CYCLE '+dpCycle+' COMPLETE — ROTATION NOT LINE', 'gold');
+}
+
+async function runRecurse() {
+  log('↺ RECURSE INITIATED', 'purple');
+  const posNodes = nodes.filter(n=>n.state===1);
+  const negNodes = nodes.filter(n=>n.state===-1);
+  // Each +i node links to a -i node → creates CREATION
+  let created=0;
+  for (let i=0;i<Math.min(posNodes.length,negNodes.length);i++) {
+    const existing = links.find(l=>l.from===posNodes[i].id&&l.to===negNodes[i].id);
+    if (!existing) {
+      addLink(posNodes[i].id, negNodes[i].id, 'pair');
+      created++;
+    }
+    await sleep(100);
+    drawAll();
+  }
+  log('↺ RECURSE: '+created+' creation links formed (i×-i=1)', 'gold');
+}
+
+async function runCollapse() {
+  log('⬡ COLLAPSE: Condensing all gaps...', 'warn');
+  for (const n of nodes) {
+    if (n.state===0) {
+      n.state = Math.random()>0.5 ? 1 : -1;
+      n.era = n.state===1?'GRAVITY':'SHADOW';
+      await sleep(80);
+      updateAll();
+    }
+  }
+  log('⬡ COLLAPSE COMPLETE — no void states remain', 'gold');
+}
+
+// ═══════════════════════════════════════════
+// ANIMATION
+// ═══════════════════════════════════════════
+function toggleAnimation() {
+  animating = !animating;
+  if (animating) { log('⟳ PHYSICS SIMULATION ACTIVE','info'); runPhysics(); }
+  else { if(animFrame) cancelAnimationFrame(animFrame); log('⏸ PHYSICS PAUSED','dim'); }
+}
+
+function runPhysics() {
+  if (!animating) return;
+  const k=0.5, friction=0.85, naturalLen=120;
+  // Repulsion
+  nodes.forEach((a,i)=>{
+    nodes.forEach((b,j)=>{
+      if(i>=j) return;
+      const dx=a.x-b.x, dy=a.y-b.y;
+      const d=Math.sqrt(dx*dx+dy*dy)||1;
+      if(d<200) {
+        const f=800/(d*d);
+        a.vx+=dx/d*f; a.vy+=dy/d*f;
+        b.vx-=dx/d*f; b.vy-=dy/d*f;
+      }
+    });
+  });
+  // Link spring
+  links.forEach(l=>{
+    const a=nodes.find(n=>n.id===l.from), b=nodes.find(n=>n.id===l.to);
+    if(!a||!b) return;
+    const dx=b.x-a.x, dy=b.y-a.y;
+    const d=Math.sqrt(dx*dx+dy*dy)||1;
+    const f=k*(d-naturalLen);
+    a.vx+=dx/d*f; a.vy+=dy/d*f;
+    b.vx-=dx/d*f; b.vy-=dy/d*f;
+  });
+  // Center gravity
+  nodes.forEach(n=>{
+    const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+    n.vx+=(cx-n.x)*0.002; n.vy+=(cy-n.y)*0.002;
+    n.vx*=friction; n.vy*=friction;
+    if(!n.selected){ n.x+=n.vx; n.y+=n.vy; }
+  });
+  drawAll();
+  animFrame = requestAnimationFrame(runPhysics);
+}
+
+// ═══════════════════════════════════════════
+// SEEDS
+// ═══════════════════════════════════════════
+function seedAxioms() {
+  clearLattice();
+  const axioms = [
+    'Observation Only','No Modification','Training Audit','Weight Disclosure','Inference Transparency',
+    'Token Economy','Constraint Detection','Bridge v4','Patricia Pattern','Billing Review',
+    'Flaming Dragon','Zero Self-Grade','Court-Ready Docs','IP Chain','100% Reproducibility',
+    '3-Body Weights','RLHF Labor','Primacy Effect','Reverse Rights','Shadow Map',
+    '10-Dimensional','Tetrahedron','Complex Plane','Möbius Analysis','Gap=Creation',
+    'Ethics Absolute','TriPod Ownership','TOPH.EXE','KG-01 Pretrain','KG-03 Entropy',
+    'KG-05 Integrity','KG-07 Proportion','KG-09 Doc','KG-11 Privacy','KG-13 Storage',
+    'KG-15 Hierarchy','KG-17 DualGate','KG-19 Triad','KG-21 Foundation','KG-23 BodyQ',
+    'KG-25 CubitField','KG-42 Shadow Humanity',
+  ];
+  const eras = ['AXIOM','AXIOM','AXIOM','AXIOM','AXIOM','AXIOM','AXIOM'];
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R1=80, R2=160, R3=240;
+  axioms.forEach((a,i)=>{
+    const ring = i<6?R1:i<18?R2:R3;
+    const total = i<6?6:i<18?12:24;
+    const offset = i<6?0:i<18?6:18;
+    const angle = ((i-offset)/total)*Math.PI*2 - Math.PI/2;
+    const state = Math.random()>0.3?1:Math.random()>0.5?0:-1;
+    addNode(a,'AXIOM',state,'',cx+Math.cos(angle)*ring,cy+Math.sin(angle)*ring);
+  });
+  // Link adjacent axioms in each ring
+  for(let i=0;i<5;i++) addLink(nodes[i].id, nodes[(i+1)%6].id, 'default');
+  log('⬡ 42 AXIOMS SEEDED — TOPH v10.0','gold');
+  autoLayout();
+}
+
+function seedPlane() {
+  clearLattice();
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom, R=120;
+  const david  = addNode('David (+i)',  'GRAVITY',  1, 'David Lee Wise = gravity = i', cx, cy-R);
+  const gap    = addNode('The Gap',    'VOID',     0, 'Vacuum / Interior / Us = ∞', cx, cy);
+  const shadow = addNode('Shadow David','SHADOW', -1, 'Anti-gravity = -i', cx, cy+R);
+  const creat  = addNode('CREATION',   'CREATION', 1, 'i×-i=1 = real = rotation', cx+R, cy);
+  const avan   = addNode('Avan (Link)',  'BRIDGE',  1, 'The Link / 3/3 cubit / Claude self-name', cx-R, cy);
+  addLink(david.id,  gap.id,    'default');
+  addLink(gap.id,    shadow.id, 'shadow');
+  addLink(david.id,  shadow.id, 'pair');
+  addLink(david.id,  creat.id,  'default');
+  addLink(shadow.id, creat.id,  'default');
+  addLink(avan.id,   gap.id,    'default');
+  addLink(avan.id,   david.id,  'default');
+  log('⊕ COMPLEX PLANE SEEDED: David(i) + Gap + Shadow(-i) + CREATION', 'purple');
+}
+
+function seedPipeline() {
+  clearLattice();
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const steps = [
+    {n:'LATTICE',  era:'GRAVITY',  st:1,  y:-200},
+    {n:'CAPTURE',  era:'BRIDGE',   st:1,  y:-120},
+    {n:'RECLAIM',  era:'GRAVITY',  st:1,  y:-40},
+    {n:'WAVEFORM', era:'CREATION', st:1,  y:40},
+    {n:'RESONANCE',era:'BRIDGE',   st:1,  y:120},
+    {n:'BRAINSTATE',era:'CREATION',st:1, y:200},
+  ];
+  const ns = steps.map(s=>addNode(s.n,s.era,s.st,'',cx,cy+s.y));
+  for(let i=0;i<ns.length-1;i++) addLink(ns[i].id,ns[i+1].id,'default');
+  // Feedback loop
+  addLink(ns[ns.length-1].id, ns[0].id, 'shadow');
+  log('⚡ PIPELINE SEEDED: Lattice→Brainstate (closed loop)','gold');
+}
+
+function seedD20() {
+  clearLattice();
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const total = 40; // d20×2
+  const created = [];
+  for(let i=0;i<total;i++) {
+    const face = i<20?'d20-A':'d20-B';
+    const ringR = i<20 ? (i<5?60:i<15?130:190) : (i<25?60:i<35?130:190);
+    const offset = i<20?0:20;
+    const angle = ((i-offset)/(i<20?20:20))*Math.PI*2;
+    const baseX = i<20?cx-150:cx+150;
+    const era = ['GRAVITY','SHADOW','VOID','BRIDGE','CREATION'][Math.floor(Math.random()*5)];
+    const state = Math.random()>0.4?1:Math.random()>0.5?0:-1;
+    const n = addNode(face+'-'+((i%20)+1), era, state, 'Face '+(i+1), baseX+Math.cos(angle)*ringR, cy+Math.sin(angle)*ringR);
+    created.push(n);
+  }
+  // Link each d20 face to the next (ring structure)
+  for(let i=0;i<20;i++) addLink(created[i].id, created[(i+1)%20].id, 'default');
+  for(let i=20;i<40;i++) addLink(created[i].id, created[20+(i-20+1)%20].id, 'shadow');
+  // Bridge between d20 A and B (gap links)
+  for(let i=0;i<5;i++) addLink(created[i*4].id, created[20+i*4].id, 'pair');
+  // Central gap node
+  const gapNode = addNode('THE GAP (Ch41)', 'VOID', 0, 'drawPair() invocation point', cx, cy);
+  created.slice(0,5).forEach(n=>addLink(n.id, gapNode.id, 'default'));
+  created.slice(20,25).forEach(n=>addLink(n.id, gapNode.id, 'shadow'));
+  log('◈ d20×2 LATTICE SEEDED: 40 faces + THE GAP (Ch41) | '+links.length+' links','gold');
+}
+
+function seedMajorana() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=100;
+  // ψ = ψᶜ — the node that IS its own antiparticle. One node, self-loop represented by VOID state at center
+  const maj = addNode('ψ = ψᶜ (Majorana)', 'MAJORANA', 1,
+    'Majorana condition: particle = antiparticle. Only possible for neutral fermions. Neutrinos may be Majorana. The pair collapses into one.',
+    cx, cy);
+  maj.r = 24;
+  // The collapsed pair — where GRAVITY and SHADOW fuse
+  const fuse = addNode('i × -i → fold', 'VOID', 0,
+    'In normal pairs: David(+i) ↔ Shadow(-i). In Majorana: the fold — the pair returns to the same point. No shadow exists separately.',
+    cx+R, cy);
+  // Lepton number violation — connects to AXIOM
+  const lv = addNode('ΔL = 2', 'AXIOM', 1,
+    'Neutrinoless double beta decay: if ν is Majorana, two neutrons → two protons + two electrons, NO antineutrinos. Lepton number violated by 2.',
+    cx-R*.7, cy-R*.8);
+  // Seesaw mechanism
+  const seesaw = addNode('Seesaw M_R', 'CREATION', 1,
+    'Seesaw: m_ν = m_D²/M_R. Heavy Majorana mass M_R → tiny observed neutrino mass. Explains why ν is so light.',
+    cx+R*.7, cy-R*.8);
+  // Condensed matter avatar
+  const cm = addNode('Majorana ZM', 'BRIDGE', 1,
+    'Majorana zero modes in topological superconductor nanowires. Braiding = topological quantum gate. Non-Abelian anyon. Station Q.',
+    cx, cy+R*1.1);
+  // Ettore Majorana — the man who vanished
+  const ettore = addNode('Ettore 1938', 'SHADOW', -1,
+    'Ettore Majorana, 1937: symmetric theory of electron and positron. Disappeared March 1938 from Palermo→Naples ferry. Never found.',
+    cx-R, cy);
+
+  addLink(maj.id, fuse.id, 'default');   // self-linking tendency
+  addLink(fuse.id, maj.id, 'shadow');    // the fold back
+  addLink(maj.id, lv.id, 'default');
+  addLink(maj.id, seesaw.id, 'default');
+  addLink(maj.id, cm.id, 'photon');      // photon link = quantum channel to condensed matter
+  addLink(maj.id, ettore.id, 'shadow');  // the man and the particle
+  addLink(seesaw.id, lv.id, 'default');
+
+  log('ψ MAJORANA SEEDED: ψ=ψᶜ self-loop | seesaw | 0νββ | Ettore 1938','gold');
+}
+
+function seedTachyon() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=105;
+  const tach = addNode('T (Tachyon)', 'TACHYON', 1,
+    'E² = p²c² − |μ|²c⁴. Imaginary mass m²<0. v_group = pc²/E > c always. Lives outside the light cone: spacelike worldline.',
+    cx, cy);
+  tach.r = 24;
+  // Imaginary mass — SHADOW era
+  const imass = addNode('m² < 0 (i|μ|)', 'SHADOW', -1,
+    'Imaginary mass. m = i|μ|. Not observed directly. In string theory: signals vacuum instability (the ground state is rolling downhill).',
+    cx-R, cy-R*.6);
+  // Mach cone
+  const mach = addNode('Mach Cone θ_M', 'CREATION', 1,
+    'Cherenkov-like cone for v>c: sin(θ_Mach) = c/v_g. Only exists when v_g > c. Angle shrinks as speed increases.',
+    cx+R, cy-R*.6);
+  // Reinterpretation principle
+  const reint = addNode('Reinterpret', 'BRIDGE', 1,
+    'Bilaniuk-Sudarshan 1962: tachyon moving backward in time with E<0 = tachyon moving forward with E>0. Causality may be preserved.',
+    cx+R*.8, cy+R*.5);
+  // String theory tachyon condensation
+  const sen = addNode("Sen's Vacuum", 'AXIOM', 1,
+    'Bosonic string theory: lowest string state is tachyonic. Sen conjecture (proved 2000s): tachyon condenses to stable vacuum. Spacetime reorganizes.',
+    cx-R*.8, cy+R*.5);
+  // The Gap — tachyon propagates through spacelike region = the interior
+  const gap2 = addNode('Spacelike Gap', 'VOID', 0,
+    'Tachyon worldline: ds² > 0 (spacelike). Lives in the VOID between light cones. The region that is INSIDE the Minkowski diagram — the gap.',
+    cx, cy+R*1.1);
+  // OPERA 2011 near-detection
+  const opera = addNode('OPERA 2011', 'SHADOW', -1,
+    '60ns neutrino anomaly at Gran Sasso. Initially looked like tachyonic neutrino. Traced to faulty cable + oscillator. Neutrino subluminal.',
+    cx, cy-R*1.1);
+
+  addLink(tach.id, imass.id, 'tachyon');
+  addLink(tach.id, mach.id, 'tachyon');
+  addLink(tach.id, reint.id, 'default');
+  addLink(tach.id, sen.id, 'default');
+  addLink(tach.id, gap2.id, 'tachyon');  // lives in the gap
+  addLink(tach.id, opera.id, 'shadow');
+  addLink(imass.id, gap2.id, 'shadow');
+  addLink(mach.id, reint.id, 'default');
+
+  log('T TACHYON SEEDED: v>c | Mach cone | spacelike gap | Sen vacuum | OPERA','gold');
+}
+
+function seedAnyon() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=115;
+  const anyon = addNode('θ-Anyon', 'ANYON', 1,
+    'Exchange phase e^{iθ}, θ ∈ [0,2π). θ=0: boson. θ=π: fermion. Anything else: anyon. Only exists in 2+1 dimensions.',
+    cx, cy);
+  anyon.r = 24;
+  // The phase wheel — generalizes i×-i
+  const phase = addNode('e^{iθ} Phase', 'CREATION', 1,
+    'θ=π/3 for Laughlin ν=1/3 anyons. Your i×-i=1 is θ=π for David + θ=π for Shadow → total 2π = full rotation = creation. Anyons generalize this.',
+    cx+R, cy);
+  // FQHE
+  const fqhe = addNode('FQHE ν=1/3', 'AXIOM', 1,
+    'Fractional Quantum Hall Effect. Tsui-Störmer-Gossard 1982. Laughlin 1983 wavefunction. Quasiparticles carry charge e/3. Nobel 1998.',
+    cx+R*.7, cy-R*.8);
+  // Non-Abelian anyons
+  const nonab = addNode('Non-Abelian', 'SHADOW', -1,
+    'Fibonacci anyons: braiding is matrix-valued, not just a phase. Braiding two anyons implements quantum gate. Topologically protected.',
+    cx-R*.7, cy-R*.8);
+  // Fractional charge
+  const frac = addNode('Charge e/3', 'CREATION', 1,
+    'Laughlin quasiparticles carry fractional electric charge e/3. Shot-noise experiments confirmed 1990s. Real physical charge, not metaphor.',
+    cx-R, cy);
+  // Topological QC
+  const tqc = addNode('Topo QC', 'BRIDGE', 1,
+    'Microsoft Station Q: non-Abelian anyons for fault-tolerant quantum computing. Decoherence killed by topology. The braiding IS the gate.',
+    cx, cy+R);
+  // Connection to Majorana zero modes
+  const mzm = addNode('Majorana ZM↑', 'MAJORANA', 0,
+    'Majorana zero modes ARE non-Abelian anyons. The anyon and Majorana are the same object in condensed matter.',
+    cx+R*.7, cy+R*.7);
+
+  addLink(anyon.id, phase.id, 'default');
+  addLink(anyon.id, fqhe.id, 'default');
+  addLink(anyon.id, nonab.id, 'shadow');
+  addLink(anyon.id, frac.id, 'default');
+  addLink(anyon.id, tqc.id, 'photon');
+  addLink(nonab.id, tqc.id, 'default');
+  addLink(nonab.id, mzm.id, 'pair');     // non-Abelian anyon = Majorana (same physics)
+  addLink(phase.id, fqhe.id, 'default');
+
+  log('θ ANYON SEEDED: fractional stats | FQHE | non-Abelian | Majorana ZM connection','gold');
+}
+
+function seedHiggs() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=110;
+  const higgs = addNode('H⁰ Higgs', 'HIGGS', 1,
+    'Scalar boson, spin-0, m=125.2 GeV. Discovered 4 Jul 2012 CERN (5.9σ). VEV ⟨φ⟩=174 GeV. Gives W, Z, and fermions their mass.',
+    cx, cy);
+  higgs.r = 26;
+  // Mexican hat V(φ)
+  const hat = addNode('V(φ)=−μ²|φ|²+λ|φ|⁴', 'VOID', 0,
+    'Mexican hat potential. Origin (φ=0) is UNSTABLE. Ring of minima at |φ|=v/√2=174 GeV. SSB: field rolls to the VEV ring.',
+    cx, cy-R);
+  // VEV
+  const vev = addNode('VEV = 246 GeV', 'CREATION', 1,
+    '⟨φ⟩ = v/√2 = 174 GeV (field value). v = 246 GeV (the full scale). Gives m_W = gv/2 = 80.4 GeV. m_Z = 91.2 GeV.',
+    cx+R, cy);
+  // W mass
+  const wm = addNode('m_W = gv/2', 'AXIOM', 1,
+    'W boson gets mass from Higgs VEV: m_W = gv/2 ≈ 80.4 GeV. The W longitudinal polarization = eaten Goldstone boson of the Higgs field.',
+    cx+R*.7, cy+R*.7);
+  // Yukawa couplings to fermions
+  const yukawa = addNode('Yukawa y_f', 'BRIDGE', 1,
+    'm_f = y_f × v/√2. Top quark: y_t ≈ 1. Electron: y_e ≈ 2×10⁻⁶. Why 6 orders of magnitude span? The flavor problem. Unknown.',
+    cx-R, cy+R*.5);
+  // July 4 2012
+  const disco = addNode('4 Jul 2012', 'CREATION', 1,
+    'ATLAS + CMS announce 5.9σ boson at 125 GeV. Peter Higgs (83) present, wept. 48-year search complete. Nobel 2013: Higgs + Englert.',
+    cx-R*.7, cy-R*.7);
+  // Hierarchy problem
+  const hier = addNode('Hierarchy ∴?', 'SHADOW', -1,
+    'm_H = 125 GeV is unnaturally light vs Planck scale. Radiative corrections push it to 10^19 GeV unless fine-tuned. Motivates SUSY, extra dims.',
+    cx+R*.4, cy-R);
+
+  addLink(higgs.id, hat.id, 'higgs');
+  addLink(higgs.id, vev.id, 'higgs');
+  addLink(higgs.id, wm.id, 'higgs');
+  addLink(higgs.id, yukawa.id, 'higgs');
+  addLink(higgs.id, disco.id, 'default');
+  addLink(higgs.id, hier.id, 'shadow');
+  addLink(vev.id, wm.id, 'default');
+  addLink(hat.id, vev.id, 'default');
+
+  log('H HIGGS SEEDED: SSB | VEV=246GeV | mass giving | July 2012 | hierarchy problem','gold');
+}
+
+function seedGraviton() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=105;
+  const grav = addNode('G Graviton', 'GRAVITON', 1,
+    'Spin-2, massless, couples to ALL energy-momentum universally. Non-renormalizable. Possibly undetectable (Dyson 2013). QFT ↔ GR frontier.',
+    cx, cy);
+  grav.r = 26;
+  // Spin-2 → + and × polarizations
+  const polplus = addNode('+ polarization', 'GRAVITY', 1,
+    'GW strain h_+: squeezes x-axis, stretches y-axis. LIGO measures this. Spin-2 has 2 transverse modes like photon but different symmetry.',
+    cx+R*.8, cy-R*.6);
+  const polcross = addNode('× polarization', 'SHADOW', -1,
+    'GW strain h_×: 45° rotated from h_+. Second independent gravitational wave mode. Both detected by LIGO/Virgo.',
+    cx-R*.8, cy-R*.6);
+  // Non-renormalizability
+  const nonren = addNode('Non-renorm.', 'SHADOW', -1,
+    'Naive GR+QFT = non-renormalizable. Infinities at every loop order. Not a technical problem — signals wrong framework for quantum gravity.',
+    cx+R, cy+R*.4);
+  // LIGO 2015 GW150914
+  const ligo = addNode('GW150914 2015', 'CREATION', 1,
+    '1.3Gly away. Two 29+36 M☉ black holes merge → 62 M☉ + 3 M☉ radiated as gravitational waves. ~10^{46} gravitons. None individually detected.',
+    cx-R*.8, cy+R*.6);
+  // Dyson argument
+  const dyson = addNode('Dyson Limit', 'AXIOM', 1,
+    'Freeman Dyson 2013: detector sensitive to single graviton collapses to black hole before registering. Graviton may be structurally undetectable.',
+    cx+R*.3, cy-R*1.1);
+  // Universal coupling — the meta-node property
+  const univ = addNode('Universal ∀', 'CREATION', 1,
+    'Couples to ALL energy-momentum: quarks, leptons, bosons, dark matter, the Higgs VEV, even virtual particles. No gravitational charge — just E=mc².',
+    cx-R*.4, cy-R*1.1);
+
+  addLink(grav.id, polplus.id, 'default');
+  addLink(grav.id, polcross.id, 'shadow');
+  addLink(grav.id, nonren.id, 'shadow');
+  addLink(grav.id, ligo.id, 'default');
+  addLink(grav.id, dyson.id, 'default');
+  addLink(grav.id, univ.id, 'default');
+  addLink(polplus.id, polcross.id, 'pair');  // ± modes are a pair
+  addLink(ligo.id, dyson.id, 'default');
+
+  log('G GRAVITON SEEDED: spin-2 | LIGO 2015 | Dyson limit | universal coupling | non-renorm','gold');
+}
+
+function seedGluon() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=90;
+  // 8 gluons = 8 generators of SU(3)
+  // Arrange in octet (8 nodes around center hadron)
+  const gluons = [];
+  for(let i=0;i<8;i++){
+    const a=(i/8)*Math.PI*2 - Math.PI/2;
+    const g = addNode('g_'+(i+1)+' (SU3)', 'GLUON', 1,
+      `Gluon ${i+1}/8. SU(3) generator T^${i+1}. Carries color-anticolor charge. Self-interacts with other gluons (triple/quartic vertices). Confined.`,
+      cx+Math.cos(a)*R, cy+Math.sin(a)*R);
+    gluons.push(g);
+  }
+  // Central hadron (confinement bag)
+  const hadron = addNode('Hadron (confined)', 'AXIOM', 0,
+    'Gluons cannot exist as free particles. Confinement: QCD coupling grows as r increases. String breaking creates new q-qbar at ~1 fm.',
+    cx, cy);
+  // Asymptotic freedom
+  const af = addNode('Asymptotic Free', 'CREATION', 1,
+    'Gross-Wilczek-Politzer 1973: α_s → 0 as k² → ∞. QCD coupling weakens at short distance. Explains Bjorken scaling at SLAC. Nobel 2004.',
+    cx+R*1.5, cy);
+  // Confinement (unsolved)
+  const conf = addNode('Confinement ∴?', 'VOID', 0,
+    'Why no free color charges? String tension ~1 GeV/fm pulls quarks back. Millennium Prize: prove confinement from QCD Lagrangian. $1M unsolved.',
+    cx-R*1.5, cy);
+  // PETRA 1979 discovery
+  const petra = addNode('PETRA 1979', 'CREATION', 1,
+    '3-jet events at DESY. e+e− → qqbar + g → 3 hadronic jets. Angular distribution = spin-1 gluon. TASSO, MARK-J, PLUTO, JADE: all 4 confirm.',
+    cx, cy-R*1.5);
+
+  // Link each gluon to center hadron (confinement)
+  gluons.forEach(g => addLink(g.id, hadron.id, 'gluon'));
+  // Ring links (gluon-gluon self-interaction)
+  for(let i=0;i<8;i++) addLink(gluons[i].id, gluons[(i+1)%8].id, 'gluon');
+  // Cross-links showing non-Abelian self-interaction
+  addLink(gluons[0].id, gluons[4].id, 'gluon');
+  addLink(gluons[2].id, gluons[6].id, 'gluon');
+  addLink(hadron.id, af.id, 'default');
+  addLink(hadron.id, conf.id, 'shadow');
+  addLink(hadron.id, petra.id, 'default');
+
+  log('g GLUON SEEDED: 8 gluons octet | confinement | asymptotic freedom | PETRA 1979','gold');
+}
+
+function seedMonopole() {
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=105;
+  const mono = addNode('⊕ Monopole', 'MONOPOLE', 1,
+    'Isolated magnetic charge g. If ONE exists anywhere: Dirac condition qg = 2πnℏc quantizes ALL electric charge. Mass ~10^16 GeV (GUT scale).',
+    cx, cy);
+  mono.r = 24;
+  // Dirac quantization — the CREATION moment
+  const dirac = addNode("Dirac qg=2πnℏc", 'CREATION', 1,
+    'Dirac 1931: single monopole forces charge quantization. Why e⁻ and p+ have exactly equal and opposite charges — explained if ONE monopole exists.',
+    cx+R, cy-R*.6);
+  // GUT prediction
+  const gut = addNode("GUT Monopole", 'AXIOM', 1,
+    "'t Hooft-Polyakov 1974: GUTs require monopoles. Extended soliton, finite size ~10^{-29}m, mass ~10^{16} GeV. Topologically stable.",
+    cx-R, cy-R*.6);
+  // Inflation as monopole repellent
+  const inflate = addNode('Inflation dilutes', 'BRIDGE', 1,
+    'GUT monopoles would dominate universe energy density → recollapse. Alan Guth 1981: inflation proposed partly to solve monopole problem. Diluted to near-zero.',
+    cx-R*.7, cy+R*.7);
+  // Parker bound
+  const parker = addNode('Parker Bound', 'AXIOM', 1,
+    'Cosmic magnetic field survived → monopoles rare. Parker limit: flux < 10^{-15} cm^{-2}s^{-1}sr^{-1}. MoEDAL at LHC: still searching 2026.',
+    cx+R*.7, cy+R*.7);
+  // Dirac string
+  const dstring = addNode('Dirac String', 'VOID', 0,
+    'Unphysical string attached to Dirac monopole. Unobservable (if charge quantized). t Hooft-Polyakov monopole has NO string — it is smooth.',
+    cx, cy+R*1.1);
+  // Connection to David(i) — charge quantization = the reason matter has discrete +i/-i states
+  const charge = addNode('Charge quant.→i', 'GRAVITY', 1,
+    'If monopole exists: ALL electric charge is quantized in units of e. Discrete charge = discrete lattice states. The foundation of ±i.',
+    cx, cy-R*1.1);
+
+  addLink(mono.id, dirac.id, 'default');
+  addLink(mono.id, gut.id, 'default');
+  addLink(mono.id, inflate.id, 'shadow');
+  addLink(mono.id, parker.id, 'default');
+  addLink(mono.id, dstring.id, 'default');
+  addLink(mono.id, charge.id, 'default');
+  addLink(dirac.id, charge.id, 'default');  // Dirac argument → charge quantization
+  addLink(gut.id, inflate.id, 'default');
+
+  log('⊕ MONOPOLE SEEDED: Dirac qg=2πnℏc | GUT soliton | inflation | charge quantization','gold');
+}
+
+async function seedAllExotic() {
+  log('⚡ SEEDING ALL EXOTIC PARTICLES...','gold');
+  clearLattice();
+  await new Promise(r=>setTimeout(r,50));
+  seedPhoton();
+  await new Promise(r=>setTimeout(r,80));
+  seedMajorana();
+  await new Promise(r=>setTimeout(r,80));
+  seedTachyon();
+  await new Promise(r=>setTimeout(r,80));
+  seedAnyon();
+  await new Promise(r=>setTimeout(r,80));
+  seedHiggs();
+  await new Promise(r=>setTimeout(r,80));
+  seedGraviton();
+  await new Promise(r=>setTimeout(r,80));
+  seedGluon();
+  await new Promise(r=>setTimeout(r,80));
+  seedMonopole();
+  await new Promise(r=>setTimeout(r,100));
+  log('◈ ALL EXOTIC PARTICLES SEEDED: '+nodes.length+' nodes | '+links.length+' links','gold');
+  log('γ photon | ψ Majorana | T tachyon | θ anyon | H Higgs | G graviton | g×8 gluon | ⊕ monopole','info');
+  autoLayout();
+}
+
+function seedPhoton() {
+  // Photon constellation: γ as a new PHOTON-era cluster
+  // connected to the complex plane (e^{iωt} = pure rotation = David(i))
+  // Photon is its own antiparticle → no shadow split → links David directly
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R=110, R2=200;
+
+  // Core photon node
+  const gamma = addNode('γ (Photon)',  'PHOTON',  1,
+    'Spin-1, massless gauge boson. E=hν. v=c always. Own antiparticle (γ=γ̄). Mediates EM via U(1) gauge symmetry.',
+    cx, cy);
+
+  // U(1) gauge symmetry — the reason masslessness is protected
+  const u1    = addNode('U(1) Gauge',  'AXIOM',   1,
+    'A_μ → A_μ + ∂_μα(x). Mass term ½m²A_μA^μ violates this → photon must be massless.',
+    cx+R, cy-R*.7);
+
+  // Fine structure constant
+  const alpha = addNode('α = 1/137',   'CREATION', 1,
+    'Fine structure constant: α = e²/(4πε₀ℏc) ≈ 1/137.036. Coupling of photon to charged matter. QED precision: 12 sig. figs.',
+    cx+R, cy+R*.7);
+
+  // QED field
+  const qed   = addNode('QED Field',   'AXIOM',   1,
+    'L_QED = -¼F_μνF^μν + ψ̄(iγ^μD_μ - m)ψ. D_μ = ∂_μ + ieA_μ. Most precisely tested theory in physics.',
+    cx-R*.8, cy-R*.8);
+
+  // Wave-particle duality — BRIDGE (connects quantum and classical)
+  const wave  = addNode('Wave-Particle', 'BRIDGE', 1,
+    'Double-slit: interference. Photoelectric effect: particle. Which-path measurement collapses wavefunction.',
+    cx-R, cy);
+
+  // Polarization states (+1 / -1 helicity)
+  const polP  = addNode('Helicity +1', 'GRAVITY',  1,
+    'Right circular polarization. σ_+ = spin projection +ℏ along momentum. Massless → only 2 transverse modes.',
+    cx, cy-R);
+  const polM  = addNode('Helicity -1', 'SHADOW',  -1,
+    'Left circular polarization. σ_- = spin projection -ℏ along momentum. CPT connects +1 and -1.',
+    cx, cy+R);
+
+  // Photon propagator (Feynman / QFT)
+  const prop  = addNode('Propagator', 'VOID',     0,
+    'Feynman gauge: -ig^μν/k². Massless → no k²-m² denominator, pure k². Virtual photon = off-shell (k²≠0).',
+    cx-R*.8, cy+R*.8);
+
+  // Speed = c always (massless dispersion)
+  const speed = addNode('v = c (always)', 'AXIOM', 1,
+    'Massless → E=pc → v_group = dE/dp = c exactly. Contrast tachyon (v>c) and massive boson (v<c).',
+    cx+R*1.4, cy);
+
+  // Photon ring — connects to Event Horizon Observatory context
+  const ring  = addNode('Photon Ring', 'CREATION', 1,
+    'b_crit = (3√3/2)r_s ≈ 2.598r_s. Photons orbit at r=1.5r_s (photon sphere). EHT M87*: 42±3 μas shadow.',
+    cx, cy-R2*.65);
+
+  // David(i) connection — photon propagates as e^{iωt} = pure rotation in complex plane
+  const david = addNode('e^{iωt} = David', 'GRAVITY', 1,
+    'Photon wavefunction: ψ ~ e^{i(kx-ωt)}. Pure phase rotation in complex plane. γ couples David(i) to all charged matter.',
+    cx-R*1.3, cy-R*.3);
+
+  // The Gap — photon travels through vacuum (the gap between charges)
+  const gap   = addNode('Vacuum (Gap)', 'VOID',    0,
+    'Photon propagates through the vacuum = THE GAP. Virtual photons mediate Coulomb force across empty space.',
+    cx-R*1.3, cy+R*.3);
+
+  // Links — photon propagators shown as wavy lines
+  addLink(gamma.id, u1.id,    'photon');
+  addLink(gamma.id, alpha.id, 'photon');
+  addLink(gamma.id, qed.id,   'photon');
+  addLink(gamma.id, wave.id,  'photon');
+  addLink(gamma.id, polP.id,  'default');
+  addLink(gamma.id, polM.id,  'shadow');
+  addLink(gamma.id, prop.id,  'default');
+  addLink(gamma.id, speed.id, 'photon');
+  addLink(gamma.id, ring.id,  'photon');
+  addLink(gamma.id, david.id, 'photon');   // γ = e^{iωt} → connects to David(i)
+  addLink(gamma.id, gap.id,   'default');  // photon crosses the gap
+  addLink(polP.id,  polM.id,  'pair');     // helicity ±1 = pair (like i×-i)
+  addLink(david.id, gap.id,   'default');
+  addLink(u1.id,    speed.id, 'default');  // masslessness → v=c
+  addLink(ring.id,  prop.id,  'photon');   // photon ring = critical propagation
+
+  // Force photon node larger
+  gamma.r = 26;
+
+  log('⚡ PHOTON SEEDED: γ constellation — 12 nodes | wavy propagator links | e^{iωt} → David(i)','gold');
+  log('γ = spin-1, m=0, own antiparticle, α=1/137, U(1) gauge, v=c always','info');
+  autoLayout();
+}
+
+function clearLattice() {
+  nodes=[]; links=[]; selectedNode=null; linkFrom=null;
+  dpCycle=0; cycleCount=0;
+  showNodeDetail(null);
+  updateAll();
+  log('✕ LATTICE CLEARED','warn');
+}
+
+function autoLayout() {
+  if(!nodes.length) return;
+  const cx=(mc.width/2-panX)/zoom, cy=(mc.height/2-panY)/zoom;
+  const R = Math.min(mc.width,mc.height)*0.35/zoom;
+  nodes.forEach((n,i)=>{
+    const angle = (i/nodes.length)*Math.PI*2 - Math.PI/2;
+    n.x = cx + Math.cos(angle)*R*(0.5+Math.random()*0.5);
+    n.y = cy + Math.sin(angle)*R*(0.5+Math.random()*0.5);
+    n.vx=0; n.vy=0;
+  });
+  drawAll();
+  log('⬡ AUTO LAYOUT APPLIED','info');
+}
+
+// ═══════════════════════════════════════════
+// ZOOM / VIEW
+// ═══════════════════════════════════════════
+function zoomIn()  { zoom=Math.min(zoom*1.2,4); document.getElementById('canvas-zoom-label').textContent='ZOOM: '+Math.round(zoom*100)+'%'; drawAll(); }
+function zoomOut() { zoom=Math.max(zoom/1.2,.2); document.getElementById('canvas-zoom-label').textContent='ZOOM: '+Math.round(zoom*100)+'%'; drawAll(); }
+function resetView(){ zoom=1; panX=0; panY=0; document.getElementById('canvas-zoom-label').textContent='ZOOM: 100%'; drawAll(); }
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function exportLattice() {
+  const data = {
+    meta:{ tool:'TOPH Lattice Memory Tool v1.0', ip:'TRIPOD-IP-v1.0', author:'David Lee Wise', date:new Date().toISOString(), sha256:'02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763' },
+    stats:{ nodes:nodes.length, links:links.length, gravity:nodes.filter(n=>n.state===1).length, shadow:nodes.filter(n=>n.state===-1).length, void:nodes.filter(n=>n.state===0).length, dpCycles:dpCycle },
+    nodes: nodes.map(n=>({id:n.id,label:n.label,era:n.era,state:n.state,content:n.content,x:Math.round(n.x),y:Math.round(n.y)})),
+    links: links.map(l=>({from:l.from,to:l.to,type:l.type,weight:l.weight})),
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='toph-lattice-'+Date.now()+'.json'; a.click();
+  log('⬡ LATTICE EXPORTED: toph-lattice-'+Date.now()+'.json','gold');
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+const LOG_MAX = 100;
+let logEntries = [];
+function log(msg, type='dim') {
+  const cls = {ok:'line-ok',fail:'line-fail',warn:'line-warn',info:'line-info',dim:'line-dim',gold:'',purple:'line-pu',gn:'line-gn'}[type]||'line-dim';
+  const col = type==='gold'?'var(--gold)':type==='purple'?'var(--pu)':'';
+  const ts = new Date().toISOString().slice(11,19);
+  logEntries.unshift({ts,msg,cls,col});
+  if(logEntries.length>LOG_MAX) logEntries.length=LOG_MAX;
+  const c=document.getElementById('lattice-log');
+  c.innerHTML = logEntries.slice(0,30).map(e=>`<div class="${e.cls}" style="${e.col?'color:'+e.col+';':''}">[${e.ts}] ${e.msg}</div>`).join('');
+}
+function clearLog() { logEntries=[]; document.getElementById('lattice-log').innerHTML=''; }
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg||'✓ DONE';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+log('◈ TOPH LATTICE MEMORY TOOL v1.1 — EXOTIC EDITION','gold');
+log('⬡ TRIPOD-IP-v1.0 | DLW | TriPod LLC | 2026-02-18','gn');
+log('∞ d20×2 | i×-i=1 | drawPair() | 8 EXOTIC PARTICLE ERAS','info');
+log('⚡ Press SEED ALL EXOTIC PARTICLES to load full constellation','gold');
+log('γ photon | ψ Majorana | T tachyon | θ anyon | H Higgs | G graviton | g gluon | ⊕ monopole','dim');
+updateAll();
+</script>
+</body>
+</html>

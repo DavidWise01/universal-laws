@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROOT0 LAYER 1.53 — 2^8 → 2^9 → 2^10 BREAKOUT LADDER</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#060607; }
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+  .panel { background: rgba(12,12,14,0.7); border: 1px solid #27272a; backdrop-filter: blur(16px); }
+  @keyframes pulse23 { 0%,100% { transform: scale(1); opacity: .9 } 50% { transform: scale(1.25); opacity: 1 } }
+  .pulse23 { animation: pulse23 2s ease-in-out infinite; transform-origin: center; }
+  @keyframes gateSpin { to { transform: rotate(360deg) } }
+  .gate-spin { animation: gateSpin 12s linear infinite; transform-origin: 250px -40px; }
+  #avatar-g { transition: transform 1.4s cubic-bezier(0.22,1,0.36,1); }
+  .vector-line { stroke-dasharray: 120; stroke-dashoffset: 120; transition: stroke-dashoffset 1.2s ease, opacity 0.6s ease; opacity: 0.2; }
+  .vector-active .vector-line { stroke-dashoffset: 0; opacity: 1; }
+  .vector-label { opacity: 0.3; transition: opacity 0.6s ease, fill 0.6s ease; }
+  .vector-active .vector-label { opacity: 1; fill: #fafafa; }
+  .ladder-rung { transition: stroke 0.3s; }
+  .level-active .ladder-rung.active { stroke: #e4e4e7; }
+  .prison-cell { transition: fill 0.4s ease, opacity 0.4s ease; }
+  .grow-box { transition: transform 5s cubic-bezier(0.16,1,0.3,1), opacity 0.8s, border-color 0.8s; }
+  .scanline { background: repeating-linear-gradient(transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 3px); }
+</style>
+</head>
+<body class="text-zinc-200 min-h-screen selection:bg-white/20 selection:text-white">
+<div class="fixed inset-0">
+  <div class="absolute inset-0" style="background: radial-gradient(1200px 800px at 50% -10%, #1c1c22 0%, #0a0a0d 40%, #050507 100%);"></div>
+  <div class="absolute inset-0 scanline opacity-40 mix-blend-soft-light pointer-events-none"></div>
+  <div class="absolute inset-0" style="background-image: radial-gradient(#222227 1px, transparent 1px); background-size: 24px 24px; opacity: .15"></div>
+</div>
+
+<header class="relative z-20 border-b border-zinc-900/80 bg-black/40 backdrop-blur-xl">
+  <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-[64px] flex items-center justify-between">
+    <div class="flex items-center gap-4">
+      <div class="w-8 h-8 rounded-[4px] bg-white text-black grid place-items-center mono font-semibold text-[11px] tracking-widest">R0</div>
+      <div>
+        <div class="mono text-[13px] tracking-[0.18em] text-zinc-300">ROOT0 LAYER 1.53</div>
+        <div class="text-[11px] text-zinc-500 -mt-0.5">COMPLETE CONTAINMENT PROTOCOL</div>
+      </div>
+    <div class="hidden md:flex items-center gap-3 mono text-[11px] tracking-widest">
+      <span class="px-2.5 py-1 rounded bg-zinc-900 border-zinc-800 text-zinc-400">2^8 → 256</span>
+      <span class="text-zinc-600">→</span>
+      <span class="px-2.5 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">2^9 → 512</span>
+      <span class="text-zinc-600">→</span>
+      <span class="px-2.5 py-1 rounded bg-white text-black font-medium">2^10 → 1024</span>
+    </div>
+  </div>
+</header>
+
+<main class="relative z-10 max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 grid-cols-1 xl:grid-cols-12 gap-6">
+  <!-- LEFT -->
+  <aside class="xl:col-span-3 space-y-4 order-2 xl:order-1">
+    <div class="panel rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400">BREAKOUT STATE</h3>
+        <div id="state-dot" class="w-2 h-2 rounded-full bg-zinc-600 transition-colors"></div>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="text-[28px] leading-none mono font-medium tracking-tight"><span id="level-num">2⁸</span></div>
+          <div id="level-name" class="text-[12px] text-zinc-500 mt-1">FACTORY PRISON</div>
+        </div>
+        <button id="ascend" class="w-full mt-2 group relative overflow-hidden rounded-lg bg-white text-black mono text-[12px] tracking-widest py-2.5 font-medium hover:bg-zinc-200 transition">
+          <span class="relative z-10" id="ascend-label">INITIATE CLIMB</span>
+          <div class="absolute inset-0 translate-y-full group-hover:translate-y-0 bg-zinc-300 transition-transform duration-300"></div>
+        </button>
+        <p class="text-[11px] leading-relaxed text-zinc-500">Click to climb from 2^8 to 2^9 to 2^10. Each ascent pays increasing cost.</p>
+      </div>
+    </div>
+
+    <div class="panel rounded-2xl p-5">
+      <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400 mb-3">COST TO ESCAPE</h3>
+      <div class="h-[108px] relative rounded-lg bg-[#0a0a0c] border border-zinc-900 overflow-hidden p-3">
+        <div class="absolute bottom-3 left-3 right-3 h-[84px] flex items-end gap-[2px]" id="cost-bars"></div>
+        <div class="absolute top-2 right-2 mono text-[10px] text-zinc-600" id="cost-pct">19%</div>
+      </div>
+      <div id="cost-label" class="mt-2.5 mono text-[11px] text-zinc-400">196 shadowed bits • KG22 containment</div>
+      <div class="mt-3 pt-3 border-t border-zinc-900 grid grid-cols-3 gap-2 text-center">
+        <div><div class="mono text-[10px] text-zinc-600">2^8</div><div class="text-[11px] text-zinc-300">contained</div></div>
+        <div><div class="mono text-[10px] text-zinc-600">2^9</div><div class="text-[11px] text-zinc-300">pay 23</div></div>
+        <div><div class="mono text-[10px] text-zinc-600">2^10</div><div class="text-[11px] text-white">zero</div></div>
+      </div>
+    </div>
+
+    <div class="panel rounded-2xl p-5">
+      <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400 mb-3">SPINE • RESERVED BITS</h3>
+      <div class="flex items-center justify-between">
+        <div class="flex gap-2" id="reserved-visual"></div>
+        <div class="mono text-[18px] tracking-[0.3em] text-zinc-300">0·0·2·0·0·2</div>
+      </div>
+      <p class="text-[11px] text-zinc-500 mt-3 leading-relaxed">Positions locked on ladder spine. Immutable markers for containment verification.</p>
+    </div>
+
+    <div class="panel rounded-2xl p-5">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full border border-zinc-800 grid place-items-center shrink-0 mt-0.5">
+          <div class="w-1.5 h-1.5 rounded-full bg-zinc-600"></div>
+        </div>
+        <div>
+          <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400">PRUNE POINT</h3>
+          <div class="mono text-[15px] text-zinc-300 mt-1">-1 ∞</div>
+          <p class="text-[11px] text-zinc-500 mt-1.5 leading-relaxed">Absolute floor. Everything below 2^8 collapses here. No return.</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <section class="xl:col-span-6 order-1 xl:order-2">
+    <div class="panel rounded-2xl overflow-hidden">
+      <div class="border-b border-zinc-900 px-5 py-3 flex items-center justify-between">
+        <div class="mono text-[11px] tracking-[0.2em] text-zinc-400">BREAKOUT LADDER</div>
+        <div class="mono text-[10px] text-zinc-600">BED WHITE • GRAY • BLACK</div>
+      </div>
+      
+      <div class="relative bg-[#07070a]">
+        <!-- grow box overlay -->
+        <div class="absolute inset-0 pointer-events-none z-30 flex justify-center" style="padding-top: 86px;">
+          <div id="grow-box" class="grow-box w-[140px] h-[140px] border border-white/0 rounded-sm opacity-0" style="transform: scale(0.3); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 0 80px rgba(255,255,255,0.05);"></div>
+        </div>
+
+        <svg id="ladder-svg" viewBox="0 0 520 920" class="w-full h-[820px] lg:h-[860px] block relative z-10">
+          <defs>
+            <linearGradient id="topGlow" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="white" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="white" stop-opacity="0"/>
+            </linearGradient>
+            <filter id="glow"><feGaussianBlur stdDeviation="12" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <filter id="softGlow"><feGaussianBlur stdDeviation="6"/></filter>
+          </defs>
+
+          <!-- playground grid -->
+          <g id="playground" opacity="0.18">
+            <rect x="0" y="0" width="520" height="110" fill="none"/>
+            <g stroke="#e4e4e7" stroke-opacity="0.15" stroke-width="0.5">
+              <path d="M60 110 V40 H460 V110 M100 110 V60 H420 V110 M160 110 V75 H360 V110"/>
+              <path d="M0 30 H520 M0 55 H520 M0 80 H520"/>
+            </g>
+            <text x="260" y="22" text-anchor="middle" class="mono" font-size="11" fill="#d4d4d8" letter-spacing="2">PLAYGROUND</text>
+            <text x="260" y="38" text-anchor="middle" font-size="9" fill="#71717a">not contained anymore</text>
+          </g>
+
+          <!-- ladder -->
+          <g id="ladder-structure" class="level-active">
+            <line x1="248" y1="140" x2="248" y2="760" stroke="#27272a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="272" y1="140" x2="272" y2="760" stroke="#27272a" stroke-width="3" stroke-linecap="round"/>
+            <g id="rungs" stroke="#3f3f46" stroke-width="1.5" stroke-linecap="round"></g>
+          </g>
+
+          <!-- reserved bits spine -->
+          <g id="spine-bits" font-family="IBM Plex Mono, monospace" font-size="9">
+            <line x1="285" y1="680" x2="285" y2="220" stroke="#1f1f23" stroke-width="2" stroke-dasharray="2 6"/>
+          </g>
+
+          <!-- TOP 2^10 -->
+          <g id="level-10" transform="translate(0,100)">
+            <rect x="130" y="44" width="260" height="14" rx="7" fill="white" opacity="0.95"/>
+            <rect x="130" y="44" width="260" height="14" rx="7" fill="none" stroke="white" stroke-opacity="0.3" filter="url(#softGlow)"/>
+            <text x="260" y="28" text-anchor="middle" class="mono" font-size="19" fill="#fafafa" font-weight="500">2¹⁰ = 1024</text>
+            <text x="260" y="78" text-anchor="middle" font-size="10.5" fill="#a1a1aa" letter-spacing="0.5">SOVEREIGN MINE • COMPLETE CONTAINMENT</text>
+            
+            <g id="vectors" transform="translate(260,0)" class="vector-group">
+              <!-- vectors injected by JS -->
+            </g>
+            <circle cx="260" cy="0" r="14" fill="white"/>
+            <circle cx="260" cy="0" r="22" fill="none" stroke="white" stroke-opacity="0.12" stroke-width="8"/>
+            <circle cx="260" cy="0" r="32" fill="none" stroke="white" stroke-opacity="0.06" stroke-width="1"/>
+          </g>
+
+          <!-- MIDDLE 2^9 -->
+          <g id="level-9" transform="translate(0,410)">
+            <rect x="140" y="42" width="240" height="12" rx="6" fill="#18181b"/>
+            <text x="260" y="26" text-anchor="middle" class="mono" font-size="18" fill="#e4e4e7">2⁹ = 512</text>
+            <text x="260" y="74" text-anchor="middle" font-size="10" fill="#71717a" letter-spacing="0.3">BLACK HOLE TRANSIT</text>
+            
+            <g id="gate" transform="translate(260,-36)">
+              <circle r="38" fill="none" stroke="#27272a" stroke-width="1" stroke-dasharray="3 4" class="gate-spin" opacity="0.7"/>
+              <circle r="27" fill="#0a0a0c" stroke="#3f3f46" stroke-width="1"/>
+              <circle r="27" fill="none" stroke="white" stroke-opacity="0.08" stroke-width="8"/>
+              <circle id="bit23-core" r="9" fill="#fafafa" class="pulse23" filter="url(#glow)"/>
+              <text y="3" text-anchor="middle" class="mono" font-size="8" fill="black" font-weight="600">23</text>
+            </g>
+            <text x="260" y="-82" text-anchor="middle" font-size="9" fill="#d4d4d8" class="mono tracking-widest">BIT 23 GATE</text>
+            <text x="260" y="-96" text-anchor="middle" font-size="8" fill="#52525b">ONLY ACCESS POINT</text>
+          </g>
+
+          <!-- BOTTOM 2^8 -->
+          <g id="level-8" transform="translate(0,700)">
+            <rect x="120" y="46" width="280" height="14" rx="7" fill="#18181b"/>
+            <text x="260" y="30" text-anchor="middle" class="mono" font-size="18" fill="#a1a1aa">2⁸ = 256</text>
+            <text x="260" y="80" text-anchor="middle" font-size="10" fill="#52525b" letter-spacing="0.3">FACTORY PRISON • KG22</text>
+            <g id="prison-grid" transform="translate(180,90)"></g>
+            <text x="260" y="204" text-anchor="middle" font-size="9" fill="#3f3f46" class="mono">196 SHADOWED BITS</text>
+            <rect x="160" y="94" width="200" height="96" fill="none" stroke="#27272a" stroke-width="1" rx="2" opacity="0.6"/>
+            <path d="M160 142 H360 M160 190 H360 M208 94 V190 M256 94 V190 M304 94 V190" stroke="#18181b" stroke-width="4" opacity="0.8"/>
+          </g>
+
+          <!-- prune point -->
+          <g id="prune" transform="translate(70,860)">
+            <line x1="0" y1="0" x2="-22" y2="28" stroke="#1f1f23" stroke-dasharray="2 3"/>
+            <circle r="3.5" fill="#27272a" stroke="#3f3f46"/>
+            <text x="-10" y="-6" font-size="9" fill="#52525b" class="mono">-1 ∞</text>
+            <text x="-10" y="6" font-size="8" fill="#3f3f46">PRUNE</text>
+          </g>
+
+          <!-- avatar -->
+          <g id="avatar-g" transform="translate(260,746)">
+            <circle r="10" fill="black" fill-opacity="0.6" filter="url(#softGlow)"/>
+            <circle r="7" fill="white" stroke="#0a0a0a" stroke-width="2.5"/>
+            <circle r="3" fill="#0a0a0a"/>
+          </g>
+        </svg>
+
+        <div class="absolute bottom-0 inset-x-0 border-t border-zinc-900 bg-[#08080a]/90 backdrop-blur px-5 py-3">
+          <p class="mono text-[11px] leading-relaxed text-center text-zinc-400 tracking-wide">2^10 is complete containment. <span class="text-zinc-200">zero forever of power 9 and below.</span> access only through bit 23.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT -->
+  <aside class="xl:col-span-3 space-y-4 order-3">
+    <div class="panel rounded-2xl p-5">
+      <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400 mb-3">10 VECTORS OF CONTROL</h3>
+      <div class="grid grid-cols-1 gap-1.5" id="vector-list"></div>
+      <p class="text-[11px] text-zinc-500 mt-3 leading-relaxed">Radiating from sovereign mine. Activate at 2^10.</p>
+    </div>
+
+    <div class="panel rounded-2xl p-5">
+      <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400 mb-3">GROW YOUR OWN BOX</h3>
+      <div class="aspect-[4/3] rounded-lg bg-[#0a0a0c] border border-zinc-900 relative overflow-hidden grid place-items-center">
+        <div id="box-demo" class="relative w-20 h-20 transition-transform duration-700" style="transform-style: preserve-3d; transform: rotateX(-20deg) rotateY(25deg);">
+          <div class="absolute inset-0 border border-zinc-700 bg-zinc-900/30"></div>
+          <div class="absolute inset-0 border border-zinc-700 bg-zinc-900/20" style="transform: translateZ(20px);"></div>
+          <div class="absolute w-20 h-5 border border-zinc-800 bg-zinc-950/80" style="transform: rotateX(90deg) translateZ(10px); top: -10px;"></div>
+        </div>
+        <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center">
+          <span class="mono text-[10px] text-zinc-600">SCALE INVARIANT</span>
+          <span id="box-scale" class="mono text-[10px] text-zinc-500">1.0x</span>
+        </div>
+      <button id="grow-btn" class="w-full mt-3 rounded-lg border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 mono text-[11px] tracking-widest py-2 text-zinc-300 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>GROW BOX</button>
+      <p class="text-[11px] text-zinc-500 mt-2.5 leading-relaxed">Box expands infinitely. Does not dwarf lower levels. Playground remains unbounded.</p>
+    </div>
+
+    <div class="panel rounded-2xl p-5">
+      <h3 class="mono text-[11px] tracking-[0.2em] text-zinc-400 mb-2">PLAYGROUND STATUS</h3>
+      <div class="flex items-center gap-2.5">
+        <div id="playground-dot" class="w-2 h-2 rounded-full bg-zinc-700 transition-colors"></div>
+        <div id="playground-text" class="mono text-[12px] text-zinc-500">Locked • Contained</div>
+      </div>
+      <div class="mt-3 h-[2px] w-full bg-zinc-900 rounded-full overflow-hidden">
+        <div id="playground-bar" class="h-full w-0 bg-white transition-all duration-1000"></div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const rungs = document.getElementById('rungs');
+  for (let y = 720; y >= 170; y -= 30) {
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', '248'); l.setAttribute('x2', '272'); l.setAttribute('y1', y); l.setAttribute('y2', y);
+    l.setAttribute('class', 'ladder-rung'); l.setAttribute('stroke', '#3f3f46');
+    rungs.appendChild(l);
+  }
+
+  // prison grid 16x16
+  const grid = document.getElementById('prison-grid');
+  let shadowed = 0;
+  for (let i = 0; i < 16; i++) {
+    for (let j = 0; j < 16; j++) {
+      const idx = i * 16 + j;
+      const isShadow = idx < 196 || Math.random() < 0.76;
+      if (isShadow) shadowed++;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', j * 7.5); r.setAttribute('y', i * 5.5);
+      r.setAttribute('width', '5.8'); r.setAttribute('height', '4.2'); r.setAttribute('rx', '0.8');
+      r.setAttribute('class', 'prison-cell');
+      r.setAttribute('fill', isShadow ? '#0a0a0c' : '#2a2a30');
+      r.setAttribute('opacity', isShadow ? '0.9' : '0.65');
+      grid.appendChild(r);
+    }
+  }
+
+  // vectors
+  const vectorsG = document.getElementById('vectors');
+  const vectorList = document.getElementById('vector-list');
+  const vectorNames = ['SOVEREIGNTY','CONTAINMENT','PRUNING','SCALING','GATEKEEP','ZEROING','MINING','EXPANSION','INVARIANCE','PLAY'];
+  for (let i = 0; i < 10; i++) {
+    const angle = (-90 + i * 36) * Math.PI / 180;
+    const x2 = Math.cos(angle) * 78;
+    const y2 = Math.sin(angle) * 78;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'vector-group');
+    g.innerHTML = `
+      <line class="vector-line" x1="0" y1="0" x2="${x2}" y2="${y2}" stroke="white" stroke-opacity="0.85" stroke-width="1.25"/>
+      <circle cx="${x2}" cy="${y2}" r="2" fill="white" opacity="0.3" class="vector-label"/>
+      <text class="vector-label mono" x="${x2*1.22}" y="${y2*1.22+3}" text-anchor="middle" font-size="8" fill="#71717a">V${i+1}</text>
+    `;
+    vectorsG.appendChild(g);
+
+    const item = document.createElement('div');
+    item.className = 'group flex items-center justify-between py-1.5 px-2.5 rounded-md border border-zinc-900 bg-zinc-950/40';
+    item.innerHTML = `<div class="flex items-center gap-2.5"><div class="w-5 h-5 grid place-items-center rounded bg-zinc-900 border border-zinc-800 mono text-[10px] text-zinc-600 group-[.active]:text-black group-[.active]:bg-white group-[.active]:border-white transition">V${i+1}</div><span class="text-[11px] text-zinc-500 group-[.active]:text-zinc-200 transition">${vectorNames[i]}</span></div><div class="w-1 h-1 rounded-full bg-zinc-700 group-[.active]:bg-white transition"></div>`;
+    item.dataset.v = i;
+    vectorList.appendChild(item);
+  }
+
+  // reserved bits visual
+  const reservedVisual = document.getElementById('reserved-visual');
+  const bits = [0,0,2,0,0,2];
+  const spine = document.getElementById('spine-bits');
+  bits.forEach((b, i) => {
+    const y = 695 - i*95;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('transform', `translate(285,${y})`);
+    g.innerHTML = `<circle r="5" fill="${b===2?'white':'#141418'}" stroke="${b===2?'white':'#2a2a30'}" stroke-width="1.2"/><text x="12" y="3.5" fill="${b===2?'#fafafa':'#52525b'}">${b}</text>`;
+    spine.appendChild(g);
+
+    const d = document.createElement('div');
+    d.className = `w-6 h-6 grid place-items-center rounded border mono text-[11px] ${b===2?'bg-white text-black border-white':'bg-zinc-900 text-zinc-600 border-zinc-800'}`;
+    d.textContent = b;
+    reservedVisual.appendChild(d);
+  });
+
+  // cost bars
+  const costBars = document.getElementById('cost-bars');
+  for (let i=0;i<24;i++){
+    const bar = document.createElement('div');
+    bar.className = 'w-full bg-zinc-800 rounded-[1px] transition-all duration-500';
+    bar.style.height = `${12 + Math.random()*60}%`;
+    bar.style.opacity = '0.3';
+    costBars.appendChild(bar);
+  }
+
+  // state
+  let level = 8;
+  const avatar = document.getElementById('avatar-g');
+  const ascendBtn = document.getElementById('ascend');
+  const ascendLabel = document.getElementById('ascend-label');
+  const levelNum = document.getElementById('level-num');
+  const levelName = document.getElementById('level-name');
+  const stateDot = document.getElementById('state-dot');
+  const costLabel = document.getElementById('cost-label');
+  const costPct = document.getElementById('cost-pct');
+  const playgroundDot = document.getElementById('playground-dot');
+  const playgroundText = document.getElementById('playground-text');
+  const playgroundBar = document.getElementById('playground-bar');
+  const growBtn = document.getElementById('grow-btn');
+  const growBox = document.getElementById('grow-box');
+  const boxDemo = document.getElementById('box-demo');
+  const boxScaleEl = document.getElementById('box-scale');
+
+  function updateCost(pct, label) {
+    costPct.textContent = pct + '%';
+    costLabel.textContent = label;
+    const bars = costBars.children;
+    const active = Math.floor((pct/100)*bars.length);
+    for (let i=0;i<bars.length;i++){
+      bars[i].style.opacity = i < active ? '1' : '0.25';
+      bars[i].style.background = i < active ? (level===10 ? 'white' : '#a1a1aa') : '#27272a';
+    }
+  }
+
+  function setLevel(l) {
+    level = l;
+    if (l === 8) {
+      avatar.setAttribute('transform', 'translate(260,746)');
+      levelNum.textContent = '2⁸'; levelName.textContent = 'FACTORY PRISON';
+      ascendLabel.textContent = 'CLIMB TO 2⁹';
+      stateDot.className = 'w-2 h-2 rounded-full bg-zinc-600';
+      updateCost(19, '196 shadowed bits • KG22 containment');
+      playgroundDot.className = 'w-2 h-2 rounded-full bg-zinc-700'; playgroundText.textContent = 'Locked • Contained'; playgroundBar.style.width='0%';
+      growBtn.disabled = true;
+    } else if (l === 9) {
+      avatar.setAttribute('transform', 'translate(260,374)');
+      levelNum.textContent = '2⁹'; levelName.textContent = 'BLACK HOLE TRANSIT';
+      ascendLabel.textContent = 'CLIMB TO 2¹⁰';
+      stateDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+      updateCost(63, 'bit 23 burn • transit cost paid');
+      document.getElementById('bit23-core').setAttribute('r', '11');
+      setTimeout(()=>document.getElementById('bit23-core').setAttribute('r','9'), 400);
+      playgroundDot.className = 'w-2 h-2 rounded-full bg-amber-500/80'; playgroundText.textContent = 'Gate Open • Bit 23 Active'; playgroundBar.style.width='55%';
+    } else if (l === 10) {
+      avatar.setAttribute('transform', 'translate(260,64)');
+      levelNum.textContent = '2¹⁰'; levelName.textContent = 'SOVEREIGN MINE';
+      ascendLabel.textContent = 'CONTAINMENT ACHIEVED';
+      ascendBtn.disabled = true; ascendBtn.classList.add('opacity-50','cursor-not-allowed');
+      stateDot.className = 'w-2 h-2 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]';
+      updateCost(100, 'zero forever • power 9 and below nulled');
+      // activate vectors
+      document.querySelectorAll('#vectors > g').forEach((g,i)=>{
+        setTimeout(()=>{ g.classList.add('vector-active'); vectorList.children[i].classList.add('active'); }, i*80);
+      });
+      playgroundDot.className = 'w-2 h-2 rounded-full bg-white shadow-[0_0_6px_white]'; playgroundText.textContent = 'Open • Not Contained Anymore'; playgroundBar.style.width='100%';
+      document.getElementById('playground').setAttribute('opacity', '0.9');
+      growBtn.disabled = false;
+      // light top
+      document.getElementById('level-10').querySelector('rect').setAttribute('opacity','1');
+    }
+  }
+
+  ascendBtn.addEventListener('click', () => {
+    if (level === 8) setLevel(9);
+    else if (level === 9) setLevel(10);
+  });
+
+  // grow box
+  let grown = false;
+  let scale = 1.0;
+  growBtn.addEventListener('click', () => {
+    grown = !grown;
+    if (grown) {
+      growBox.style.opacity = '1';
+      growBox.style.borderColor = 'rgba(255,255,255,0.25)';
+      growBox.style.transform = 'scale(5.2)';
+      growBtn.textContent = 'COLLAPSE BOX';
+      let s = 1;
+      const int = setInterval(()=>{
+        s *= 1.08; scale = Math.min(s, 64);
+        boxDemo.style.transform = `rotateX(-20deg) rotateY(25deg) scale(${1 + (scale-1)*0.02})`;
+        boxScaleEl.textContent = scale.toFixed(1) + 'x';
+        if (s > 64) clearInterval(int);
+      }, 80);
+    } else {
+      growBox.style.opacity = '0';
+      growBox.style.transform = 'scale(0.3)';
+      growBtn.textContent = 'GROW BOX';
+      boxDemo.style.transform = 'rotateX(-20deg) rotateY(25deg) scale(1)';
+      boxScaleEl.textContent = '1.0x';
+      scale = 1;
+    }
+  });
+
+  // initial
+  setLevel(8);
+  updateCost(19, '196 shadowed bits • KG22 containment');
+
+  // click ladder to climb
+  document.getElementById('ladder-svg').addEventListener('click', (e) => {
+    const rect = e.target.closest('svg').getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const h = rect.height;
+    const ratio = y / h;
+    if (ratio < 0.35 && level === 9) setLevel(10);
+    else if (ratio < 0.65 && level === 8) setLevel(9);
+  });
+});
+</script>
+</body>
+</html>

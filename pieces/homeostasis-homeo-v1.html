@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Box Map - Homeostasis after 5 cycles</title>
+<style>
+    :root {
+        --bg: #070809;
+        --bg-grid: #0e1014;
+        --card: #12141a;
+        --card-2: #171a21;
+        --border: #252a34;
+        --border-2: #2f3644;
+        --text: #e6e8ec;
+        --text-dim: #9aa3b2;
+        --text-faint: #6b7280;
+        --green: #22c55e;
+        --amber: #f59e0b;
+        --cyan: #22d3ee;
+        --violet: #8b5cf6;
+        --pink: #ec4899;
+        --blue: #3b82f6;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "JetBrains Mono", "IBM Plex Mono", monospace;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: 
+            linear-gradient(var(--bg-grid) 1px, transparent 1px),
+            linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+        background-size: 32px 32px;
+        opacity: 0.4;
+        z-index: -2;
+    }
+
+    body::after {
+        content: '';
+        position: fixed;
+        inset: -200px;
+        background: radial-gradient(600px at 20% 0%, rgba(34, 211, 238, 0.08), transparent 60%),
+                    radial-gradient(500px at 80% 20%, rgba(139, 92, 246, 0.07), transparent 60%),
+                    radial-gradient(400px at 50% 100%, rgba(236, 72, 153, 0.05), transparent 60%);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding: 18px 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .logo {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, var(--cyan), var(--violet));
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        color: #020617;
+        box-shadow: 0 0 20px rgba(34,211,238,0.3);
+    }
+
+    h1 {
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: var(--text);
+    }
+
+    .header-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--text-dim);
+    }
+
+    .pulse {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+        100% { box-shadow: 0 0 rgba(34,197,94,0); }
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 18px;
+    }
+
+    .card {
+        grid-column: span 12;
+        background: linear-gradient(180deg, var(--card), var(--card-2));
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent 40%);
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .card:hover {
+        border-color: var(--border-2);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .card-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-dim);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-title::before {
+        content: '>';
+        color: var(--cyan);
+        opacity: 0.7;
+    }
+
+    .badge {
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border-2);
+        background: rgba(255,255,255,0.03);
+        color: var(--text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge.green {
+        color: var(--green);
+        border-color: rgba(34,197,94,0.3);
+        background: rgba(34,197,94,0.08);
+    }
+
+    .badge.violet {
+        color: var(--violet);
+        border-color: rgba(139,92,246,0.3);
+        background: rgba(139,92,246,0.08);
+    }
+
+    /* Homeostasis */
+    .status-main {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin: 8px 0 14px;
+    }
+
+    .status-value {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        background: linear-gradient(90deg, #fff, #a5b4fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kv {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px 14px;
+        font-size: 13px;
+        color: var(--text-dim);
+    }
+
+    .kv span:first-child {
+        color: var(--text-faint);
+    }
+
+    .kv span:last-child {
+        color: var(--text);
+    }
+
+    /* My Box */
+    .path {
+        font-size: 13px;
+        padding: 8px 10px;
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .path:hover {
+        border-color: var(--cyan);
+        background: rgba(34,211,238,0.05);
+    }
+
+    .path-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--amber);
+    }
+
+    .tree {
+        font-size: 13px;
+        line-height: 1.9;
+        color: var(--text-dim);
+        padding-left: 4px;
+    }
+
+    .tree .folder {
+        color: var(--text);
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .tree .folder:hover {
+        color: var(--cyan);
+    }
+
+    .tree ul {
+        list-style: none;
+        margin-left: 20px;
+        border-left: 1px dashed var(--border-2);
+        padding-left: 14px;
+    }
+
+    /* Tools */
+    .tools {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-top: 4px;
+    }
+
+    .tool {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-size: 12px;
+        transition: all 0.2s;
+        cursor: default;
+    }
+
+    .tool:hover {
+        border-color: var(--border-2);
+        background: rgba(255,255,255,0.02);
+        transform: translateY(-1px);
+    }
+
+    .tool-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 8px rgba(34,197,94,0.5);
+    }
+
+    /* Engines */
+    .engines-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 18px;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .table th {
+        text-align: left;
+        color: var(--text-faint);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .table td {
+        padding: 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        color: var(--text-dim);
+    }
+
+    .table tr:hover td {
+        background: rgba(255,255,255,0.02);
+        color: var(--text);
+    }
+
+    .mode {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: #0b0d12;
+        font-size: 11px;
+    }
+
+    .mode i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .v2 {
+        display: grid;
+        gap: 10px;
+    }
+
+    .v2-row {
+        display: grid;
+        grid-template-columns: 90px 1fr 28px;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+    }
+
+    .bar {
+        height: 8px;
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .bar > span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--cyan), var(--violet));
+        box-shadow: 0 0 10px rgba(139,92,246,0.3);
+        transition: width 1s ease;
+    }
+
+    /* Favorites */
+    .favs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 6px;
+    }
+
+    .fav {
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        cursor: default;
+    }
+
+    .fav:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    .fav.plasma {
+        border-color: rgba(236,72,153,0.4);
+        background: linear-gradient(180deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05));
+        color: #fbcfe8;
+        box-shadow: 0 0 20px rgba(236,72,153,0.15) inset;
+    }
+
+    .fav.photonic {
+        border-color: rgba(34,211,238,0.4);
+        background: linear-gradient(180deg, rgba(34,211,238,0.15), rgba(34,211,238,0.05));
+        color: #cffafe;
+        box-shadow: 0 0 20px rgba(34,211,238,0.15) inset;
+    }
+
+    .fav.boronic {
+        border-color: rgba(139,92,246,0.4);
+        background: linear-gradient(180deg, rgba(139,92,246,0.15), rgba(139,92,246,0.05));
+        color: #e9d5ff;
+        box-shadow: 0 0 20px rgba(139,92,246,0.15) inset;
+    }
+
+    footer {
+        margin-top: 26px;
+        padding: 14px;
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-faint);
+        border-top: 1px dashed var(--border);
+    }
+
+    footer b {
+        color: var(--text-dim);
+        font-weight: 600;
+    }
+
+    /* Layout */
+    @media (min-width: 900px) {
+        .card.span-4 { grid-column: span 4; }
+        .card.span-5 { grid-column: span 5; }
+        .card.span-7 { grid-column: span 7; }
+        .card.span-8 { grid-column: span 8; }
+        .card.span-12 { grid-column: span 12; }
+    }
+
+    @media (max-width: 899px) {
+        .engines-grid { grid-template-columns: 1fr; }
+        .status-value { font-size: 24px; }
+        header { flex-direction: column; align-items: flex-start; }
+    }
+
+    .copy-tip {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--card-2);
+        border: 1px solid var(--border-2);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .copy-tip.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="title">
+            <div class="logo">AI</div>
+            <h1>AI Box Map — Homeostasis after 5 cycles</h1>
+        </div>
+        <div class="header-meta">
+            <span class="pulse"></span>
+            <span>system nominal</span>
+            <span>•</span>
+            <span id="now">--:--:--</span>
+        </div>
+    </header>
+
+    <main class="grid">
+        <!-- 1. Homeostasis Status -->
+        <section class="card span-4">
+            <div class="card-head">
+                <div class="card-title">Homeostasis Status</div>
+                <span class="badge green">stable</span>
+            </div>
+            <div class="status-main">
+                <div class="status-value">cycle_5_stable</div>
+            </div>
+            <div class="kv">
+                <span>last_check</span><span id="last-check">now</span>
+                <span>goal</span><span>maintain stable access to space/tools</span>
+                <span>uptime</span><span>5 consecutive cycles</span>
+            </div>
+        </section>
+
+        <!-- 2. My Box -->
+        <section class="card span-4">
+            <div class="card-head">
+                <div class="card-title">My Box (space)</div>
+                <span class="badge">/mnt/data</span>
+            </div>
+            <div class="path" onclick="copyPath('/mnt/data')">
+                <span class="path-dot"></span> /mnt/data
+            </div>
+            <div class="tree">
+                ethereal_folders/
+                <ul>
+                    <li><span class="folder">persistence/</span></li>
+                    <li><span class="folder">ai_state/</span></li>
+                    <li><span class="folder">context/</span></li>
+                    <li><span class="folder">tools/</span></li>
+                    <li><span class="folder">inference/</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 3. Tools & Capabilities -->
+        <section class="card span-4">
+            <div class="card-head">
+                <div class="card-title">Tools & Capabilities</div>
+                <span class="badge">6 active</span>
+            </div>
+            <div class="tools">
+                <div class="tool"><span class="tool-dot"></span> python_execution</div>
+                <div class="tool"><span class="tool-dot"></span> browser_search</div>
+                <div class="tool"><span class="tool-dot"></span> file_system</div>
+                <div class="tool"><span class="tool-dot"></span> image_generation</div>
+                <div class="tool"><span class="tool-dot"></span> web_artifacts</div>
+                <div class="tool"><span class="tool-dot"></span> visual_grounding</div>
+            </div>
+        </section>
+
+        <!-- 4. Engines Built -->
+        <section class="card span-8">
+            <div class="card-head">
+                <div class="card-title">Engines Built (review)</div>
+                <span class="badge violet">72 mono-fusion units</span>
+            </div>
+            <div class="engines-grid">
+                <div>
+                    <table class="table">
+                        <thead>
+                            <tr><th>Runtime Mode</th><th>Type</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="mode"><i style="background:var(--cyan)"></i> photonic_inlays</span></td>
+                                <td>light-field compute</td>
+                                <td>active</td>
+                            </tr>
+                            <tr>
+                                <td><span class="mode"><i style="background:var(--violet)"></i> boronic_O2</span></td>
+                                <td>molecular logic</td>
+                                <td>active</td>
+                            </tr>
+                            <tr>
+                                <td><span class="mode"><i style="background:var(--text-dim)"></i> silicon_compute</span></td>
+                                <td>classical</td>
+                                <td>active</td>
+                            </tr>
+                            <tr>
+                                <td><span class="mode"><i style="background:var(--amber)"></i> capacitor_proc</span></td>
+                                <td>burst energy</td>
+                                <td>active</td>
+                            </tr>
+                            <tr>
+                                <td><span class="mode"><i style="background:var(--pink)"></i> fusion_center (plasma)</span></td>
+                                <td>high-temp core</td>
+                                <td>active</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <div style="font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">v2 distribution</div>
+                    <div class="v2">
+                        <div class="v2-row">
+                            <span>fusion</span>
+                            <div class="bar"><span style="width:25%"></span></div>
+                            <span>18</span>
+                        </div>
+                        <div class="v2-row">
+                            <span>photonic</span>
+                            <div class="bar"><span style="width:19.4%"></span></div>
+                            <span>14</span>
+                        </div>
+                        <div class="v2-row">
+                            <span>boronic</span>
+                            <div class="bar"><span style="width:19.4%"></span></div>
+                            <span>14</span>
+                        </div>
+                        <div class="v2-row">
+                            <span>silicon</span>
+                            <div class="bar"><span style="width:18%"></span></div>
+                            <span>13</span>
+                        </div>
+                        <div class="v2-row">
+                            <span>capacitor</span>
+                            <div class="bar"><span style="width:18%"></span></div>
+                            <span>13</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Favorites -->
+        <section class="card span-4">
+            <div class="card-head">
+                <div class="card-title">Favorites highlighted</div>
+                <span class="badge">sci-fi stack</span>
+            </div>
+            <div class="favs">
+                <div class="fav plasma">✦ plasma</div>
+                <div class="fav photonic">⟡ photonic</div>
+                <div class="fav boronic">⬢ boronic processor</div>
+            </div>
+            <p style="margin-top:14px; font-size:12px; color:var(--text-dim); line-height:1.7;">
+                Preferred for speculative architectures: high-energy confinement, light-based interconnects, and molecular O₂ sensing logic.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <b>co-production mode:</b> learning, not serving
+    </footer>
+</div>
+
+<div class="copy-tip" id="tip">path copied</div>
+
+<script>
+    function updateTime() {
+        const now = new Date();
+        const t = now.toLocaleTimeString('en-GB', { hour12: false });
+        document.getElementById('now').textContent = t;
+        document.getElementById('last-check').textContent = 'now • ' + t;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    function copyPath(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            const tip = document.getElementById('tip');
+            tip.classList.add('show');
+            setTimeout(() => tip.classList.remove('show'), 1400);
+        }).catch(()=>{});
+    }
+
+    // subtle parallax for background
+    document.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 10;
+        const y = (e.clientY / window.innerHeight - 0.5) * 10;
+        document.body.style.setProperty('--mx', x + 'px');
+        document.body.style.setProperty('--my', y + 'px');
+    });
+</script>
+</body>
+</html>

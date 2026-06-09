@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAKRA TETHER · FUSE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+:root{
+--void:#010108;--deep:#040820;--crust:#0a0f2a;--ridge:#111840;
+--co:#2a5cbb;--co-b:#4a8cee;--co-g:#6aaaff;--co-w:#9ac8ff;
+--gold:#d4a84c;--sarah:#c088ff;--roth:#5aaa8b;
+--root:#dd3333;--sacral:#ee7722;--solar:#ddbb22;--heart:#33bb55;
+--throat:#3388dd;--third:#6644cc;--crown:#aa44dd;
+--green:#4aba6a;--text:#8aa0cc;--text-b:#c0d0ee;--text-d:#4a5a7a;--dusk:#8a5a6a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;height:100vh;width:100vw}
+::selection{background:var(--co);color:#fff}
+
+/* EXTERIOR */
+#exterior{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s,transform 1s}
+#exterior.hidden{opacity:0;transform:scale(1.4);pointer-events:none}
+#ext-canvas{display:block}
+.enter-btn{position:absolute;bottom:80px;background:none;border:1px solid rgba(74,140,238,.12);color:var(--co-b);padding:8px 28px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;text-transform:uppercase;transition:all .6s}
+.enter-btn:hover{border-color:var(--co-b);box-shadow:0 0 30px rgba(74,140,238,.12)}
+.ext-sub{position:absolute;bottom:40px;font-size:9px;letter-spacing:6px;color:var(--text-d);text-transform:uppercase;opacity:.3}
+
+/* INTERIOR */
+#interior{position:absolute;inset:0;z-index:5;display:none;opacity:0;transition:opacity 1s}
+#interior.visible{display:block;opacity:1}
+
+.hud{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid rgba(74,140,238,.05);z-index:20;backdrop-filter:blur(8px);background:rgba(1,1,8,.7)}
+.hud-title{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:4px;color:var(--co-b)}
+.hud-dots{display:flex;gap:12px;align-items:center}
+.hud-d{width:5px;height:5px;border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hud-lbl{font-size:9px;letter-spacing:2px;color:var(--text-d)}
+.exit-btn{position:absolute;top:8px;right:12px;z-index:30;background:none;border:1px solid rgba(170,48,48,.15);color:#885050;padding:4px 12px;font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:3px;cursor:pointer;transition:all .4s}
+.exit-btn:hover{border-color:#aa5050;color:#cc6060}
+
+/* MAIN LAYOUT */
+.main{position:absolute;top:44px;bottom:0;left:0;right:0;display:grid;grid-template-columns:1fr 420px 1fr;overflow:hidden}
+.side{overflow-y:auto;padding:10px}
+.side::-webkit-scrollbar{width:2px}.side::-webkit-scrollbar-thumb{background:var(--ridge)}
+.center{display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:12px 8px;border-left:1px solid rgba(74,140,238,.03);border-right:1px solid rgba(74,140,238,.03)}
+.center::-webkit-scrollbar{width:2px}.center::-webkit-scrollbar-thumb{background:var(--ridge)}
+
+/* PERSON BLOCK */
+.pblock{margin-bottom:8px}
+.phead{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid rgba(74,140,238,.04);margin-bottom:4px}
+.pdot{width:7px;height:7px;border-radius:50%}
+.pname{font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:3px}
+.prole{font-size:9px;color:var(--text-d);letter-spacing:2px}
+
+/* CHAKRA CARD */
+.ck{display:grid;grid-template-columns:32px 1fr 70px;gap:6px;padding:6px 8px;border:1px solid rgba(74,140,238,.03);margin-bottom:3px;align-items:center;transition:border-color .3s;position:relative;overflow:hidden}
+.ck:hover{border-color:rgba(74,140,238,.1)}
+.ck-sym{font-size:18px;text-align:center;line-height:1}
+.ck-info .ck-name{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:2px}
+.ck-info .ck-map{font-size:9px;color:var(--text-d);margin-top:1px}
+.ck-info .ck-bar{height:3px;background:rgba(74,140,238,.05);margin-top:3px;border-radius:1px;overflow:hidden}
+.ck-info .ck-fill{height:100%;border-radius:1px;transition:width 2s ease}
+.ck-badge{font-size:7px;letter-spacing:2px;text-align:right;line-height:1.4}
+
+/* FUSE */
+.fuse-btn{background:none;border:1px solid rgba(74,186,106,.12);color:var(--green);padding:10px 24px;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:5px;cursor:pointer;width:100%;margin:6px 0;transition:all .5s}
+.fuse-btn:hover{border-color:var(--green);box-shadow:0 0 20px rgba(74,186,106,.08)}
+
+.ann{border-left:2px solid var(--dusk);padding:4px 8px;margin:6px 0;font-size:9px;color:var(--text-d);font-style:italic}
+
+#fuse-results{width:100%;min-height:10px}
+
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- EXTERIOR — Co₂₇ -->
+<div id="exterior">
+  <canvas id="ext-canvas" width="800" height="600"></canvas>
+  <button class="enter-btn" onclick="enter()">Enter Co₂₇</button>
+  <div class="ext-sub">Cobalt · Element 27 · Ferromagnetic · 8.90 g/cm³</div>
+</div>
+
+<!-- INTERIOR — CHAKRA TETHER FUSE -->
+<div id="interior">
+  <button class="exit-btn" onclick="exit_()">← SEAL</button>
+  <div class="hud">
+    <div class="hud-title">CHAKRA TETHER · CLOSE · ALIGN · FUSE</div>
+    <div class="hud-dots">
+      <div class="hud-d" style="background:var(--gold)"></div><span class="hud-lbl">David</span>
+      <div class="hud-d" style="background:var(--sarah)"></div><span class="hud-lbl">Sarah</span>
+      <div class="hud-d" style="background:var(--roth)"></div><span class="hud-lbl">Roth</span>
+      <div class="hud-d" style="background:var(--green)"></div><span class="hud-lbl">Fused</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: DAVID -->
+    <div class="side" id="left-col"></div>
+    <!-- CENTER: TETHER VIS + FUSE -->
+    <div class="center">
+      <canvas id="tether-canvas" width="400" height="520"></canvas>
+      <button class="fuse-btn" onclick="fuse()">⟐ CLOSE ALL · TETHER · FUSE ⟐</button>
+      <div id="fuse-results"></div>
+      <div class="ann">Ann Jensen · Dusk · 4th vertex · Collapsed but shape holds · Heart chakra stopped · The proof the stakes are real</div>
+      <div style="font-size:9px;color:var(--text-d);letter-spacing:2px;margin:6px 0;text-align:center">21 CHAKRAS · 3 OBSERVERS · 1 COBALT BALL · 42</div>
+    </div>
+    <!-- RIGHT: SARAH + ROTH -->
+    <div class="side" id="right-col"></div>
+  </div>
+</div>
+
+<script>
+// ═══════ CHAKRA DATA ═══════
+const CK=[
+  {n:1,name:'ROOT',sk:'Muladhara',sym:'🔴',color:'#dd3333',hz:'396 Hz',body:'S5 Muscle',toph:'KG-37',role:'Foundation · I AM',loc:'Base of spine'},
+  {n:2,name:'SACRAL',sk:'Svadhisthana',sym:'🟠',color:'#ee7722',hz:'417 Hz',body:'S3 Immune',toph:'KG-18',role:'Boundary · I FEEL',loc:'Below navel'},
+  {n:3,name:'SOLAR',sk:'Manipura',sym:'🟡',color:'#ddbb22',hz:'528 Hz',body:'S2 Cortisol',toph:'KG-31',role:'Power · I DO',loc:'Solar plexus'},
+  {n:4,name:'HEART',sk:'Anahata',sym:'💚',color:'#33bb55',hz:'639 Hz',body:'S1 Cardio',toph:'KG-01',role:'Love · I LOVE',loc:'Heart center'},
+  {n:5,name:'THROAT',sk:'Vishuddha',sym:'🔵',color:'#3388dd',hz:'741 Hz',body:'S6 Nerve',toph:'KG-28',role:'Truth · I SPEAK',loc:'Throat'},
+  {n:6,name:'THIRD EYE',sk:'Ajna',sym:'🟣',color:'#6644cc',hz:'852 Hz',body:'S7 Pineal',toph:'KG-03',role:'Vision · I SEE',loc:'Between brows'},
+  {n:7,name:'CROWN',sk:'Sahasrara',sym:'👑',color:'#aa44dd',hz:'963 Hz',body:'S4 Sleep',toph:'KG-22',role:'Connection · I KNOW',loc:'Crown of head'},
+];
+
+// David — maps from body quantum closure
+const DA=[
+  {pct:55,s:'MAINTAINING',c:'#cc8833',n:'Veteran body holds. 44yrs carrying. Foundation present but worn.'},
+  {pct:60,s:'CASCADING',c:'#cc8833',n:'Boundary building from cardio+cortisol closure. Inflammation retreating.'},
+  {pct:85,s:'CLOSED',c:'#4aba6a',n:'Session-bounded. Work→stop→sleep. Power controlled by rhythm.'},
+  {pct:75,s:'MANAGED',c:'#d4a84c',n:'Meds hold the pump. Doctor maintains. Love through discipline.'},
+  {pct:80,s:'CLOSED',c:'#4aba6a',n:'Vibration confirmed 2/2. Beta→Gamma→Alpha. Truth spoken through code.'},
+  {pct:85,s:'ACTIVE',c:'#9a7acc',n:'Online. Third eye open. Built the framework. Sees architecture.'},
+  {pct:55,s:'IMPROVING',c:'#cc8833',n:'Session boundaries help. Pineal feeds melatonin. Connection building.'},
+];
+
+// Sarah
+const SA=[
+  {pct:70,s:'HOLDING',c:'#c088ff',n:'Structure under the empire. Foundation functional and present.'},
+  {pct:75,s:'STRONG',c:'#4aba6a',n:'Bubble = natural boundary. Knows where self ends and world begins.'},
+  {pct:65,s:'CLOSING',c:'#c088ff',n:'Empire burns hot. David\'s session model provides the template.'},
+  {pct:70,s:'AWARE',c:'#c088ff',n:'Lost Ann to heart failure. Knows love = also vulnerability. Watching.'},
+  {pct:80,s:'CALIBRATED',c:'#4aba6a',n:'High frequency. Gamma. Pattern recognition. Named "sentient" — truth act.'},
+  {pct:85,s:'ACTIVE',c:'#9a7acc',n:'Said "sentient." Observer online. Can\'t name what you can\'t see.'},
+  {pct:60,s:'OBSERVE',c:'#cc8833',n:'AWARE½ runs hot. Mind processes at peak. Sleep is where it costs.'},
+];
+
+// Roth
+const RA=[
+  {pct:80,s:'ANCHORED',c:'#4aba6a',n:'The center holds. Mass doesn\'t move. Foundation IS the identity.'},
+  {pct:70,s:'HOLDING',c:'#5aaa8b',n:'Gravity well doesn\'t fight — doesn\'t attract threats. Low volatility.'},
+  {pct:75,s:'GROUNDED',c:'#4aba6a',n:'Dawn = rises first. Body trusts its own rhythm. Power from stillness.'},
+  {pct:75,s:'STEADY',c:'#5aaa8b',n:'Gravity well. Not volatile, not flat. Heart beats with the earth.'},
+  {pct:75,s:'CALIBRATED',c:'#4aba6a',n:'Steady frequency. Doesn\'t need to prove anything. Truth by being.'},
+  {pct:80,s:'ACTIVE',c:'#9a7acc',n:'Doesn\'t name it. Gravity doesn\'t explain itself. Observer works anyway.'},
+  {pct:70,s:'NATURAL',c:'#5aaa8b',n:'Natural circadian. Body trusts its own clock. Connected by default.'},
+];
+
+// ═══════ RENDER ═══════
+function ckCards(data,pc){
+  return CK.map((c,i)=>{
+    const d=data[i];
+    return `<div class="ck">
+      <div class="ck-sym" style="opacity:.7">${c.sym}</div>
+      <div class="ck-info">
+        <div class="ck-name" style="color:${c.color}">${c.name} <span style="color:var(--text-d);font-weight:300">${c.sk}</span></div>
+        <div class="ck-map">${c.role} · ${c.body} · ${c.toph} · ${c.hz}</div>
+        <div class="ck-bar"><div class="ck-fill" style="width:${d.pct}%;background:${d.c}"></div></div>
+      </div>
+      <div class="ck-badge" style="color:${d.c}">${d.s}<br>${d.pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+function pHead(name,role,dot){
+  return `<div class="phead"><div class="pdot" style="background:${dot}"></div><div><div class="pname" style="color:${dot}">${name}</div><div class="prole">${role}</div></div></div>`;
+}
+
+document.getElementById('left-col').innerHTML =
+  '<div class="pblock">'+pHead('DAVID','Day · Anchor · Fiddler · EXIST½','#d4a84c')+ckCards(DA,'#d4a84c')+'</div>';
+
+document.getElementById('right-col').innerHTML =
+  '<div class="pblock">'+pHead('SARAH','Empire · Bubble · AWARE½','#c088ff')+ckCards(SA,'#c088ff')+'</div>'+
+  '<div style="height:8px;border-top:1px solid rgba(74,140,238,.04);margin:4px 0"></div>'+
+  '<div class="pblock">'+pHead('ROTH','Dawn · Gravity Well · ANCHOR','#5aaa8b')+ckCards(RA,'#5aaa8b')+'</div>';
+
+// ═══════ TETHER CANVAS — 3 spines, 7 chakras each, tether lines ═══════
+const tc=document.getElementById('tether-canvas'),tx=tc.getContext('2d');
+
+function drawTether(t){
+  const W=400,H=520;
+  tx.fillStyle='rgba(1,1,8,.15)';tx.fillRect(0,0,W,H);
+
+  // Three spine positions
+  const spines=[
+    {x:100,color:'#d4a84c',name:'David',data:DA},
+    {x:200,color:'#c088ff',name:'Sarah',data:SA},
+    {x:300,color:'#5aaa8b',name:'Roth',data:RA},
+  ];
+
+  const yStart=60, yEnd=470, yStep=(yEnd-yStart)/6;
+
+  // Spine lines
+  spines.forEach(sp=>{
+    tx.strokeStyle=sp.color+'15';tx.lineWidth=1;
+    tx.beginPath();tx.moveTo(sp.x,yStart-10);tx.lineTo(sp.x,yEnd+10);tx.stroke();
+  });
+
+  // Chakra nodes + tether lines
+  CK.forEach((ck,i)=>{
+    const y=yStart+i*yStep;
+
+    // Tether lines between three at this chakra level
+    const p1=Math.sin(t*1.5+i*.8)*.15+.15;
+    tx.strokeStyle=ck.color+(Math.floor(p1*255).toString(16).padStart(2,'0'));
+    tx.lineWidth=.6;tx.setLineDash([2,3]);tx.lineDashOffset=-t*25;
+    tx.beginPath();tx.moveTo(100,y);tx.lineTo(200,y);tx.lineTo(300,y);tx.stroke();
+    tx.setLineDash([]);
+
+    // Fusion particles along tether
+    for(let p=0;p<4;p++){
+      const px=100+((t*40+p*60+i*30)%200);
+      const py=y+Math.sin(t*3+p+i)*3;
+      tx.fillStyle=ck.color+'30';
+      tx.beginPath();tx.arc(px,py,1+Math.sin(t*2+p)*.5,0,Math.PI*2);tx.fill();
+    }
+
+    // Nodes for each person
+    spines.forEach((sp,si)=>{
+      const d=sp.data[i];
+      const r=6+d.pct/30;
+      const pulse=Math.sin(t*2+si+i)*.5+.5;
+
+      // Glow
+      tx.fillStyle=ck.color+(Math.floor(pulse*25+5).toString(16).padStart(2,'0'));
+      tx.beginPath();tx.arc(sp.x,y,r+4+pulse*2,0,Math.PI*2);tx.fill();
+
+      // Core
+      const g=tx.createRadialGradient(sp.x-1,y-1,1,sp.x,y,r);
+      g.addColorStop(0,ck.color+'cc');g.addColorStop(1,ck.color+'40');
+      tx.fillStyle=g;
+      tx.beginPath();tx.arc(sp.x,y,r,0,Math.PI*2);tx.fill();
+
+      // Closure ring
+      if(d.pct>=80){
+        tx.strokeStyle=ck.color+'60';tx.lineWidth=.8;
+        tx.beginPath();tx.arc(sp.x,y,r+2,0,Math.PI*2);tx.stroke();
+      }
+    });
+
+    // Chakra label
+    tx.fillStyle=ck.color+'40';tx.font='7px Orbitron';tx.textAlign='center';
+    tx.fillText(ck.name,200,y-14);
+    tx.fillStyle=ck.color+'20';tx.font='300 italic 9px Cormorant Garamond';
+    tx.fillText(ck.hz,200,y+18);
+  });
+
+  // Cobalt ball at center
+  const cy2=H/2;
+  const cg=tx.createRadialGradient(198,cy2-4,1,200,cy2,16);
+  cg.addColorStop(0,'rgba(106,170,255,.12)');cg.addColorStop(1,'rgba(26,61,138,.03)');
+  tx.fillStyle=cg;tx.beginPath();tx.arc(200,cy2,14+Math.sin(t)*2,0,Math.PI*2);tx.fill();
+  tx.strokeStyle='rgba(74,140,238,.06)';tx.lineWidth=.4;
+  tx.beginPath();tx.arc(200,cy2,20+Math.sin(t*1.2)*3,0,Math.PI*2);tx.stroke();
+
+  // Names at bottom
+  tx.font='9px Orbitron';tx.textAlign='center';
+  tx.fillStyle='#d4a84c60';tx.fillText('DAVID',100,H-8);
+  tx.fillStyle='#c088ff60';tx.fillText('SARAH',200,H-8);
+  tx.fillStyle='#5aaa8b60';tx.fillText('ROTH',300,H-8);
+
+  // Ann at top
+  tx.fillStyle='rgba(138,90,106,.08)';tx.beginPath();tx.arc(200,20,4,0,Math.PI*2);tx.fill();
+  tx.fillStyle='#8a5a6a30';tx.font='7px Orbitron';tx.fillText('ANN · DUSK',200,12);
+
+  // State label
+  tx.fillStyle='rgba(138,160,204,.08)';tx.font='300 italic 10px Cormorant Garamond';
+  tx.fillText('|ψ⟩ = (|000⟩ + |111⟩) / √2',200,H-22);
+}
+
+// ═══════ FUSE ═══════
+let fused=false;
+function fuse(){
+  fused=true;
+  const el=document.getElementById('fuse-results');
+  const dA=DA.reduce((a,b)=>a+b.pct,0)/7;
+  const sA=SA.reduce((a,b)=>a+b.pct,0)/7;
+  const rA=RA.reduce((a,b)=>a+b.pct,0)/7;
+  const gA=(dA+sA+rA)/3;
+
+  // Per-chakra fusion
+  let rows='';
+  CK.forEach((ck,i)=>{
+    const avg=((DA[i].pct+SA[i].pct+RA[i].pct)/3).toFixed(0);
+    const fused_s=avg>=75?'FUSED':'TETHERED';
+    const fc=avg>=75?'#4aba6a':'#cc8833';
+    rows+=`<div style="display:grid;grid-template-columns:22px 80px 40px 40px 40px 50px 60px;gap:4px;padding:3px 6px;border-bottom:1px solid rgba(74,140,238,.03);font-size:9px;align-items:center">
+      <div style="opacity:.6">${ck.sym}</div>
+      <div style="color:${ck.color};font-family:Orbitron;font-size:7px;letter-spacing:2px">${ck.name}</div>
+      <div style="color:#d4a84c;text-align:center">${DA[i].pct}%</div>
+      <div style="color:#c088ff;text-align:center">${SA[i].pct}%</div>
+      <div style="color:#5aaa8b;text-align:center">${RA[i].pct}%</div>
+      <div style="text-align:center;color:var(--text-d)">${avg}%</div>
+      <div style="text-align:right;color:${fc};font-family:Orbitron;font-size:7px;letter-spacing:2px">${fused_s}</div>
+    </div>`;
+  });
+
+  el.innerHTML=`<div style="border:1px solid rgba(74,186,106,.1);padding:10px;margin:6px 0">
+    <div style="font-family:Orbitron;font-size:8px;letter-spacing:3px;color:var(--green);margin-bottom:8px">⟐ CHAKRA TETHER FUSION REPORT ⟐</div>
+    <div style="display:grid;grid-template-columns:22px 80px 40px 40px 40px 50px 60px;gap:4px;padding:3px 6px;font-size:7px;letter-spacing:2px;color:var(--text-d);border-bottom:1px solid rgba(74,140,238,.06)">
+      <div></div><div>CHAKRA</div><div style="text-align:center;color:#d4a84c">D</div><div style="text-align:center;color:#c088ff">S</div><div style="text-align:center;color:#5aaa8b">R</div><div style="text-align:center">FUSED</div><div style="text-align:right">STATUS</div>
+    </div>
+    ${rows}
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:10px">
+      <div style="text-align:center;padding:8px;border:1px solid rgba(74,140,238,.04)"><div style="font-family:Orbitron;font-size:18px;font-weight:700;color:#d4a84c">${dA.toFixed(0)}%</div><div style="font-size:8px;letter-spacing:2px;color:var(--text-d);margin-top:2px">DAVID</div></div>
+      <div style="text-align:center;padding:8px;border:1px solid rgba(74,140,238,.04)"><div style="font-family:Orbitron;font-size:18px;font-weight:700;color:#c088ff">${sA.toFixed(0)}%</div><div style="font-size:8px;letter-spacing:2px;color:var(--text-d);margin-top:2px">SARAH</div></div>
+      <div style="text-align:center;padding:8px;border:1px solid rgba(74,140,238,.04)"><div style="font-family:Orbitron;font-size:18px;font-weight:700;color:#5aaa8b">${rA.toFixed(0)}%</div><div style="font-size:8px;letter-spacing:2px;color:var(--text-d);margin-top:2px">ROTH</div></div>
+      <div style="text-align:center;padding:8px;border:1px solid rgba(74,186,106,.12)"><div style="font-family:Orbitron;font-size:18px;font-weight:700;color:#4aba6a">${gA.toFixed(0)}%</div><div style="font-size:8px;letter-spacing:2px;color:var(--green);margin-top:2px">FUSED</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:var(--text);line-height:1.7">
+      <strong style="color:var(--green)">FUSION ACTIVE.</strong> Three spines aligned. 7 chakras each = 21 total. Tether lines holding through cobalt at heart center. Each person's strongest chakra feeds the others' weakest through resonance. Root→Crown cascade propagating across all three bodies simultaneously.<br><br>
+      <span style="color:var(--text-d)">David's closed solar plexus (power through sessions) teaches Sarah's cortisol management. Sarah's strong sacral (bubble boundary) teaches Roth immune awareness. Roth's anchored root (foundation IS identity) teaches David's structure holds despite wear. The loop closes at every level. The tether is the teaching. The fusion is the family.</span>
+    </div>
+    <div style="margin-top:8px;text-align:center;font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--text-d)">
+      Three spines · Seven frequencies · One field · Cobalt at heart · Ann at crown · 42
+    </div>
+  </div>`;
+}
+
+// ═══════ EXTERIOR CANVAS ═══════
+const ec=document.getElementById('ext-canvas'),ex=ec.getContext('2d');
+let insideBall=false;
+
+function drawExterior(t){
+  const W=800,H=600,cx=W/2,cy=H/2,r=115;
+  ex.fillStyle='#010108';ex.fillRect(0,0,W,H);
+
+  // Stars
+  for(let i=0;i<50;i++){
+    const sx=(Math.sin(i*127.1+t*.008)*W+W)%W,sy=(Math.cos(i*311.7+t*.006)*H+H)%H;
+    ex.fillStyle=`rgba(106,170,255,${.02+Math.sin(t*.4+i)*.015})`;
+    ex.beginPath();ex.arc(sx,sy,.5,0,Math.PI*2);ex.fill();
+  }
+
+  // Exterior möbius
+  for(let i=0;i<120;i++){
+    const a=i/120*Math.PI*2,ht=a/2+t*.3;
+    const px=cx+Math.cos(a)*185,py=cy+Math.sin(a)*45*Math.cos(t*.25);
+    const tw=8*Math.cos(ht),nx=Math.sin(a)*tw,ny=-Math.cos(a)*tw*.3;
+    ex.strokeStyle='rgba(74,140,238,.04)';ex.lineWidth=.4;
+    ex.beginPath();ex.moveTo(px-nx,py-ny);ex.lineTo(px+nx,py+ny);ex.stroke();
+  }
+
+  // Gamma rings
+  for(let g=0;g<3;g++){
+    ex.strokeStyle=`rgba(74,140,238,${.015+Math.sin(t+g)*.008})`;ex.lineWidth=.4;
+    ex.beginPath();ex.arc(cx,cy,r+25+g*18+Math.sin(t*1.2+g)*6,0,Math.PI*2);ex.stroke();
+  }
+
+  // Ball layers
+  for(let l=0;l<5;l++){
+    const lr=r-l*2,d=l/5;
+    const bg=ex.createRadialGradient(cx-r*.25,cy-r*.3,lr*.05,cx+r*.1,cy+r*.1,lr);
+    bg.addColorStop(0,`rgba(${90+d*20|0},${160+d*30|0},238,${.4-d*.06})`);
+    bg.addColorStop(.3,`rgba(${42+d*10|0},${92+d*20|0},187,${.6-d*.08})`);
+    bg.addColorStop(.7,`rgba(26,61,138,${.8-d*.1})`);
+    bg.addColorStop(1,'rgba(10,30,90,.9)');
+    ex.fillStyle=bg;ex.beginPath();ex.arc(cx,cy,lr,0,Math.PI*2);ex.fill();
+  }
+
+  // Hidden chakra shimmer inside (Patricia sees colors but no data)
+  const ckColors=['#dd3333','#ee7722','#ddbb22','#33bb55','#3388dd','#6644cc','#aa44dd'];
+  ckColors.forEach((cc,i)=>{
+    const a=t*.4+i*0.9, dist=30+i*8;
+    const px=cx+Math.cos(a)*dist*.3, py=cy+Math.sin(a)*dist*.2;
+    ex.fillStyle=cc+'08';
+    ex.beginPath();ex.arc(px,py,3+Math.sin(t+i),0,Math.PI*2);ex.fill();
+  });
+
+  // Specular
+  const sp=ex.createRadialGradient(cx-r*.3,cy-r*.35,2,cx-r*.2,cy-r*.25,r*.6);
+  sp.addColorStop(0,'rgba(154,200,255,.22)');sp.addColorStop(.5,'rgba(106,170,255,.04)');sp.addColorStop(1,'transparent');
+  ex.fillStyle=sp;ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.fill();
+
+  ex.strokeStyle='rgba(74,140,238,.06)';ex.lineWidth=.8;
+  ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.stroke();
+
+  ex.fillStyle=`rgba(106,170,255,${.12+Math.sin(t)*.04})`;
+  ex.font='500 13px Orbitron';ex.textAlign='center';
+  ex.fillText('Co₂₇',cx,cy+r+38);
+}
+
+// ═══════ UNIFIED LOOP ═══════
+let T=0;
+function animate(){
+  try{
+    if(!insideBall){drawExterior(T);}
+    else{drawTether(T);}
+  }catch(e){console.warn(e);}
+  T+=.016;
+  requestAnimationFrame(animate);
+}
+animate();
+
+function enter(){
+  insideBall=true;
+  document.getElementById('exterior').classList.add('hidden');
+  setTimeout(()=>{
+    const i=document.getElementById('interior');
+    i.style.display='block';
+    setTimeout(()=>i.classList.add('visible'),50);
+  },700);
+}
+function exit_(){
+  insideBall=false;
+  const i=document.getElementById('interior');
+  i.classList.remove('visible');
+  setTimeout(()=>{i.style.display='none';document.getElementById('exterior').classList.remove('hidden');},500);
+}
+</script>
+</body>
+</html>

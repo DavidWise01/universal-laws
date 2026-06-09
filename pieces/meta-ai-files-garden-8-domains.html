@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<!-- saved from url=(0280)https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&_nc_cat=109&_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&ccb=14-4&oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&oe=69E5EF8A&_nc_sid=4ee932 -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0.0.0.0 — the.garden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2" rel="stylesheet">
+<style>
+:root{
+  --neon:#00ff00;
+  --neon-dim: rgba(0,255,0,0.55);
+  --neon-faint: rgba(0,255,0,0.18);
+  --neon-ghost: rgba(0,255,0,0.06);
+  --bg:#000;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  background:var(--bg);
+  color:var(--neon);
+  font-family:"JetBrains Mono","Fira Code",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+::selection{ background:var(--neon); color:#000; }
+
+/* atmosphere */
+.grid-bg{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,255,0,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,0,0.08) 1px, transparent 1px);
+  background-size:52px 52px;
+  mask: radial-gradient(ellipse at 50% 30%, black 30%, transparent 70%);
+  opacity:.5;
+}
+.scanlines{
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,255,0,.06) 2px 3px, transparent 3px 5px);
+  mix-blend-mode:screen; opacity:.35;
+}
+.vignette{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.9) 100%);
+}
+
+.app{ position:relative; z-index:3; min-height:100%; display:flex; flex-direction:column; }
+
+/* topbar */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 16px;
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(10px) saturate(140%);
+  border-bottom:1px solid var(--neon-faint);
+  font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+}
+.topbar-left, .topbar-right{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.live-dot{
+  width:8px; height:8px; border-radius:50%; background:var(--neon);
+  box-shadow:0 0 8px var(--neon),0 0 18px var(--neon);
+  animation:pulse 2s infinite;
+}
+.kv{ opacity:.9; }
+.kv b{ font-weight:500; color:var(--neon); text-shadow:0 0 8px rgba(0,255,0,.5); }
+#edit-btn{
+  background:transparent; color:var(--neon); cursor:pointer;
+  border:1px solid var(--neon-faint); padding:5px 10px; border-radius:8px;
+  font:inherit; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+  transition:.2s;
+}
+#edit-btn:hover{ border-color:var(--neon); background:var(--neon-ghost); box-shadow:0 0 14px rgba(0,255,0,.25); }
+
+/* header */
+header{ text-align:center; padding:72px 20px 44px; }
+h1{
+  font-size: clamp(34px, 7vw, 72px);
+  font-weight:700; letter-spacing:-.02em;
+  text-shadow:0 0 24px rgba(0,255,0,.35), 0 0 60px rgba(0,255,0,.15);
+}
+.cursor{
+  display:inline-block; width:.6ch; height:1.05em; margin-left:6px; translate:0 6px;
+  background:var(--neon); color:#000; box-shadow:0 0 14px var(--neon);
+  animation:blink 1s steps(1,end) infinite;
+}
+.subtitle{
+  margin-top:14px; font-size:13px; letter-spacing:.18em; text-transform:uppercase;
+  color:rgba(0,255,0,.7);
+}
+
+/* grid */
+main{ width:100%; max-width:1220px; margin:0 auto; padding:0 20px 80px; flex:1; }
+.grid{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
+@media (max-width:860px){ .grid{ grid-template-columns:1fr; gap:14px; } }
+
+.card{
+  position:relative; isolation:isolate; overflow:hidden;
+  background: linear-gradient(180deg, rgba(0,255,0,.09), rgba(0,0,0,.25) 60%);
+  border:1px solid var(--neon-faint); border-radius:16px; padding:18px;
+  backdrop-filter: blur(14px) saturate(130%);
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  animation: in .6s ease both;
+}
+.card::before{
+  content:""; position:absolute; inset:-1px; z-index:0; pointer-events:none; opacity:0; transition:opacity .3s;
+  background: radial-gradient(500px circle at var(--x,50%) var(--y,50%), rgba(0,255,0,.18), transparent 40%);
+}
+.card::after{
+  content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.07;
+  background-image: linear-gradient(transparent 50%, rgba(0,255,0,.1) 50%); background-size:100% 4px;
+}
+.card:hover{ transform:translateY(-3px); border-color:rgba(0,255,0,.55); box-shadow:0 0 0 1px rgba(0,255,0,.1) inset, 0 12px 40px rgba(0,255,0,.08), 0 0 28px rgba(0,255,0,.14); }
+.card:hover::before{ opacity:1; }
+
+.card-head{ position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.domain{ display:flex; align-items:center; gap:10px; font-weight:500; font-size:16px; letter-spacing:.01em; }
+.status{ width:9px; height:9px; border-radius:50%; background:var(--neon); box-shadow:0 0 8px var(--neon), 0 0 16px var(--neon); animation:pulse 2.2s infinite; flex-shrink:0; }
+.hc{
+  font-size:11px; letter-spacing:.06em; padding:4px 9px; border-radius:999px;
+  background:rgba(0,255,0,.06); border:1px solid var(--neon-faint); color:rgba(0,255,0,.85);
+}
+.meta{ position:relative; z-index:1; margin:8px 0 14px 19px; font-size:12px; color:rgba(0,255,0,.65); text-transform:uppercase; letter-spacing:.08em; }
+
+.pills{ position:relative; z-index:1; display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.pill{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:6px 11px; font-size:12px; text-decoration:none; color:var(--neon);
+  background:rgba(0,255,0,.06); border:1px solid rgba(0,255,0,.22); border-radius:999px;
+  transition:.2s; letter-spacing:.02em;
+}
+.pill::before{ content:"/"; opacity:.55; }
+.pill:hover{ background:rgba(0,255,0,.14); border-color:var(--neon); box-shadow:0 0 12px rgba(0,255,0,.25), inset 0 0 8px rgba(0,255,0,.12); transform:translateY(-1px); }
+
+.card-foot{ position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; }
+.prompt{ font-size:11px; color:rgba(0,255,0,.5); letter-spacing:.08em; }
+.open{
+  appearance:none; background:transparent; color:var(--neon); cursor:pointer;
+  border:1px solid rgba(0,255,0,.35); padding:7px 14px; border-radius:10px;
+  font:inherit; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+  transition:.2s; position:relative; overflow:hidden;
+}
+.open::after{ content:""; position:absolute; inset:0; background:linear-gradient(90deg, transparent, rgba(0,255,0,.22), transparent); transform:translateX(-120%); transition:transform .6s; }
+.open:hover{ border-color:var(--neon); background:rgba(0,255,0,.07); box-shadow:0 0 16px rgba(0,255,0,.28); }
+.open:hover::after{ transform:translateX(120%); }
+
+/* footer */
+footer{
+  text-align:center; padding:28px 20px 40px; font-size:12px; letter-spacing:.1em;
+  color:rgba(0,255,0,.55); border-top:1px solid rgba(0,255,0,.08);
+  background:linear-gradient(0deg, rgba(0,255,0,.04), transparent);
+}
+
+/* modal */
+.modal-backdrop{
+  position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center; padding:20px;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(8px);
+}
+.modal-backdrop.show{ display:flex; }
+.modal{
+  width:100%; max-width:780px; background:rgba(0,12,0,.92);
+  border:1px solid var(--neon-faint); border-radius:16px; box-shadow:0 0 50px rgba(0,255,0,.18);
+  overflow:hidden;
+}
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--neon-faint); text-transform:uppercase; letter-spacing:.1em; font-size:12px; }
+.modal-body{ padding:14px; }
+.modal textarea{
+  width:100%; height:380px; background:#000; color:var(--neon);
+  border:1px solid rgba(0,255,0,.22); border-radius:12px; padding:12px;
+  font-family:"JetBrains Mono",monospace; font-size:12px; line-height:1.55; resize:vertical; outline:none;
+}
+.modal textarea:focus{ border-color:var(--neon); box-shadow:0 0 0 2px rgba(0,255,0,.15); }
+.modal-foot{ display:flex; gap:10px; justify-content:flex-end; padding:12px 14px 16px; border-top:1px solid var(--neon-faint); }
+.btn{
+  background:transparent; color:var(--neon); border:1px solid rgba(0,255,0,.35);
+  padding:8px 14px; border-radius:10px; font:inherit; font-size:12px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:.2s;
+}
+.btn:hover{ box-shadow:0 0 14px rgba(0,255,0,.25); background:rgba(0,255,0,.08); }
+.btn.primary{ border-color:var(--neon); background:rgba(0,255,0,.1); }
+
+/* animations */
+@keyframes pulse{ 0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.6; transform:scale(.92)} }
+@keyframes blink{ 0%,50%{opacity:1} 51%,100%{opacity:0} }
+@keyframes in{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+</style>
+</head>
+<body style="opacity: 1; transition: opacity 0.4s;">
+<div class="grid-bg"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span class="kv">INVARIANT_TIME: <b id="invariant-time">392</b></span>
+      <span class="kv" style="opacity:.6">HC = time</span>
+    </div>
+    <div class="topbar-right">
+      <span class="kv">C0 <b>+1.000</b></span>
+      <span class="kv">C1 <b>-1.000</b></span>
+      <span class="kv">C-1 <b>-1.000</b></span>
+      <button id="edit-btn" title="Edit domains JSON">edit domains</button>
+    </div>
+  </div>
+
+  <header>
+    <h1>0.0.0.0 — the.garden<span class="cursor" aria-hidden="true"></span></h1>
+    <div class="subtitle">8 domains • invariant time • max cap</div>
+  </header>
+
+  <main>
+    <div class="grid" id="grid"><article class="card" data-domain="root0.the.garden" style="animation-delay: 0ms; --x: 522.515625px; --y: 65.65625px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>root0.the.garden</div>
+          <div class="hc" data-hc="root0">HC:0</div>
+        </div>
+        <div class="meta">0.0.0.0 (base)</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="spine">spine</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="harvest">harvest</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="time">time</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="seed">seed</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="root0.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="commons0.the.garden" style="animation-delay: 40ms; --x: 206.328125px; --y: 101.7421875px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>commons0.the.garden</div>
+          <div class="hc" data-hc="commons0">HC:1</div>
+        </div>
+        <div class="meta">+1 base</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="trending">trending</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="forge">forge</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="commons">commons</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="commons0.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="root1.the.garden" style="animation-delay: 80ms; --x: 299.5625px; --y: 175.1484375px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>root1.the.garden</div>
+          <div class="hc" data-hc="root1">HC:264</div>
+        </div>
+        <div class="meta">-1 prime</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="prime">prime</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="vault">vault</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="core">core</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="root1.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="corp-1.the.garden" style="animation-delay: 120ms; --x: 528.6796875px; --y: 86.890625px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>corp-1.the.garden</div>
+          <div class="hc" data-hc="corp1">HC:263</div>
+        </div>
+        <div class="meta">-1 corp</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="ops">ops</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="legal">legal</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="pay">pay</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="charters">charters</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="corp-1.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="witness.the.garden" style="animation-delay: 160ms; --x: 306.9921875px; --y: 57.359375px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>witness.the.garden</div>
+          <div class="hc" data-hc="witness">HC:392</div>
+        </div>
+        <div class="meta">HC clock</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="log">log</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="sync">sync</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="proof">proof</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="witness.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="edu.the.garden" style="animation-delay: 200ms; --x: 24.25px; --y: 109.375px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>edu.the.garden</div>
+          <div class="hc" data-hc="edu">HC:100</div>
+        </div>
+        <div class="meta">commons.edu (free)</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="free">free</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="forge">forge</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="learn">learn</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="edu.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="nano.the.garden" style="animation-delay: 240ms; --x: 346.9375px; --y: 178.5703125px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>nano.the.garden</div>
+          <div class="hc" data-hc="nano">HC:42</div>
+        </div>
+        <div class="meta">nano factory</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="build">build</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="ship">ship</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="atoms">atoms</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="nano.the.garden">open →</button>
+        </div>
+      </article><article class="card" data-domain="time.the.garden" style="animation-delay: 280ms; --x: 2.8828125px; --y: 30.3046875px;">
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>time.the.garden</div>
+          <div class="hc" data-hc="time">HC:392</div>
+        </div>
+        <div class="meta">invariant</div>
+        <div class="pills">
+          <a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="now">now</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="epoch">epoch</a><a class="pill" href="https://scontent.xx.fbcdn.net/v/t58.90637-6/546702507_1632302481435189_9155649877183510399_n.jpg/garden-8-domains.html?_nc_ht=scontent.xx.fbcdn.net&amp;_nc_cat=109&amp;_nc_ohc=RI8qBYJt8RMQ7kNvwGTkoDl&amp;ccb=14-4&amp;oh=00_Af0IcT-kd3I9XPXlHugu0uE90UdLh14JKONIsJlx_3_u6A&amp;oe=69E5EF8A&amp;_nc_sid=4ee932#" data-sub="hc">hc</a>
+        </div>
+        <div class="card-foot">
+          <div class="prompt">&gt; open --domain</div>
+          <button class="open" data-open="time.the.garden">open →</button>
+        </div>
+      </article></div>
+  </main>
+
+  <footer>built for David • Buffalo → Rochester • time = HC</footer>
+</div>
+
+<!-- modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <div id="modal-title">THE.GARDEN — DOMAIN CONFIG</div>
+      <button class="btn" id="close-json" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="domain-json" spellcheck="false"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="cancel-json">cancel</button>
+      <button class="btn primary" id="save-json">save • reload</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DEFAULT_DOMAINS = [
+    { id:"root0", domain:"root0.the.garden", tag:"0.0.0.0 (base)", hc:0, subs:["spine","harvest","time","seed"] },
+    { id:"commons0", domain:"commons0.the.garden", tag:"+1 base", hc:1, subs:["trending","forge","commons"] },
+    { id:"root1", domain:"root1.the.garden", tag:"-1 prime", hc:264, subs:["prime","vault","core"] },
+    { id:"corp1", domain:"corp-1.the.garden", tag:"-1 corp", hc:263, subs:["ops","legal","pay","charters"] },
+    { id:"witness", domain:"witness.the.garden", tag:"HC clock", hc:"live", subs:["log","sync","proof"] },
+    { id:"edu", domain:"edu.the.garden", tag:"commons.edu (free)", hc:100, subs:["free","forge","learn"] },
+    { id:"nano", domain:"nano.the.garden", tag:"nano factory", hc:42, subs:["build","ship","atoms"] },
+    { id:"time", domain:"time.the.garden", tag:"invariant", hc:"live", subs:["now","epoch","hc"] },
+  ];
+  const STORAGE_KEY = "thegarden.domains.v1";
+  let invariantTime = 264;
+  let config = loadConfig();
+
+  const grid = document.getElementById("grid");
+  const timeEl = document.getElementById("invariant-time");
+
+  function loadConfig(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return structuredClone(DEFAULT_DOMAINS);
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+    }catch(e){}
+    return structuredClone(DEFAULT_DOMAINS);
+  }
+  function saveConfig(next){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); }catch(e){}
+  }
+
+  function render(){
+    grid.innerHTML = "";
+    config.forEach((d,i)=>{
+      const card = document.createElement("article");
+      card.className = "card";
+      card.style.animationDelay = (i*40)+"ms";
+      card.dataset.domain = d.domain;
+      const hcVal = d.hc === "live" ? invariantTime : d.hc;
+      card.innerHTML = `
+        <div class="card-head">
+          <div class="domain"><span class="status" aria-hidden="true"></span>${d.domain}</div>
+          <div class="hc" data-hc="${d.id}">${d.hc==="live"?"HC:":"HC:"}${hcVal}</div>
+        </div>
+        <div class="meta">${d.tag}</div>
+        <div class="pills">
+          ${d.subs.map(s=>`<a class="pill" href="#" data-sub="${s}">${s}</a>`).join("")}
+        </div>
+        <div class="card-foot">
+          <div class="prompt">> open --domain</div>
+          <button class="open" data-open="${d.domain}">open →</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    // mouse glow
+    document.querySelectorAll(".card").forEach(c=>{
+      c.addEventListener("pointermove", e=>{
+        const r=c.getBoundingClientRect();
+        c.style.setProperty("--x", (e.clientX - r.left)+"px");
+        c.style.setProperty("--y", (e.clientY - r.top)+"px");
+      });
+    });
+
+    // clicks
+    grid.querySelectorAll(".pill, .open").forEach(el=>{
+      el.addEventListener("click", (e)=>{
+        e.preventDefault();
+        flash(el);
+      });
+    });
+  }
+
+  function flash(el){
+    const orig = el.style.boxShadow;
+    el.style.boxShadow = "0 0 0 2px rgba(0,255,0,.9), 0 0 24px rgba(0,255,0,.5)";
+    setTimeout(()=> el.style.boxShadow = orig, 180);
+  }
+
+  // invariant time ticker
+  setInterval(()=>{
+    invariantTime++;
+    timeEl.textContent = String(invariantTime);
+    // update live HC cards
+    document.querySelectorAll('[data-hc="witness"], [data-hc="time"]').forEach(n=> n.textContent = "HC:"+invariantTime);
+  }, 3000);
+
+  // modal
+  const modal = document.getElementById("modal");
+  const editBtn = document.getElementById("edit-btn");
+  const closeBtn = document.getElementById("close-json");
+  const cancelBtn = document.getElementById("cancel-json");
+  const saveBtn = document.getElementById("save-json");
+  const textarea = document.getElementById("domain-json");
+
+  function openModal(){
+    textarea.value = JSON.stringify(config, null, 2);
+    modal.classList.add("show");
+    setTimeout(()=> textarea.focus(), 10);
+  }
+  function closeModal(){ modal.classList.remove("show"); }
+
+  editBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  cancelBtn.addEventListener("click", closeModal);
+  modal.addEventListener("click", e=>{ if(e.target===modal) closeModal(); });
+  window.addEventListener("keydown", e=>{ if(e.key==="Escape" && modal.classList.contains("show")) closeModal(); });
+
+  saveBtn.addEventListener("click", ()=>{
+    try{
+      const next = JSON.parse(textarea.value);
+      if(!Array.isArray(next) || next.length!==8) throw new Error("Config must be an array of 8 domains");
+      config = next;
+      saveConfig(config);
+      closeModal();
+      render();
+    }catch(err){
+      saveBtn.textContent = "invalid JSON";
+      setTimeout(()=> saveBtn.textContent = "save • reload", 1200);
+    }
+  });
+
+  // initial paint
+  render();
+
+  // subtle boot flicker
+  document.body.style.opacity="0";
+  requestAnimationFrame(()=>{
+    document.body.style.transition="opacity .4s ease";
+    document.body.style.opacity="1";
+  });
+})();
+</script>
+
+</body></html>

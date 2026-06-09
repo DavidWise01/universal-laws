@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERRA PROPAGATION — HMAC Integrity Network</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --void: #020408;
+    --deep: #060c18;
+    --panel: rgba(6,12,24,0.95);
+    --wire: rgba(0,180,255,0.12);
+    --wire-b: rgba(0,180,255,0.3);
+    --cyan: #00b4ff;
+    --cyan-dim: rgba(0,180,255,0.08);
+    --green: #0eff6a;
+    --green-dim: rgba(14,255,106,0.08);
+    --red: #ff2040;
+    --red-dim: rgba(255,32,64,0.06);
+    --gold: #d4a843;
+    --gold-dim: rgba(212,168,67,0.08);
+    --purple: #7021ff;
+    --white: #b0bcd0;
+    --dim: rgba(176,188,208,0.2);
+    --off: rgba(255,255,255,0.03);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'Azeret Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #bar {
+    height: 38px;
+    background: var(--deep);
+    border-bottom: 1px solid var(--wire);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  #bar h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--cyan);
+    text-shadow: 0 0 10px var(--cyan-dim);
+  }
+
+  #bar .r {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  #main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 260px 1fr 280px;
+    grid-template-rows: 1fr auto;
+    gap: 1px;
+    background: rgba(0,180,255,0.04);
+    overflow: hidden;
+  }
+
+  .pane {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ph {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--wire);
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .pb {
+    flex: 1;
+    padding: 10px 12px;
+    overflow-y: auto;
+    font-size: 10px;
+  }
+
+  /* ══ LEFT: CONTROLS ══ */
+  #ctrlPane { grid-row: 1 / 3; }
+
+  .ctrl-section {
+    margin-bottom: 16px;
+  }
+
+  .ctrl-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .ctrl-row label {
+    flex: 1;
+    font-size: 10px;
+    opacity: 0.5;
+  }
+
+  .ctrl-row input[type="range"] {
+    width: 100px;
+    accent-color: var(--cyan);
+  }
+
+  .ctrl-row .val {
+    font-weight: 700;
+    font-size: 10px;
+    width: 50px;
+    text-align: right;
+  }
+
+  .btn {
+    width: 100%;
+    background: var(--cyan-dim);
+    border: 1px solid var(--wire-b);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+  }
+
+  .btn:hover { background: rgba(0,180,255,0.2); }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+  .btn.go { border-color: rgba(14,255,106,0.4); color: var(--green); }
+  .btn.go:hover { background: var(--green-dim); }
+  .btn.rst { border-color: rgba(255,32,64,0.3); color: var(--red); }
+  .btn.rst:hover { background: var(--red-dim); }
+
+  /* Node list */
+  .node-list {
+    margin-top: 8px;
+  }
+
+  .nl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 10px;
+  }
+
+  .nl-row:hover { background: var(--off); }
+  .nl-row.selected { border-left-color: var(--cyan); background: var(--cyan-dim); }
+
+  .nl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .nl-name { flex: 1; }
+  .nl-state { font-size: 8px; letter-spacing: 1px; opacity: 0.4; }
+
+  /* Payload input */
+  #payloadInput {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--wire);
+    color: var(--cyan);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px;
+    padding: 8px;
+    outline: none;
+    margin-bottom: 8px;
+    resize: none;
+    height: 60px;
+  }
+
+  #payloadInput:focus { border-color: var(--cyan); }
+  #payloadInput::placeholder { color: rgba(0,180,255,0.15); }
+
+  /* ══ CENTER: GRAPH ══ */
+  #graphPane { grid-column: 2; grid-row: 1; }
+  #graphSvg { width: 100%; height: 100%; }
+
+  /* ══ RIGHT: LOG + STATS ══ */
+  #logPane { grid-row: 1 / 3; grid-column: 3; }
+
+  .stat-block {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--off);
+  }
+
+  .stat-block .st {
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    margin-bottom: 6px;
+  }
+
+  .sr {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    font-size: 10px;
+  }
+
+  .sr .k { opacity: 0.3; }
+  .sr .v { font-weight: 500; }
+  .v.g { color: var(--green); }
+  .v.r { color: var(--red); }
+  .v.c { color: var(--cyan); }
+  .v.y { color: var(--gold); }
+  .v.p { color: var(--purple); }
+
+  /* HMAC display */
+  .hmac-display {
+    font-size: 8px;
+    word-break: break-all;
+    padding: 4px 6px;
+    background: rgba(0,0,0,0.3);
+    border-left: 2px solid var(--wire);
+    margin: 4px 0;
+    line-height: 1.5;
+    max-height: 60px;
+    overflow-y: auto;
+  }
+
+  .hmac-display.valid { border-left-color: var(--green); color: var(--green); }
+  .hmac-display.corrupt { border-left-color: var(--red); color: var(--red); }
+
+  /* Log entries */
+  .log-section {
+    margin-top: 8px;
+  }
+
+  .le {
+    font-size: 9px;
+    padding: 2px 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .le .ts { color: var(--dim); font-size: 8px; margin-right: 6px; }
+  .le.ok { color: var(--green); }
+  .le.fail { color: var(--red); }
+  .le.info { color: var(--cyan); opacity: 0.7; }
+  .le.prop { color: var(--gold); }
+  .le.sys { opacity: 0.3; }
+
+  /* Bottom bar */
+  #bottom {
+    grid-column: 2;
+    background: var(--deep);
+    border-top: 1px solid var(--wire);
+    padding: 6px 12px;
+    display: flex;
+    gap: 16px;
+    font-size: 9px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .bi { display: flex; gap: 4px; }
+  .bi .bk { opacity: 0.3; }
+  .bi .bv { font-weight: 500; }
+
+  ::-webkit-scrollbar { width: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--wire); }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <h1>TERRA PROPAGATION</h1>
+  <span class="r">HMAC-SHA256 Integrity Network &middot; Standard 3,002 &middot; Bit-Flip Corruption Model</span>
+</div>
+
+<div id="main">
+  <!-- LEFT -->
+  <div class="pane" id="ctrlPane">
+    <div class="ph"><span>Controls</span></div>
+    <div class="pb">
+      <div class="ctrl-section">
+        <div class="ctrl-label">Payload</div>
+        <textarea id="payloadInput" placeholder="Message payload...">Scan for Wave 26 Propaganda Blueprint</textarea>
+      </div>
+
+      <div class="ctrl-section">
+        <div class="ctrl-label">Edge Noise</div>
+        <div class="ctrl-row">
+          <label>Bit-flip probability</label>
+          <input type="range" id="noiseSlider" min="0" max="50" value="5" oninput="updateNoise()">
+          <span class="val" id="noiseVal" style="color:var(--gold)">0.005</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Network size</label>
+          <input type="range" id="sizeSlider" min="6" max="24" value="12" oninput="updateSize()">
+          <span class="val" id="sizeVal" style="color:var(--cyan)">12</span>
+        </div>
+        <div class="ctrl-row">
+          <label>Edge density</label>
+          <input type="range" id="densitySlider" min="10" max="80" value="30" oninput="updateDensity()">
+          <span class="val" id="densityVal" style="color:var(--cyan)">0.30</span>
+        </div>
+      </div>
+
+      <div class="ctrl-section">
+        <button class="btn" onclick="generateNetwork()">GENERATE NETWORK</button>
+        <button class="btn go" id="btnPropagate" onclick="propagate()">PROPAGATE</button>
+        <button class="btn rst" onclick="resetState()">RESET</button>
+      </div>
+
+      <div class="ctrl-section">
+        <div class="ctrl-label">Source Node</div>
+        <div class="node-list" id="nodeList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="pane" id="graphPane">
+    <div class="ph"><span>Network Graph</span><span id="graphStatus" style="color:var(--dim)">IDLE</span></div>
+    <svg id="graphSvg"></svg>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="pane" id="logPane">
+    <div class="ph"><span>Integrity Log</span></div>
+    <div class="pb">
+      <div class="stat-block">
+        <div class="st">Propagation Stats</div>
+        <div class="sr"><span class="k">Total Nodes</span><span class="v c" id="stNodes">0</span></div>
+        <div class="sr"><span class="k">Total Edges</span><span class="v c" id="stEdges">0</span></div>
+        <div class="sr"><span class="k">Accepted</span><span class="v g" id="stAccepted">0</span></div>
+        <div class="sr"><span class="k">Rejected</span><span class="v r" id="stRejected">0</span></div>
+        <div class="sr"><span class="k">Integrity</span><span class="v y" id="stIntegrity">—</span></div>
+        <div class="sr"><span class="k">Corruption</span><span class="v r" id="stCorruption">—</span></div>
+        <div class="sr"><span class="k">Noise</span><span class="v y" id="stNoise">—</span></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="st">Original HMAC</div>
+        <div class="hmac-display" id="origHmac">—</div>
+      </div>
+
+      <div class="stat-block">
+        <div class="st">HMAC Verification</div>
+        <div class="ctrl-label" style="font-size:7px;margin-top:4px;">HMAC = SHA256(key, payload)</div>
+        <div class="ctrl-label" style="font-size:7px;">verify = compare_digest(tag(msg), mac)</div>
+        <div class="ctrl-label" style="font-size:7px;">corruption = bit_flip(data, probability)</div>
+      </div>
+
+      <div class="log-section">
+        <div class="st" style="font-family:'Orbitron';font-size:7px;letter-spacing:2px;color:var(--purple);margin-bottom:6px;">Event Log</div>
+        <div id="logFeed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+    <div class="bi"><span class="bk">TERRA</span><span class="bv" style="color:var(--gold)">3,002</span></div>
+    <div class="bi"><span class="bk">KEY</span><span class="bv" style="color:var(--purple)">demo_key</span></div>
+    <div class="bi"><span class="bk">ALGO</span><span class="bv" style="color:var(--cyan)">HMAC-SHA256</span></div>
+    <div class="bi"><span class="bk">MODE</span><span class="bv" id="bottomMode" style="color:var(--green)">READY</span></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CRYPTO — HMAC-SHA256 (Web Crypto API)
+// ═══════════════════════════════════════════
+
+const KEY_RAW = new TextEncoder().encode("demo_key_for_modeling_only");
+let cryptoKey = null;
+
+async function initCrypto() {
+  cryptoKey = await crypto.subtle.importKey(
+    'raw', KEY_RAW, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']
+  );
+}
+
+async function hmacTag(msg) {
+  const data = typeof msg === 'string' ? new TextEncoder().encode(msg) : msg;
+  const sig = await crypto.subtle.sign('HMAC', cryptoKey, data);
+  return new Uint8Array(sig);
+}
+
+async function hmacVerify(msg, mac) {
+  const data = typeof msg === 'string' ? new TextEncoder().encode(msg) : msg;
+  return await crypto.subtle.verify('HMAC', cryptoKey, mac, data);
+}
+
+function toHex(buf) {
+  return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function flipBits(data, prob) {
+  const out = new Uint8Array(data.length);
+  let flipped = 0;
+  for (let i = 0; i < data.length; i++) {
+    let byte = data[i];
+    for (let bit = 0; bit < 8; bit++) {
+      if (Math.random() < prob) {
+        byte ^= (1 << bit);
+        flipped++;
+      }
+    }
+    out[i] = byte;
+  }
+  return { data: out, flipped };
+}
+
+// ═══════════════════════════════════════════
+// GRAPH DATA
+// ═══════════════════════════════════════════
+
+let nodes = [];
+let edges = [];
+let sourceNode = 0;
+let noiseProb = 0.005;
+let networkSize = 12;
+let edgeDensity = 0.3;
+
+const LABELS = [
+  'ALPHA','BRAVO','CORTEX','DELTA','ECHO','FOXTROT','GAMMA','HOTEL',
+  'INDIA','JULIET','KILO','LIMA','MIKE','NEXUS','OSCAR','PAPA',
+  'QUEBEC','ROOT','SIGMA','TANGO','ULTRA','VECTOR','WHISKEY','XRAY'
+];
+
+function generateNetwork() {
+  nodes = [];
+  edges = [];
+
+  for (let i = 0; i < networkSize; i++) {
+    nodes.push({
+      id: i,
+      label: LABELS[i] || `N${i}`,
+      state: 'idle', // idle, source, accepted, rejected, pending
+      hmac: null,
+      receivedData: null,
+      bitsFlipped: 0
+    });
+  }
+
+  for (let i = 0; i < networkSize; i++) {
+    for (let j = i + 1; j < networkSize; j++) {
+      if (Math.random() < edgeDensity) {
+        edges.push({ source: i, target: j, state: 'idle' }); // idle, active, corrupt, clean
+      }
+    }
+  }
+
+  // Ensure connected — add edges from isolated nodes
+  const connected = new Set([0]);
+  const queue = [0];
+  while (queue.length > 0) {
+    const n = queue.shift();
+    edges.forEach(e => {
+      const other = e.source === n ? e.target : (e.target === n ? e.source : -1);
+      if (other >= 0 && !connected.has(other)) {
+        connected.add(other);
+        queue.push(other);
+      }
+    });
+  }
+  for (let i = 0; i < networkSize; i++) {
+    if (!connected.has(i)) {
+      const target = Array.from(connected)[Math.floor(Math.random() * connected.size)];
+      edges.push({ source: i, target, state: 'idle' });
+      connected.add(i);
+    }
+  }
+
+  sourceNode = 0;
+  renderGraph();
+  renderNodeList();
+  updateStats();
+  log('Generated network: ' + nodes.length + ' nodes, ' + edges.length + ' edges', 'info');
+}
+
+// ═══════════════════════════════════════════
+// D3 GRAPH RENDERING
+// ═══════════════════════════════════════════
+
+const svg = d3.select('#graphSvg');
+let simulation = null;
+
+function renderGraph() {
+  svg.selectAll('*').remove();
+
+  const rect = document.getElementById('graphSvg').getBoundingClientRect();
+  const W = rect.width || 600;
+  const H = rect.height || 400;
+
+  // Defs
+  const defs = svg.append('defs');
+  defs.html(`
+    <filter id="ng"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="ng2"><feGaussianBlur stdDeviation="8"/></filter>
+    <marker id="arrow" viewBox="0 0 10 6" refX="10" refY="3" markerWidth="8" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,3 L0,6" fill="rgba(0,180,255,0.3)"/>
+    </marker>
+  `);
+
+  const gEdges = svg.append('g');
+  const gNodes = svg.append('g');
+  const gLabels = svg.append('g');
+
+  // Build d3 data
+  const d3nodes = nodes.map(n => ({ ...n }));
+  const d3edges = edges.map(e => ({ source: e.source, target: e.target, _ref: e }));
+
+  simulation = d3.forceSimulation(d3nodes)
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('link', d3.forceLink(d3edges).id(d => d.id).distance(100))
+    .force('center', d3.forceCenter(W / 2, H / 2))
+    .force('collide', d3.forceCollide(30));
+
+  const linkEls = gEdges.selectAll('line')
+    .data(d3edges).enter().append('line')
+    .attr('stroke', 'rgba(0,180,255,0.1)')
+    .attr('stroke-width', 1.5)
+    .attr('stroke-dasharray', '4 4')
+    .attr('data-idx', (d, i) => i);
+
+  const nodeEls = gNodes.selectAll('g')
+    .data(d3nodes).enter().append('g')
+    .attr('cursor', 'pointer')
+    .call(d3.drag()
+      .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+      .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+    );
+
+  // Outer ring
+  nodeEls.append('circle')
+    .attr('r', 18)
+    .attr('fill', 'none')
+    .attr('stroke', d => d.id === sourceNode ? 'var(--cyan)' : 'rgba(0,180,255,0.1)')
+    .attr('stroke-width', 1)
+    .attr('stroke-dasharray', d => d.id === sourceNode ? 'none' : '3 5')
+    .attr('class', 'outer-ring');
+
+  // Main circle
+  nodeEls.append('circle')
+    .attr('r', 12)
+    .attr('fill', d => d.id === sourceNode ? 'rgba(0,180,255,0.15)' : 'rgba(255,255,255,0.03)')
+    .attr('stroke', d => d.id === sourceNode ? 'var(--cyan)' : 'rgba(255,255,255,0.08)')
+    .attr('stroke-width', 1.5)
+    .attr('filter', 'url(#ng)')
+    .attr('class', 'main-circle');
+
+  // Inner dot
+  nodeEls.append('circle')
+    .attr('r', 3)
+    .attr('fill', d => d.id === sourceNode ? 'var(--cyan)' : 'rgba(255,255,255,0.1)')
+    .attr('class', 'inner-dot');
+
+  // Labels
+  const labelEls = gLabels.selectAll('text')
+    .data(d3nodes).enter().append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dy', 28)
+    .attr('fill', d => d.id === sourceNode ? 'var(--cyan)' : 'rgba(255,255,255,0.3)')
+    .attr('font-family', 'Azeret Mono, monospace')
+    .attr('font-size', 8)
+    .attr('font-weight', d => d.id === sourceNode ? 700 : 400)
+    .text(d => d.label);
+
+  // Click to select source
+  nodeEls.on('click', (e, d) => {
+    sourceNode = d.id;
+    updateNodeVisuals();
+    renderNodeList();
+    log(`Source set: ${nodes[sourceNode].label}`, 'info');
+  });
+
+  simulation.on('tick', () => {
+    linkEls
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+
+    nodeEls.attr('transform', d => `translate(${d.x},${d.y})`);
+    labelEls.attr('x', d => d.x).attr('y', d => d.y);
+  });
+
+  // Store refs for updates
+  window._linkEls = linkEls;
+  window._nodeEls = nodeEls;
+  window._labelEls = labelEls;
+  window._d3nodes = d3nodes;
+}
+
+function updateNodeVisuals() {
+  if (!window._nodeEls) return;
+
+  window._nodeEls.select('.outer-ring')
+    .attr('stroke', d => {
+      const n = nodes[d.id];
+      if (n.state === 'source') return 'var(--cyan)';
+      if (n.state === 'accepted') return 'var(--green)';
+      if (n.state === 'rejected') return 'var(--red)';
+      if (n.state === 'pending') return 'var(--gold)';
+      if (d.id === sourceNode) return 'var(--cyan)';
+      return 'rgba(0,180,255,0.1)';
+    })
+    .attr('stroke-dasharray', d => {
+      const n = nodes[d.id];
+      return (n.state !== 'idle' || d.id === sourceNode) ? 'none' : '3 5';
+    });
+
+  window._nodeEls.select('.main-circle')
+    .attr('fill', d => {
+      const n = nodes[d.id];
+      if (n.state === 'source') return 'rgba(0,180,255,0.2)';
+      if (n.state === 'accepted') return 'rgba(14,255,106,0.12)';
+      if (n.state === 'rejected') return 'rgba(255,32,64,0.12)';
+      if (n.state === 'pending') return 'rgba(212,168,67,0.1)';
+      return 'rgba(255,255,255,0.03)';
+    })
+    .attr('stroke', d => {
+      const n = nodes[d.id];
+      if (n.state === 'source') return 'var(--cyan)';
+      if (n.state === 'accepted') return 'var(--green)';
+      if (n.state === 'rejected') return 'var(--red)';
+      if (n.state === 'pending') return 'var(--gold)';
+      return 'rgba(255,255,255,0.08)';
+    });
+
+  window._nodeEls.select('.inner-dot')
+    .attr('fill', d => {
+      const n = nodes[d.id];
+      if (n.state === 'source') return 'var(--cyan)';
+      if (n.state === 'accepted') return 'var(--green)';
+      if (n.state === 'rejected') return 'var(--red)';
+      return 'rgba(255,255,255,0.1)';
+    });
+
+  window._labelEls
+    .attr('fill', d => {
+      const n = nodes[d.id];
+      if (n.state === 'source') return 'var(--cyan)';
+      if (n.state === 'accepted') return 'var(--green)';
+      if (n.state === 'rejected') return 'var(--red)';
+      if (d.id === sourceNode) return 'var(--cyan)';
+      return 'rgba(255,255,255,0.3)';
+    });
+}
+
+function updateEdgeVisuals() {
+  if (!window._linkEls) return;
+
+  window._linkEls
+    .attr('stroke', (d, i) => {
+      const e = edges[i];
+      if (!e) return 'rgba(0,180,255,0.1)';
+      if (e.state === 'clean') return 'rgba(14,255,106,0.4)';
+      if (e.state === 'corrupt') return 'rgba(255,32,64,0.5)';
+      if (e.state === 'active') return 'rgba(0,180,255,0.4)';
+      return 'rgba(0,180,255,0.1)';
+    })
+    .attr('stroke-width', (d, i) => {
+      const e = edges[i];
+      if (!e) return 1.5;
+      return (e.state === 'clean' || e.state === 'corrupt') ? 2.5 : 1.5;
+    })
+    .attr('stroke-dasharray', (d, i) => {
+      const e = edges[i];
+      if (!e) return '4 4';
+      return e.state === 'idle' ? '4 4' : 'none';
+    });
+}
+
+// ═══════════════════════════════════════════
+// PROPAGATION ENGINE
+// ═══════════════════════════════════════════
+
+async function propagate() {
+  const payload = document.getElementById('payloadInput').value.trim();
+  if (!payload) { log('No payload.', 'fail'); return; }
+  if (nodes.length === 0) { log('Generate network first.', 'fail'); return; }
+
+  document.getElementById('btnPropagate').disabled = true;
+  document.getElementById('graphStatus').textContent = 'PROPAGATING';
+  document.getElementById('graphStatus').style.color = 'var(--gold)';
+  document.getElementById('bottomMode').textContent = 'PROPAGATING';
+  document.getElementById('bottomMode').style.color = 'var(--gold)';
+
+  // Reset states
+  nodes.forEach(n => { n.state = 'idle'; n.hmac = null; n.receivedData = null; n.bitsFlipped = 0; });
+  edges.forEach(e => { e.state = 'idle'; });
+
+  // Tag the payload
+  const payloadBytes = new TextEncoder().encode(payload);
+  const mac = await hmacTag(payloadBytes);
+
+  nodes[sourceNode].state = 'source';
+  nodes[sourceNode].hmac = mac;
+  nodes[sourceNode].receivedData = payloadBytes;
+
+  document.getElementById('origHmac').textContent = toHex(mac);
+  document.getElementById('origHmac').className = 'hmac-display valid';
+
+  log(`Source: ${nodes[sourceNode].label} | Payload: "${payload.substring(0,40)}"`, 'info');
+  log(`HMAC: ${toHex(mac).substring(0,32)}...`, 'info');
+
+  updateNodeVisuals();
+  updateEdgeVisuals();
+
+  // BFS propagation with delays
+  const accepted = new Set([sourceNode]);
+  const queue = [sourceNode];
+  let rejected = 0;
+  let step = 0;
+
+  // Build adjacency
+  const adj = {};
+  nodes.forEach(n => adj[n.id] = []);
+  edges.forEach((e, i) => {
+    adj[e.source].push({ target: e.target, edgeIdx: i });
+    adj[e.target].push({ target: e.source, edgeIdx: i });
+  });
+
+  async function processNext() {
+    if (queue.length === 0) {
+      // Done
+      document.getElementById('btnPropagate').disabled = false;
+      document.getElementById('graphStatus').textContent = 'COMPLETE';
+      document.getElementById('graphStatus').style.color = 'var(--green)';
+      document.getElementById('bottomMode').textContent = 'COMPLETE';
+      document.getElementById('bottomMode').style.color = 'var(--green)';
+
+      const integ = ((accepted.size / nodes.length) * 100).toFixed(1);
+      document.getElementById('stIntegrity').textContent = integ + '%';
+      document.getElementById('stIntegrity').className = `v ${parseFloat(integ) >= 80 ? 'g' : parseFloat(integ) >= 50 ? 'y' : 'r'}`;
+      log(`Propagation complete. ${accepted.size} accepted, ${rejected} rejected.`, accepted.size > rejected ? 'ok' : 'fail');
+      return;
+    }
+
+    const current = queue.shift();
+    const neighbors = adj[current] || [];
+
+    for (const { target, edgeIdx } of neighbors) {
+      if (accepted.has(target)) continue;
+      if (nodes[target].state === 'rejected') continue;
+
+      step++;
+      edges[edgeIdx].state = 'active';
+      nodes[target].state = 'pending';
+      updateNodeVisuals();
+      updateEdgeVisuals();
+
+      await wait(200 + Math.random() * 200);
+
+      // Flip bits on the payload as it crosses this edge
+      const { data: corrupted, flipped } = flipBits(payloadBytes, noiseProb);
+      nodes[target].bitsFlipped = flipped;
+
+      // Verify HMAC against (potentially corrupted) data
+      const valid = await hmacVerify(corrupted, mac);
+
+      if (valid) {
+        // Accepted
+        nodes[target].state = 'accepted';
+        nodes[target].hmac = mac;
+        nodes[target].receivedData = corrupted;
+        edges[edgeIdx].state = 'clean';
+        accepted.add(target);
+        queue.push(target);
+
+        document.getElementById('stAccepted').textContent = accepted.size;
+        log(`${nodes[current].label} → ${nodes[target].label}: ACCEPTED (${flipped} bits flipped, HMAC valid)`, 'ok');
+      } else {
+        // Rejected — corruption detected
+        nodes[target].state = 'rejected';
+        nodes[target].receivedData = corrupted;
+        edges[edgeIdx].state = 'corrupt';
+        rejected++;
+
+        document.getElementById('stRejected').textContent = rejected;
+        const corruptHex = toHex(await hmacTag(corrupted));
+        log(`${nodes[current].label} → ${nodes[target].label}: REJECTED (${flipped} bits flipped, HMAC mismatch)`, 'fail');
+        log(`  Expected: ${toHex(mac).substring(0,24)}...`, 'sys');
+        log(`  Got:      ${corruptHex.substring(0,24)}...`, 'sys');
+      }
+
+      document.getElementById('stCorruption').textContent = rejected;
+      updateNodeVisuals();
+      updateEdgeVisuals();
+
+      await wait(100);
+    }
+
+    await processNext();
+  }
+
+  await processNext();
+}
+
+// ═══════════════════════════════════════════
+// NODE LIST
+// ═══════════════════════════════════════════
+
+function renderNodeList() {
+  const list = document.getElementById('nodeList');
+  list.innerHTML = '';
+  nodes.forEach(n => {
+    const row = document.createElement('div');
+    row.className = `nl-row ${n.id === sourceNode ? 'selected' : ''}`;
+    const stateColors = { idle: 'var(--dim)', source: 'var(--cyan)', accepted: 'var(--green)', rejected: 'var(--red)', pending: 'var(--gold)' };
+    row.innerHTML = `<div class="nl-dot" style="background:${stateColors[n.state] || 'var(--dim)'}"></div>
+      <span class="nl-name">${n.label}</span>
+      <span class="nl-state">${n.state.toUpperCase()}</span>`;
+    row.onclick = () => {
+      sourceNode = n.id;
+      renderNodeList();
+      updateNodeVisuals();
+      log(`Source set: ${n.label}`, 'info');
+    };
+    list.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+
+function updateNoise() {
+  noiseProb = parseInt(document.getElementById('noiseSlider').value) / 1000;
+  document.getElementById('noiseVal').textContent = noiseProb.toFixed(3);
+  document.getElementById('stNoise').textContent = noiseProb.toFixed(3);
+}
+
+function updateSize() {
+  networkSize = parseInt(document.getElementById('sizeSlider').value);
+  document.getElementById('sizeVal').textContent = networkSize;
+}
+
+function updateDensity() {
+  edgeDensity = parseInt(document.getElementById('densitySlider').value) / 100;
+  document.getElementById('densityVal').textContent = edgeDensity.toFixed(2);
+}
+
+function resetState() {
+  nodes.forEach(n => { n.state = 'idle'; n.hmac = null; n.receivedData = null; n.bitsFlipped = 0; });
+  edges.forEach(e => { e.state = 'idle'; });
+  updateNodeVisuals();
+  updateEdgeVisuals();
+  renderNodeList();
+  document.getElementById('stAccepted').textContent = '0';
+  document.getElementById('stRejected').textContent = '0';
+  document.getElementById('stIntegrity').textContent = '—';
+  document.getElementById('stCorruption').textContent = '—';
+  document.getElementById('origHmac').textContent = '—';
+  document.getElementById('origHmac').className = 'hmac-display';
+  document.getElementById('graphStatus').textContent = 'IDLE';
+  document.getElementById('graphStatus').style.color = 'var(--dim)';
+  document.getElementById('bottomMode').textContent = 'READY';
+  document.getElementById('bottomMode').style.color = 'var(--green)';
+  document.getElementById('btnPropagate').disabled = false;
+  log('State reset.', 'sys');
+}
+
+function updateStats() {
+  document.getElementById('stNodes').textContent = nodes.length;
+  document.getElementById('stEdges').textContent = edges.length;
+  document.getElementById('stNoise').textContent = noiseProb.toFixed(3);
+}
+
+// ═══════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════
+
+const logFeed = document.getElementById('logFeed');
+
+function log(msg, cls = 'info') {
+  const ts = new Date().toTimeString().split(' ')[0];
+  const el = document.createElement('div');
+  el.className = `le ${cls}`;
+  el.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+  logFeed.appendChild(el);
+  logFeed.parentElement.scrollTop = logFeed.parentElement.scrollHeight;
+  while (logFeed.children.length > 200) logFeed.removeChild(logFeed.firstChild);
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+
+async function init() {
+  await initCrypto();
+  log('HMAC-SHA256 crypto initialized (Web Crypto API).', 'sys');
+  log('Key: demo_key_for_modeling_only', 'sys');
+  log('Terra Standard: 3,002', 'sys');
+  generateNetwork();
+}
+
+init();
+
+</script>
+</body>
+</html>

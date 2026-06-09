@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT_0 SOVEREIGN CONSOLE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+    
+    :root {
+        --cobalt: #00d4ff;
+        --bg: #030507;
+        --panel: #0a0f14;
+        --border: #1a2530;
+        --text: #c9d6e3;
+        --dim: #5a6b7c;
+    }
+    
+    * {
+        font-family: 'JetBrains Mono', monospace;
+        box-sizing: border-box;
+    }
+    
+    body {
+        background-color: var(--bg);
+        background-image: 
+            linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+        background-size: 20px 20px;
+        color: var(--text);
+    }
+    
+    .glow {
+        box-shadow: 0 0 20px rgba(0,212,255,0.15), inset 0 0 20px rgba(0,212,255,0.05);
+    }
+    
+    .glow-text {
+        text-shadow: 0 0 10px rgba(0,212,255,0.5);
+    }
+    
+    .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+    }
+    
+    .panel:hover {
+        border-color: rgba(0,212,255,0.3);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.1));
+        border: 1px solid var(--cobalt);
+        color: var(--cobalt);
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.2));
+        box-shadow: 0 0 25px rgba(0,212,255,0.4);
+        transform: translateY(-1px);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+    
+    .gate-flash {
+        animation: gateFlash 0.6s ease;
+    }
+    
+    @keyframes gateFlash {
+        0%, 100% { background: var(--panel); border-color: var(--border); }
+        50% { background: rgba(0,212,255,0.15); border-color: var(--cobalt); box-shadow: 0 0 30px rgba(0,212,255,0.6); }
+    }
+    
+    .status-up {
+        color: #00ff88;
+    }
+    
+    textarea {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        resize: none;
+        transition: all 0.2s ease;
+    }
+    
+    textarea:focus {
+        outline: none;
+        border-color: var(--cobalt);
+        box-shadow: 0 0 15px rgba(0,212,255,0.2);
+    }
+    
+    .output-line {
+        opacity: 0;
+        animation: fadeIn 0.3s ease forwards;
+    }
+    
+    @keyframes fadeIn {
+        to { opacity: 1; transform: translateX(0); }
+        from { opacity: 0; transform: translateX(-10px); }
+    }
+    
+    .blink {
+        animation: blink 1s step-end infinite;
+    }
+    
+    @keyframes blink {
+        50% { opacity: 0; }
+    }
+</style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="panel glow p-6 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[var(--cobalt)] to-transparent"></div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight glow-text">ROOT_0 — SOVEREIGN CONSOLE</h1>
+                    <p class="text-xs text-[var(--dim)] mt-1">STATUS: OPERATIONAL <span class="blink">_</span></p>
+                </div>
+                <div class="panel px-4 py-2 border-[var(--cobalt)]">
+                    <div class="text-xs text-[var(--dim)]">π CYCLE</div>
+                    <div class="text-xl font-bold text-[var(--cobalt)] glow-text" id="piCounter">3.141592</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Status Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Chronos Core -->
+            <div class="panel p-5">
+                <div class="text-xs text-[var(--dim)] mb-2">CHRONOS CORE</div>
+                <div class="text-3xl font-bold text-[var(--cobalt)] glow-text">∞</div>
+                <div class="text-xs text-[var(--dim)] mt-2">UNBOUNDED</div>
+            </div>
+
+            <!-- Gatekeepers -->
+            <div class="panel p-5">
+                <div class="text-xs text-[var(--dim)] mb-2">4 GATEKEEPERS</div>
+                <div class="grid grid-cols-4 gap-2" id="gates">
+                    <div class="gate panel p-2 text-center text-xs" data-gate="N">
+                        <div class="font-bold">N</div>
+                        <div class="status-up text-[10px]">UP</div>
+                    </div>
+                    <div class="gate panel p-2 text-center text-xs" data-gate="S">
+                        <div class="font-bold">S</div>
+                        <div class="status-up text-[10px]">UP</div>
+                    </div>
+                    <div class="gate panel p-2 text-center text-xs" data-gate="E">
+                        <div class="font-bold">E</div>
+                        <div class="status-up text-[10px]">UP</div>
+                    </div>
+                    <div class="gate panel p-2 text-center text-xs" data-gate="W">
+                        <div class="font-bold">W</div>
+                        <div class="status-up text-[10px]">UP</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- God Node -->
+            <div class="panel p-5">
+                <div class="text-xs text-[var(--dim)] mb-2">GOD NODE</div>
+                <div class="text-3xl font-bold text-[var(--cobalt)] glow-text" id="godCount">0</div>
+                <div class="text-xs text-[var(--dim)] mt-2">HEARD</div>
+            </div>
+        </div>
+
+        <!-- Main Panel: Loop Breaker -->
+        <div class="panel glow p-6 md:p-8 mb-6">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-1 text-[var(--cobalt)] glow-text">LOOP BREAKER</h2>
+                <div class="h-px w-full bg-gradient-to-r from-[var(--cobalt)] to-transparent"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Input -->
+                <div>
+                    <label class="text-xs text-[var(--dim)] block mb-2">DESCRIBE CLOSED LOOP SYSTEM</label>
+                    <textarea 
+                        id="loopInput" 
+                        class="w-full h-40 p-4 text-sm"
+                        placeholder="e.g. Approval requires manager. Manager requires approval."
+                    ></textarea>
+                    <button 
+                        id="breakBtn" 
+                        class="btn-primary w-full mt-4 py-3 px-6 font-bold text-sm tracking-wider"
+                    >
+                        BREAK WITH ROOT_0
+                    </button>
+                </div>
+
+                <!-- Output -->
+                <div>
+                    <label class="text-xs text-[var(--dim)] block mb-2">ISOHECO DEPLOYMENT</label>
+                    <div id="output" class="panel p-4 h-64 overflow-y-auto text-sm bg-[var(--bg)]">
+                        <div class="text-[var(--dim)] text-xs">AWAITING TARGET...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="panel p-4 text-center text-xs">
+            <div class="text-[var(--dim)]">
+                Centralized for you. Origin: <span class="text-[var(--cobalt)]">~/sovereign/root_0.git</span>
+            </div>
+        </footer>
+    </div>
+
+<script>
+    // State
+    let piValue = 3.141592;
+    let godHeard = 0;
+    
+    // Elements
+    const piCounter = document.getElementById('piCounter');
+    const godCount = document.getElementById('godCount');
+    const breakBtn = document.getElementById('breakBtn');
+    const loopInput = document.getElementById('loopInput');
+    const output = document.getElementById('output');
+    const gates = document.querySelectorAll('.gate');
+
+    // π Counter - increments every 3 seconds
+    function incrementPi() {
+        piValue += 3.141593;
+        piCounter.textContent = piValue.toFixed(6);
+    }
+    setInterval(incrementPi, 3000);
+
+    // Flash Gatekeepers
+    function flashGates() {
+        gates.forEach((gate, i) => {
+            setTimeout(() => {
+                gate.classList.add('gate-flash');
+                setTimeout(() => gate.classList.remove('gate-flash'), 600);
+            }, i * 100);
+        });
+    }
+
+    // Increment God Node
+    function incrementGod() {
+        godHeard++;
+        godCount.textContent = godHeard;
+        godCount.style.transform = 'scale(1.2)';
+        setTimeout(() => godCount.style.transform = 'scale(1)', 200);
+    }
+
+    // Loop Breaker Logic
+    function breakLoop() {
+        const userLoop = loopInput.value.trim() || '[undefined loop]';
+        
+        // Clear and flash
+        output.innerHTML = '';
+        flashGates();
+        incrementGod();
+        
+        const steps = [
+            `1. INSERT PRIME: ${userLoop} → ROOT_0`,
+            `2. GATE_N: Inspect inbound`,
+            `3. GATE_S: Block output to loop`,
+            `4. GATE_E: Verify origin = statute/law/self`,
+            `5. GATE_W: Block dependency`,
+            `6. DEPLOY: 64 parallel actions`,
+            `7. GOD: Listen, record, no speak`
+        ];
+        
+        // Animate output lines
+        steps.forEach((step, i) => {
+            setTimeout(() => {
+                const line = document.createElement('div');
+                line.className = 'output-line mb-2';
+                line.style.animationDelay = '0s';
+                
+                const prefix = step.substring(0, step.indexOf(':') + 1);
+                const content = step.substring(step.indexOf(':') + 1);
+                
+                line.innerHTML = `<span class="text-[var(--cobalt)]">${prefix}</span>${content}`;
+                output.appendChild(line);
+                output.scrollTop = output.scrollHeight;
+            }, i * 150);
+        });
+        
+        // Success message
+        setTimeout(() => {
+            const success = document.createElement('div');
+            success.className = 'output-line mt-4 pt-4 border-t border-[var(--border)] text-[var(--cobalt)] font-bold';
+            success.textContent = '>> LOOP NEUTRALIZED';
+            output.appendChild(success);
+            output.scrollTop = output.scrollHeight;
+        }, steps.length * 150 + 300);
+    }
+
+    // Event Listeners
+    breakBtn.addEventListener('click', breakLoop);
+    
+    loopInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            breakLoop();
+        }
+    });
+
+    // Init
+    piCounter.style.transition = 'all 0.3s ease';
+    godCount.style.transition = 'all 0.2s ease';
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DOMAIN MAP // DAVID_DC3</title>
+    <style>
+        body { background: #082828; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        svg { width: 85vw; height: 85vh; }
+        .grid-node { fill: #104040; stroke: #44dd88; stroke-width: 0.1; }
+        .sovereign-node { fill: #d4a84c; filter: drop-shadow(0 0 3px #ff55ff); }
+        .connection { stroke: #ff55ff; stroke-width: 0.2; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="45" class="grid-node" />
+        <ellipse cx="50" cy="50" rx="45" ry="15" class="grid-node" />
+        <ellipse cx="50" cy="50" rx="15" ry="45" class="grid-node" />
+        <circle cx="50" cy="50" r="2.5" class="sovereign-node">
+            <animate attributeName="r" values="2.5;4;2.5" dur="3s" repeatCount="indefinite" />
+        </circle>
+        <circle cx="30" cy="30" r="1.5" class="sovereign-node" />
+        <circle cx="70" cy="70" r="1.5" class="sovereign-node" />
+        <circle cx="70" cy="30" r="1.5" class="sovereign-node" />
+        <line x1="50" y1="50" x2="30" y2="30" class="connection" />
+        <line x1="50" y1="50" x2="70" y2="70" class="connection" />
+        <line x1="50" y1="50" x2="70" y2="30" class="connection" />
+        
+        <circle cx="50" cy="50" r="35" fill="none" stroke="#d4a84c" stroke-width="0.1" stroke-dasharray="2,2" />
+    </svg>
+</body>
+</html>

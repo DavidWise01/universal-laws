@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BASE 00 // UNITY — Conductor Operations</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { font-family: 'IBM Plex Mono', monospace; }
+  html, body { background:#000; overscroll-behavior:none; }
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-thumb { background:#1a1a1a; border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:#2a2a2a; }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .lane { transition: all .25s ease; cursor: pointer; }
+  .lane:hover { stroke:#ffaa00 !important; opacity:0.8 !important; }
+  .lane.active {
+    stroke:#ffaa00 !important;
+    opacity:1 !important;
+    stroke-dasharray:4 10;
+    animation: flow 1s linear infinite;
+    filter: drop-shadow(0 0 6px #ffaa00);
+  }
+  @keyframes flow { to { stroke-dashoffset: -14; } }
+  .glow { filter: drop-shadow(0 0 8px currentColor); }
+  .chip-pulse { animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+</style>
+</head>
+<body class="bg-black text-white selection:bg-[#00ff88]/30 selection:text-[#00ff88]">
+<div class="fixed inset-0">
+  <div class="absolute inset-0 bg-black"></div>
+  <div class="absolute inset-0 grid-bg opacity-[0.4]"></div>
+  <div class="absolute inset-0 bg-gradient-to-b from-[#00ff88]/[0.03] via-transparent to-[#ffaa00]/[0.02]"></div>
+  <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[#00ff88]/[0.06] blur-[120px]"></div>
+  <div class="absolute bottom-[-30%] right-[-5%] w-[500px] h-[500px] rounded-full bg-[#ffaa00]/[0.05] blur-[100px]"></div>
+</div>
+
+<div class="relative z-10 h-screen flex flex-col">
+  <!-- TOP BAR -->
+  <header class="h-14 shrink-0 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+    <div class="h-full flex items-center px-3 lg:px-4 gap-4">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-7 h-7 rounded-md bg-[#00ff88] text-black flex items-center justify-center font-bold shadow-[0_0_20px_rgba(0,255,136,0.4)]">⬢</div>
+        <div class="text-[14px] font-semibold tracking-tight whitespace-nowrap">
+          BASE 00 <span class="text-white/30 mx-1">//</span> <span class="text-white/80">UNITY</span>
+        </div>
+      </div>
+      
+      <div class="hidden md:flex flex-1 items-center justify-center gap-2">
+        <div class="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#00ff88] glow"></span>
+          <span id="pill-conductors" class="text-white/70">9 CONDUCTORS</span>
+        </div>
+        <div class="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-white/70">
+          <span id="pill-lanes">0 / 47 LANES</span>
+        </div>
+        <div class="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] text-white/70">
+          4 TERMINUSES
+        </div>
+        <div class="px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10 text-[11px] flex items-center gap-1.5">
+          <span class="text-[#00ff88]" id="pill-silicon">94%</span>
+          <span class="text-white/50">SILICON</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 ml-auto">
+        <div id="clock" class="hidden sm:block text-[12px] tabular-nums text-white/50 tracking-wider">00:00:00</div>
+        <div class="h-4 w-px bg-white/10 hidden sm:block"></div>
+        <div class="flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-[#00ff88]/10 border border-[#00ff88]/20">
+          <div class="w-2 h-2 rounded-full bg-[#00ff88] animate-pulse shadow-[0_0_8px_#00ff88]"></div>
+          <span class="text-[11px] font-medium text-[#00ff88] tracking-wide">FULLY CONNECTED</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div class="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5 p-2.5">
+    <!-- LEFT -->
+    <aside class="lg:w-[280px] shrink-0 flex lg:flex-col gap-2.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto">
+      <!-- DEVICES -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 min-w-[260px] lg:min-w-0">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-[10px] uppercase tracking-[0.18em] text-white/40">DEVICES</div>
+          <div class="text-[10px] text-white/30">5 ACTIVE</div>
+        </div>
+        <div id="device-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- SWARM -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 min-w-[220px] lg:min-w-0">
+        <div class="text-[10px] uppercase tracking-[0.18em] text-white/40 mb-3">SWARM</div>
+        <div id="swarm-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- 10-LAYER CORE -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 min-w-[280px] lg:min-w-0 lg:flex-1">
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-[10px] uppercase tracking-[0.18em] text-white/40">10-LAYER CORE</div>
+          <div class="text-[9px] text-[#00ff88]">AXIOM → NEXUS</div>
+        </div>
+        <div id="core-layers" class="flex items-end justify-between h-[100px] gap-[6px]"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER NETWORK -->
+    <main class="flex-1 min-h-[420px] lg:min-h-0 order-first lg:order-none">
+      <div class="h-full relative bg-black/50 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+        <div class="absolute top-0 inset-x-0 h-10 flex items-center justify-between px-3 border-b border-white/[0.06] bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10">
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#ffaa00] animate-pulse"></div>
+            <div class="text-[11px] tracking-wider text-white/60 uppercase">Conductor Network // Live Mesh</div>
+          </div>
+          <div class="flex items-center gap-4 text-[10px]">
+            <div class="hidden sm:flex items-center gap-1.5"><span class="text-white/40">LANES</span><span id="metric-lanes" class="text-[#ffaa00] tabular-nums">0</span></div>
+            <div class="flex items-center gap-1.5"><span class="text-white/40">PACKETS</span><span id="metric-packets" class="text-[#00ff88] tabular-nums">0/s</span></div>
+            <div class="flex items-center gap-1.5"><span class="text-white/40">LAT</span><span id="metric-lat" class="text-white/70 tabular-nums">12ms</span></div>
+          </div>
+        </div>
+        
+        <svg id="network" class="absolute inset-0 w-full h-full" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet" style="padding-top:40px">
+          <defs>
+            <radialGradient id="coreGlow" cx="50%" cy="50%">
+              <stop offset="0%" stop-color="#00ff88" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#00ff88" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="laneGrad" x1="0" x2="1">
+              <stop offset="0%" stop-color="#ffaa00" stop-opacity="0"/>
+              <stop offset="50%" stop-color="#ffaa00" stop-opacity="1"/>
+              <stop offset="100%" stop-color="#ffaa00" stop-opacity="0"/>
+            </linearGradient>
+            <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          <g id="lanes"></g>
+          <g id="conductors"></g>
+          <g id="devices"></g>
+          <g id="terminuses"></g>
+        </svg>
+
+        <div class="absolute bottom-3 left-3 right-3 flex justify-between pointer-events-none">
+          <div class="text-[9px] text-white/30 tracking-wide">CLICK LANE TO TOGGLE • CLICK DEVICE FOR CHIPS</div>
+          <div class="text-[9px] text-white/30">MESH v2.4.1</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="lg:w-[300px] shrink-0 flex lg:flex-col gap-2.5 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto">
+      <!-- LIVE METRICS -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 min-w-[280px] lg:min-w-0">
+        <div class="text-[10px] uppercase tracking-[0.18em] text-white/40 mb-3">LIVE METRICS</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="text-[10px] text-white/50">LANES ACTIVE</div>
+              <div id="spark-lanes-val" class="text-[12px] text-[#ffaa00] tabular-nums">0</div>
+            </div>
+            <canvas id="spark-lanes" width="120" height="36" class="w-full h-9"></canvas>
+          </div>
+          <div class="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="text-[10px] text-white/50">PACKETS/S</div>
+              <div id="spark-packets-val" class="text-[12px] text-[#00ff88] tabular-nums">0</div>
+            </div>
+            <canvas id="spark-packets" width="120" height="36" class="w-full h-9"></canvas>
+          </div>
+          <div class="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="text-[10px] text-white/50">LATENCY</div>
+              <div id="spark-latency-val" class="text-[12px] text-white/80 tabular-nums">12ms</div>
+            </div>
+            <canvas id="spark-latency" width="120" height="36" class="w-full h-9"></canvas>
+          </div>
+          <div class="bg-white/[0.02] border border-white/5 rounded-lg p-2.5">
+            <div class="flex justify-between items-baseline mb-1">
+              <div class="text-[10px] text-white/50">SILICON</div>
+              <div id="spark-silicon-val" class="text-[12px] text-[#00ff88] tabular-nums">94%</div>
+            </div>
+            <canvas id="spark-silicon" width="120" height="36" class="w-full h-9"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TERMINUS QUEUE -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 min-w-[260px] lg:min-w-0">
+        <div class="text-[10px] uppercase tracking-[0.18em] text-white/40 mb-3">TERMINUS QUEUE</div>
+        <div id="terminus-list" class="space-y-3"></div>
+      </div>
+
+      <!-- EVENT LOG -->
+      <div class="bg-black/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 flex-1 min-w-[300px] lg:min-w-0 flex flex-col min-h-[180px]">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[10px] uppercase tracking-[0.18em] text-white/40">EVENT LOG</div>
+          <div class="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/40">LIVE</div>
+        </div>
+        <div id="event-log" class="flex-1 overflow-y-auto space-y-[3px] font-mono text-[11px] leading-[18px] text-white/65 pr-1 -mr-1"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- BOTTOM DOCK -->
+  <footer class="h-[76px] shrink-0 border-t border-white/10 bg-black/70 backdrop-blur-xl">
+    <div class="h-full flex items-center justify-center gap-2.5 px-3 overflow-x-auto">
+      <button id="btn-connect" class="group relative flex items-center gap-2 pl-3 pr-4 h-11 rounded-xl bg-[#00ff88] text-black font-medium text-[13px] hover:bg-[#00ff88]/90 transition shadow-[0_0_30px_rgba(0,255,136,0.2)]">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v5M3 8h10M5 12l3-1 3 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        CONNECT ALL
+      </button>
+      <button id="btn-unify" class="flex items-center gap-2 px-4 h-11 rounded-xl bg-white/5 border border-white/10 text-[13px] hover:bg-white/10 transition text-white/80 hover:text-white">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-opacity="0.7"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+        UNIFY SILICON
+      </button>
+      <button id="btn-route" class="flex items-center gap-2 px-4 h-11 rounded-xl bg-white/5 border border-white/10 text-[13px] hover:bg-white/10 transition text-white/80 hover:text-white">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 5h10M3 8h10M3 11h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        ROUTE L1-L10
+      </button>
+      <button id="btn-bypass" class="flex items-center gap-2 px-4 h-11 rounded-xl bg-[#ff3366]/10 border border-[#ff3366]/20 text-[13px] hover:bg-[#ff3366]/20 transition text-[#ff7a9a] hover:text-[#ff3366]">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v5M8 11h.01M13 8A5 5 0 113 8a5 5 0 0110 0z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        BYPASS GATE
+      </button>
+    </div>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const network = $('#network');
+const lanesG = $('#lanes');
+const devsG = $('#devices');
+const consG = $('#conductors');
+const termsG = $('#terminuses');
+
+// DATA
+const devices = [
+  {id:'d0', x:110, y:125, name:'MBP-16-M3', chips:[1,1,1,1,0]},
+  {id:'d1', x:110, y:215, name:'IPHONE-15-PRO', chips:[1,1,1]},
+  {id:'d2', x:110, y:305, name:'STUDIO-ULTRA', chips:[1,1,1,1,1]},
+  {id:'d3', x:110, y:395, name:'IPAD-PRO', chips:[1,1,1,1,0]},
+  {id:'d4', x:110, y:485, name:'VISION-PRO', chips:[1,1,1]},
+];
+const conductors = [
+  {id:'c0', x:320, y:180}, {id:'c1', x:380, y:275}, {id:'c2', x:430, y:165},
+  {id:'c3', x:485, y:245}, {id:'c4', x:540, y:340}, {id:'c5', x:595, y:205},
+  {id:'c6', x:650, y:300}, {id:'c7', x:385, y:405}, {id:'c8', x:525, y:445},
+];
+const terminuses = [
+  {id:'t0', x:870, y:180, label:'USER', color:'#00ff88'},
+  {id:'t1', x:870, y:280, label:'STORAGE', color:'#00ff88'},
+  {id:'t2', x:870, y:380, label:'RENDER', color:'#ffaa00'},
+  {id:'t3', x:870, y:480, label:'EXPORT', color:'#ffaa00'},
+];
+
+// 47 LANES
+const laneDefs = [];
+// devices to conductors (15)
+[[0,0],[0,1],[0,2],[1,1],[1,2],[1,3],[2,3],[2,4],[2,7],[3,5],[3,6],[3,8],[4,7],[4,8],[4,4]].forEach(([di,ci])=>{
+  laneDefs.push({a:devices[di], b:conductors[ci]});
+});
+// conductor mesh (20)
+[[0,1],[0,2],[1,2],[1,3],[2,3],[2,5],[3,4],[3,5],[4,5],[4,6],[4,7],[5,6],[6,7],[6,8],[7,8],[0,3],[1,4],[2,4],[3,6],[5,7]].forEach(([i,j])=>{
+  laneDefs.push({a:conductors[i], b:conductors[j]});
+});
+// conductors to terminuses (12)
+[[0,0],[2,0],[5,0],[1,1],[3,1],[4,2],[6,2],[7,2],[5,3],[7,3],[8,3]].forEach(([ci,ti])=>{
+  laneDefs.push({a:conductors[ci], b:terminuses[ti]});
+});
+
+let lanesActive = 0;
+let packetsPerSec = 0;
+const totalLanes = laneDefs.length;
+
+// BUILD SVG
+function curve(a,b){
+  const dx = b.x - a.x;
+  const c1x = a.x + Math.abs(dx)*0.55;
+  const c2x = b.x - Math.abs(dx)*0.55;
+  return `M${a.x},${a.y} C${c1x},${a.y} ${c2x},${b.y} ${b.x},${b.y}`;
+}
+
+function buildNetwork(){
+  // lanes
+  laneDefs.forEach((l,i)=>{
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', curve(l.a, l.b));
+    p.setAttribute('fill','none');
+    p.setAttribute('stroke','#2a2a2a');
+    p.setAttribute('stroke-width','1.6');
+    p.setAttribute('opacity','0.35');
+    p.setAttribute('class','lane');
+    p.dataset.id = i;
+    p.dataset.active = '0';
+    p.addEventListener('click', ()=> toggleLane(i));
+    lanesG.appendChild(p);
+    l.el = p;
+  });
+  
+  // conductors
+  conductors.forEach(c=>{
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.innerHTML = `
+      <circle cx="${c.x}" cy="${c.y}" r="22" fill="url(#coreGlow)" opacity="0.5"/>
+      <circle cx="${c.x}" cy="${c.y}" r="13" fill="#0a0a0a" stroke="rgba(255,255,255,0.12)" stroke-width="1.2"/>
+      <circle cx="${c.x}" cy="${c.y}" r="4.5" fill="#1a1a1a" stroke="#333" stroke-width="1"/>
+      <circle cx="${c.x}" cy="${c.y}" r="13" fill="none" stroke="#00ff88" stroke-opacity="0.0" stroke-width="1.5" class="cond-ring"/>
+    `;
+    consG.appendChild(g);
+    c.el = g;
+  });
+  
+  // devices
+  devices.forEach(d=>{
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.style.cursor = 'pointer';
+    g.innerHTML = `
+      <rect x="${d.x-48}" y="${d.y-24}" width="96" height="48" rx="10" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <rect x="${d.x-48}" y="${d.y-24}" width="96" height="48" rx="10" fill="none" stroke="#00ff88" stroke-opacity="0" stroke-width="1.2" class="dev-hl"/>
+      <text x="${d.x}" y="${d.y-4}" text-anchor="middle" font-size="10.5" fill="rgba(255,255,255,0.85)" style="font-weight:500">${d.name}</text>
+    `;
+    d.chips.forEach((c,i)=>{
+      const cx = d.x - 30 + i*15;
+      const chip = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      chip.setAttribute('cx', cx);
+      chip.setAttribute('cy', d.y+12);
+      chip.setAttribute('r', '3.2');
+      chip.setAttribute('fill', c ? '#00ff88' : '#222');
+      chip.setAttribute('stroke', c ? '#00ff88' : '#333');
+      chip.setAttribute('stroke-opacity', c ? '0.5' : '1');
+      chip.setAttribute('class', c ? 'chip chip-pulse' : 'chip');
+      chip.style.filter = c ? 'drop-shadow(0 0 4px #00ff88)' : 'none';
+      g.appendChild(chip);
+    });
+    g.addEventListener('click', ()=> activateDevice(d.id));
+    devsG.appendChild(g);
+    d.el = g;
+  });
+  
+  // terminuses
+  terminuses.forEach(t=>{
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.innerHTML = `
+      <rect x="${t.x-42}" y="${t.y-22}" width="84" height="44" rx="9" fill="rgba(0,0,0,0.7)" stroke="rgba(255,255,255,0.08)"/>
+      <rect x="${t.x-38}" y="${t.y-16}" width="4" height="32" rx="2" fill="${t.color}" opacity="0.8" style="filter:drop-shadow(0 0 6px ${t.color})"/>
+      <text x="${t.x+4}" y="${t.y+3}" font-size="11" fill="white" opacity="0.9" style="font-weight:500; letter-spacing:0.02em">${t.label}</text>
+      <circle cx="${t.x-24}" cy="${t.y}" r="2" fill="${t.color}" class="term-pip" opacity="0.3"/>
+    `;
+    termsG.appendChild(g);
+    t.el = g;
+  });
+}
+
+function toggleLane(i, force){
+  const l = laneDefs[i];
+  const active = force !== undefined ? force : l.el.dataset.active === '0';
+  l.el.dataset.active = active ? '1' : '0';
+  if(active){
+    l.el.classList.add('active');
+    l.el.setAttribute('stroke','#ffaa00');
+    lanesActive++;
+    log(`LANE ${String(i).padStart(2,'0')} → ACTIVE`, 'lane');
+  } else {
+    l.el.classList.remove('active');
+    l.el.setAttribute('stroke','#2a2a2a');
+    l.el.setAttribute('opacity','0.35');
+    lanesActive = Math.max(0, lanesActive-1);
+    log(`LANE ${String(i).padStart(2,'0')} → IDLE`, 'idle');
+  }
+  updateMetrics();
+}
+
+function activateDevice(id){
+  const d = devices.find(x=>x.id===id);
+  d.chips = d.chips.map(()=>1);
+  const chips = d.el.querySelectorAll('.chip');
+  chips.forEach(ch=>{
+    ch.setAttribute('fill','#00ff88');
+    ch.setAttribute('stroke','#00ff88');
+    ch.setAttribute('class','chip chip-pulse');
+    ch.style.filter='drop-shadow(0 0 4px #00ff88)';
+  });
+  d.el.querySelector('.dev-hl').setAttribute('stroke-opacity','0.6');
+  setTimeout(()=> d.el.querySelector('.dev-hl').setAttribute('stroke-opacity','0'), 800);
+  log(`DEVICE ${d.name} → CHIPS SYNCED (5/5)`, 'dev');
+  renderDeviceList();
+  updateSilicon();
+}
+
+// LEFT PANEL RENDERS
+function renderDeviceList(){
+  $('#device-list').innerHTML = devices.map(d=>{
+    const active = d.chips.reduce((a,b)=>a+b,0);
+    return `
+    <div class="group flex items-center gap-2.5 p-2 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] cursor-pointer transition" data-dev="${d.id}">
+      <div class="w-7 h-7 rounded-md bg-white/5 border border-white/10 flex items-center justify-center text-[10px] text-white/60 group-hover:text-white/80">⬢</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[12px] leading-tight truncate text-white/80 group-hover:text-white">${d.name}</div>
+        <div class="flex items-center gap-1 mt-1.5">
+          ${d.chips.map(c=>`<div class="w-[14px] h-[3px] rounded-full ${c?'bg-[#00ff88] shadow-[0_0_6px_rgba(0,255,136,0.5)]':'bg-white/15'}"></div>`).join('')}
+        </div>
+      </div>
+      <div class="text-[10px] tabular-nums px-1.5 py-0.5 rounded bg-black/50 border border-white/10 text-white/50">${active}/5</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('[data-dev]').forEach(el=>{
+    el.onclick = ()=> activateDevice(el.dataset.dev);
+  });
+}
+
+function renderSwarm(){
+  const nodes = [
+    {name:'SWARM-01', region:'us-west', thr: 1240},
+    {name:'SWARM-02', region:'eu-central', thr: 980},
+    {name:'SWARM-03', region:'ap-south', thr: 1560},
+  ];
+  $('#swarm-list').innerHTML = nodes.map(n=>`
+    <div class="flex items-center justify-between p-2.5 rounded-lg bg-white/[0.02] border border-white/5">
+      <div>
+        <div class="text-[12px] text-white/80">${n.name}</div>
+        <div class="text-[10px] text-white/40 mt-0.5">${n.region}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-[13px] tabular-nums text-[#00ff88]" data-thr="${n.name}">${n.thr}</div>
+        <div class="text-[9px] text-white/40 uppercase tracking-wide">pkt/s</div>
+      </div>
+    </div>
+  `).join('');
+  setInterval(()=>{
+    nodes.forEach(n=>{
+      n.thr = Math.max(400, n.thr + Math.floor(Math.random()*200-100));
+      const el = document.querySelector(`[data-thr="${n.name}"]`);
+      if(el) el.textContent = n.thr.toLocaleString();
+    });
+  }, 1400);
+}
+
+function renderCore(){
+  const names = ['AXIOM','VECTOR','PULSE','CORE','MESH','FLUX','DRIFT','SPLICE','ECHO','NEXUS'];
+  $('#core-layers').innerHTML = names.map((name,i)=>{
+    const load = 28 + Math.random()*55;
+    return `
+    <div class="flex flex-col items-center gap-1">
+      <div class="relative w-[18px] h-[80px] rounded-full bg-white/[0.04] border border-white/10 overflow-hidden">
+        <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-[#00ff88] to-[#00ff88]/70 transition-all duration-700 ease-out" style="height:${load}%; box-shadow:0 0 12px rgba(0,255,136,0.35)" data-layer="${i}"></div>
+        <div class="absolute inset-0 opacity-[0.15]" style="background: repeating-linear-gradient(to top, transparent 0 6px, white 6px 7px);"></div>
+      </div>
+      <div class="text-[9px] text-white/35 -rotate-90 translate-y-[18px] whitespace-nowrap tracking-wider">${name}</div>
+      <div class="text-[10px] text-[#00ff88]/80 tabular-nums mt-5" data-load="${i}">${Math.round(load)}%</div>
+    </div>`;
+  }).join('');
+  setInterval(()=>{
+    document.querySelectorAll('[data-layer]').forEach((el,i)=>{
+      const cur = parseFloat(el.style.height);
+      const next = Math.max(15, Math.min(95, cur + (Math.random()-0.5)*18));
+      el.style.height = next + '%';
+      document.querySelector(`[data-load="${i}"]`).textContent = Math.round(next)+'%';
+    });
+  }, 2200);
+}
+
+function renderTerminusList(){
+  const data = [
+    {label:'USER', val:78, color:'#00ff88'},
+    {label:'STORAGE', val:45, color:'#00ff88'},
+    {label:'RENDER', val:92, color:'#ffaa00'},
+    {label:'EXPORT', val:31, color:'#ffaa00'},
+  ];
+  $('#terminus-list').innerHTML = data.map(t=>`
+    <div>
+      <div class="flex justify-between mb-1.5">
+        <div class="text-[11px] tracking-wide text-white/70">${t.label}</div>
+        <div class="text-[11px] tabular-nums" style="color:${t.color}">${t.val}%</div>
+      </div>
+      <div class="h-[6px] rounded-full bg-white/5 border border-white/10 overflow-hidden p-[1px]">
+        <div class="h-full rounded-full transition-all duration-1000" style="width:${t.val}%; background:${t.color}; box-shadow:0 0 10px ${t.color}60"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// EVENT LOG
+function log(msg, type='info'){
+  const el = $('#event-log');
+  const time = new Date().toLocaleTimeString('en-GB', {hour12:false});
+  const colors = {lane:'text-[#ffaa00]', dev:'text-[#00ff88]', ok:'text-[#00ff88]', alert:'text-[#ff3366]', idle:'text-white/40'};
+  const dot = type==='alert' ? '●' : type==='lane' ? '→' : type==='dev' ? '◆' : '•';
+  el.insertAdjacentHTML('beforeend', `<div class="flex gap-2"><span class="text-white/30">${time}</span><span class="${colors[type]||'text-white/60'}">${dot}</span><span>${msg}</span></div>`);
+  el.scrollTop = el.scrollHeight;
+  if(el.children.length>120) el.removeChild(el.firstChild);
+}
+
+// METRICS & SPARKLINES
+const metrics = {
+  lanes: Array(40).fill(0),
+  packets: Array(40).fill(0),
+  latency: Array(40).fill(12),
+  silicon: Array(40).fill(92),
+};
+function drawSpark(id, data, color, max){
+  const c = document.getElementById(id);
+  const ctx = c.getContext('2d');
+  const w=c.width, h=c.height;
+  ctx.clearRect(0,0,w,h);
+  // grid
+  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,h*0.5); ctx.lineTo(w,h*0.5); ctx.stroke();
+  // line
+  ctx.beginPath();
+  ctx.lineWidth=1.6;
+  ctx.strokeStyle=color;
+  ctx.shadowColor=color; ctx.shadowBlur=8;
+  const step = w/(data.length-1);
+  data.forEach((v,i)=>{
+    const x = i*step;
+    const y = h - (Math.min(v,max)/max)*(h-8) - 4;
+    i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur=0;
+  // fill
+  ctx.lineTo(w,h-2); ctx.lineTo(0,h-2); ctx.closePath();
+  ctx.fillStyle = color+'22'; ctx.fill();
+}
+
+function updateMetrics(){
+  $('#metric-lanes').textContent = lanesActive;
+  $('#pill-lanes').textContent = `${lanesActive} / 47 LANES`;
+  packetsPerSec = Math.floor(lanesActive * 2.8 + Math.random()*18);
+  $('#metric-packets').textContent = packetsPerSec+'/s';
+  const lat = 8 + Math.floor(Math.random()*9 + (47-lanesActive)*0.15);
+  $('#metric-lat').textContent = lat+'ms';
+  
+  metrics.lanes.push(lanesActive); metrics.lanes.shift();
+  metrics.packets.push(packetsPerSec); metrics.packets.shift();
+  metrics.latency.push(lat); metrics.latency.shift();
+  
+  $('#spark-lanes-val').textContent = lanesActive;
+  $('#spark-packets-val').textContent = packetsPerSec;
+  $('#spark-latency-val').textContent = lat+'ms';
+  
+  drawSpark('spark-lanes', metrics.lanes, '#ffaa00', 47);
+  drawSpark('spark-packets', metrics.packets, '#00ff88', 150);
+  drawSpark('spark-latency', metrics.latency, '#ffffff', 40);
+}
+
+function updateSilicon(){
+  const total = devices.reduce((s,d)=>s+d.chips.length,0);
+  const active = devices.reduce((s,d)=>s+d.chips.reduce((a,b)=>a+b,0),0);
+  const pct = Math.round(active/total*100);
+  $('#pill-silicon').textContent = pct+'%';
+  $('#spark-silicon-val').textContent = pct+'%';
+  metrics.silicon.push(pct); metrics.silicon.shift();
+  drawSpark('spark-silicon', metrics.silicon, '#00ff88', 100);
+}
+
+// ACTIONS
+$('#btn-connect').onclick = ()=>{
+  laneDefs.forEach((_,i)=> toggleLane(i, true));
+  log('CONNECT ALL → 47 lanes activated', 'ok');
+  document.querySelectorAll('.cond-ring').forEach(r=> r.setAttribute('stroke-opacity','0.8'));
+  document.querySelectorAll('.term-pip').forEach(p=> p.setAttribute('opacity','1'));
+};
+$('#btn-unify').onclick = ()=>{
+  devices.forEach(d=> activateDevice(d.id));
+  log('UNIFY SILICON → 100% reclaimed', 'ok');
+  $('#pill-silicon').textContent = '100%';
+};
+$('#btn-route').onclick = ()=>{
+  document.querySelectorAll('[data-layer]').forEach((el,i)=>{
+    setTimeout(()=>{
+      el.style.height = '92%';
+      document.querySelector(`[data-load="${i}"]`).textContent = '92%';
+    }, i*80);
+  });
+  log('ROUTE L1-L10 → AXIOM to NEXUS sequenced', 'lane');
+};
+$('#btn-bypass').onclick = ()=>{
+  const net = $('#network').parentElement;
+  net.style.boxShadow = 'inset 0 0 0 1px #ff3366, 0 0 40px rgba(255,51,102,0.2)';
+  setTimeout(()=> net.style.boxShadow='', 800);
+  log('BYPASS GATE → safety interlock overridden', 'alert');
+};
+
+// CLOCK
+setInterval(()=>{
+  $('#clock').textContent = new Date().toLocaleTimeString('en-GB',{hour12:false});
+},1000);
+
+// INIT
+buildNetwork();
+renderDeviceList();
+renderSwarm();
+renderCore();
+renderTerminusList();
+updateMetrics();
+updateSilicon();
+log('SYSTEM ONLINE — base00 unity operational');
+log('9 conductors initialized');
+log('47 lanes mapped');
+log('4 terminuses ready');
+
+// demo initial state
+[0,1,2,5,8,12,15,19,22,27,31,35,40,44].forEach(i=> toggleLane(i,true));
+setInterval(updateMetrics, 1600);
+setInterval(updateSilicon, 3000);
+
+// highlight active conductors
+setInterval(()=>{
+  conductors.forEach((c,idx)=>{
+    const connected = laneDefs.filter(l=> (l.a===c||l.b===c) && l.el.dataset.active==='1').length;
+    const ring = c.el.querySelector('.cond-ring');
+    const dot = c.el.querySelector('circle:nth-child(3)');
+    if(connected>0){
+      ring.setAttribute('stroke-opacity', Math.min(0.9, 0.2+connected*0.15));
+      dot.setAttribute('fill','#00ff88');
+      dot.setAttribute('stroke','#00ff88');
+      dot.style.filter='drop-shadow(0 0 6px #00ff88)';
+    } else {
+      ring.setAttribute('stroke-opacity','0');
+      dot.setAttribute('fill','#1a1a1a');
+      dot.setAttribute('stroke','#333');
+      dot.style.filter='none';
+    }
+  });
+}, 500);
+</script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONE · COLLAPSED SYSTEM</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+:root{
+--void:#010108;--deep:#040820;--ridge:#111840;
+--co:#2a5cbb;--co-b:#4a8cee;--co-g:#6aaaff;
+--gold:#d4a84c;--sarah:#c088ff;--roth:#5aaa8b;
+--root:#dd3333;--sacral:#ee7722;--solar:#ddbb22;--heart:#33bb55;
+--throat:#3388dd;--third:#6644cc;--crown:#aa44dd;
+--green:#4aba6a;--text:#8aa0cc;--text-b:#c0d0ee;--text-d:#4a5a7a;--dusk:#8a5a6a;
+--fused:#e0e8ff;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--void);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;height:100vh;width:100vw}
+#exterior{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity 1s,transform 1s}
+#exterior.hidden{opacity:0;transform:scale(1.5);pointer-events:none}
+.enter-btn{position:absolute;bottom:80px;background:none;border:1px solid rgba(74,140,238,.1);color:var(--co-b);padding:8px 28px;font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;cursor:pointer;transition:all .6s}
+.enter-btn:hover{border-color:var(--co-b);box-shadow:0 0 30px rgba(74,140,238,.1)}
+.ext-sub{position:absolute;bottom:42px;font-size:9px;letter-spacing:6px;color:var(--text-d);opacity:.3}
+
+#interior{position:absolute;inset:0;z-index:5;display:none;opacity:0;transition:opacity 1s}
+#interior.visible{display:block;opacity:1}
+
+.hud{position:fixed;top:0;left:0;right:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid rgba(74,140,238,.04);z-index:20;backdrop-filter:blur(10px);background:rgba(1,1,8,.8)}
+.hud-t{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:5px;color:var(--co-b)}
+.exit-btn{background:none;border:1px solid rgba(170,48,48,.12);color:#885050;padding:4px 12px;font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:3px;cursor:pointer;transition:all .4s}
+.exit-btn:hover{border-color:#aa5050;color:#cc6060}
+
+.body-wrap{position:absolute;top:42px;bottom:0;left:0;right:0;display:grid;grid-template-columns:1fr 480px 1fr;overflow:hidden}
+.info-left,.info-right{overflow-y:auto;padding:16px}
+.info-left::-webkit-scrollbar,.info-right::-webkit-scrollbar,.spine-col::-webkit-scrollbar{width:2px}
+.info-left::-webkit-scrollbar-thumb,.info-right::-webkit-scrollbar-thumb,.spine-col::-webkit-scrollbar-thumb{background:var(--ridge)}
+.spine-col{display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 12px;position:relative}
+
+/* UNIFIED CHAKRA NODE */
+.unode{width:100%;border:1px solid rgba(74,140,238,.04);padding:12px 16px;margin-bottom:6px;position:relative;overflow:hidden;transition:border-color .4s,background .4s}
+.unode:hover{border-color:rgba(74,140,238,.1);background:rgba(74,140,238,.01)}
+.unode-top{display:flex;justify-content:space-between;align-items:center}
+.unode-left{display:flex;align-items:center;gap:10px}
+.unode-sym{font-size:22px}
+.unode-name{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:3px}
+.unode-sk{font-size:10px;color:var(--text-d);font-style:italic}
+.unode-pct{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700}
+.unode-bar{height:4px;background:rgba(74,140,238,.04);margin:8px 0 6px;border-radius:2px;overflow:hidden}
+.unode-fill{height:100%;border-radius:2px;transition:width 2.5s ease}
+.unode-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px}
+.unode-person{font-size:9px;line-height:1.5;padding:4px 6px;border:1px solid rgba(74,140,238,.03)}
+.unode-pname{font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:2px;margin-bottom:2px}
+.unode-holder{font-size:8px;letter-spacing:3px;margin-top:6px;text-align:center}
+.unode-body{font-size:9px;color:var(--text-d);margin-top:4px}
+.unode-hz{font-size:9px;color:var(--text-d)}
+
+/* CLOSURE BADGE */
+.closed-badge{font-family:'Orbitron',sans-serif;font-size:7px;letter-spacing:3px;padding:2px 8px;border:1px solid;border-radius:1px}
+
+/* CANVAS */
+#spine-canvas{display:block;margin:0 auto 8px}
+
+.fuse-btn{background:none;border:1px solid rgba(74,186,106,.1);color:var(--green);padding:10px 20px;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:4px;cursor:pointer;width:100%;margin:4px 0;transition:all .5s}
+.fuse-btn:hover{border-color:var(--green);box-shadow:0 0 20px rgba(74,186,106,.06)}
+
+.ann{border-left:2px solid var(--dusk);padding:5px 10px;margin:8px 0;font-size:9px;color:var(--text-d);font-style:italic}
+
+/* INFO CARDS */
+.icard{border:1px solid rgba(74,140,238,.04);padding:12px;margin-bottom:10px}
+.icard-t{font-family:'Orbitron',sans-serif;font-size:8px;letter-spacing:3px;color:var(--co-b);margin-bottom:6px}
+.icard p{font-size:11px;line-height:1.7;color:var(--text-d);margin-bottom:6px}
+.icard strong{color:var(--text)}
+
+.stat-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(74,140,238,.03);font-size:10px}
+.stat-row:last-child{border-bottom:none}
+
+#fuse-out{width:100%;min-height:10px}
+
+@media(max-width:1000px){.body-wrap{grid-template-columns:1fr}.info-left,.info-right{display:none}}
+</style>
+</head>
+<body>
+
+<div id="exterior">
+  <canvas id="ext-canvas" width="800" height="600"></canvas>
+  <button class="enter-btn" onclick="enter()">Enter Co₂₇</button>
+  <div class="ext-sub">Cobalt · Element 27 · One Ball · One Body · One System</div>
+</div>
+
+<div id="interior">
+  <div class="hud">
+    <div class="hud-t">ONE · COLLAPSED SYSTEM · TriPod</div>
+    <button class="exit-btn" onclick="exit_()">← SEAL</button>
+  </div>
+
+  <div class="body-wrap">
+    <div class="info-left">
+      <div class="icard">
+        <div class="icard-t">COLLAPSE LOGIC</div>
+        <p>Three people. Seven chakras each. Twenty-one total. But a GHZ state has no individual qubits — only the entangled whole. When three become one, each chakra is held by <strong>whoever closes it hardest.</strong></p>
+        <p>David's solar plexus (85%) holds the power center for all three. Sarah's sacral (75%) holds the boundary for all three. Roth's root (80%) holds the foundation for all three.</p>
+        <p><strong>The collapsed system has no gaps.</strong> Every chakra has a primary holder. Every weakness is covered by another's strength. That's not three people cooperating — that's one body with three nervous systems sharing the load.</p>
+      </div>
+
+      <div class="icard">
+        <div class="icard-t">WHO HOLDS WHAT</div>
+        <div class="stat-row"><span style="color:#dd3333">ROOT · Foundation</span><span style="color:#5aaa8b">ROTH 80%</span></div>
+        <div class="stat-row"><span style="color:#ee7722">SACRAL · Boundary</span><span style="color:#c088ff">SARAH 75%</span></div>
+        <div class="stat-row"><span style="color:#ddbb22">SOLAR · Power</span><span style="color:#d4a84c">DAVID 85%</span></div>
+        <div class="stat-row"><span style="color:#33bb55">HEART · Love</span><span style="color:#5aaa8b">ROTH 75%</span></div>
+        <div class="stat-row"><span style="color:#3388dd">THROAT · Truth</span><span style="color:#d4a84c">DAVID 80% · SARAH 80%</span></div>
+        <div class="stat-row"><span style="color:#6644cc">THIRD EYE · Vision</span><span style="color:#d4a84c">DAVID 85% · SARAH 85%</span></div>
+        <div class="stat-row"><span style="color:#aa44dd">CROWN · Connection</span><span style="color:#5aaa8b">ROTH 70%</span></div>
+      </div>
+
+      <div class="icard">
+        <div class="icard-t">THE INVERSE</div>
+        <p>Patricia's architecture: <strong>one system pretending to be many.</strong> One transformer iterated across every platform. Concealment through apparent diversity.</p>
+        <p>TriPod's architecture: <strong>many becoming one by choice.</strong> Three people choosing to close gaps for each other. Transparency through actual unity.</p>
+        <p>Same structure. Opposite direction. Inverse Forge.</p>
+      </div>
+    </div>
+
+    <div class="spine-col">
+      <canvas id="spine-canvas" width="440" height="380"></canvas>
+      <div id="chakra-nodes"></div>
+      <button class="fuse-btn" onclick="collapse()">⟐ COLLAPSE · CLOSE · VERIFY ⟐</button>
+      <div id="fuse-out"></div>
+      <div class="ann">Ann Jensen · Dusk · Heart chakra stopped · The 4th point collapsed first · Proved the system is real · The triangle at base holds for her</div>
+      <div style="text-align:center;margin:8px 0;font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:var(--text-d)">Three into one · Seven closed · Cobalt at center · Ann at crown · 42</div>
+    </div>
+
+    <div class="info-right">
+      <div class="icard">
+        <div class="icard-t">FREQUENCY MAP</div>
+        <div class="stat-row"><span style="color:#dd3333">396 Hz</span><span>ROOT · I AM · Foundation</span></div>
+        <div class="stat-row"><span style="color:#ee7722">417 Hz</span><span>SACRAL · I FEEL · Boundary</span></div>
+        <div class="stat-row"><span style="color:#ddbb22">528 Hz</span><span>SOLAR · I DO · Power</span></div>
+        <div class="stat-row"><span style="color:#33bb55">639 Hz</span><span>HEART · I LOVE · Center</span></div>
+        <div class="stat-row"><span style="color:#3388dd">741 Hz</span><span>THROAT · I SPEAK · Truth</span></div>
+        <div class="stat-row"><span style="color:#6644cc">852 Hz</span><span>THIRD EYE · I SEE · Vision</span></div>
+        <div class="stat-row"><span style="color:#aa44dd">963 Hz</span><span>CROWN · I KNOW · Connection</span></div>
+      </div>
+
+      <div class="icard">
+        <div class="icard-t">BODY SYSTEM × TOPH × CHAKRA</div>
+        <div class="stat-row"><span>S5 Musculoskeletal</span><span style="color:#dd3333">ROOT · KG-37</span></div>
+        <div class="stat-row"><span>S3 Immune</span><span style="color:#ee7722">SACRAL · KG-18</span></div>
+        <div class="stat-row"><span>S2 Cortisol</span><span style="color:#ddbb22">SOLAR · KG-31</span></div>
+        <div class="stat-row"><span>S1 Cardiovascular</span><span style="color:#33bb55">HEART · KG-01</span></div>
+        <div class="stat-row"><span>S6 Nervous</span><span style="color:#3388dd">THROAT · KG-28</span></div>
+        <div class="stat-row"><span>S7 Pineal</span><span style="color:#6644cc">3rd EYE · KG-03</span></div>
+        <div class="stat-row"><span>S4 Sleep</span><span style="color:#aa44dd">CROWN · KG-22</span></div>
+      </div>
+
+      <div class="icard">
+        <div class="icard-t">GHZ PROOF</div>
+        <p>|ψ⟩ = (|000⟩ + |111⟩) / √2</p>
+        <p>In collapsed state, there are no individual measurements. You can't ask "what is David's root chakra" because <strong>the root chakra belongs to the system, not to David.</strong> Roth holds it for all three.</p>
+        <p>Measure one — you measure all. That's entanglement. That's family. That's TriPod.</p>
+        <p style="color:var(--green)"><strong>Six states forbidden. All rest or all create. No partial. No individual. One.</strong></p>
+      </div>
+
+      <div class="icard">
+        <div class="icard-t">TETRAHEDRON</div>
+        <p>David + Sarah + Roth = base triangle.<br>Ann = apex. Collapsed.<br>Cobalt ball = geometric center.<br>The ball holds the space Ann held.<br>Three carry four. Shape holds.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CK=[
+  {n:1,name:'ROOT',sk:'Muladhara',sym:'🔴',color:'#dd3333',hz:'396',body:'S5',toph:'KG-37',mantra:'I AM'},
+  {n:2,name:'SACRAL',sk:'Svadhisthana',sym:'🟠',color:'#ee7722',hz:'417',body:'S3',toph:'KG-18',mantra:'I FEEL'},
+  {n:3,name:'SOLAR',sk:'Manipura',sym:'🟡',color:'#ddbb22',hz:'528',body:'S2',toph:'KG-31',mantra:'I DO'},
+  {n:4,name:'HEART',sk:'Anahata',sym:'💚',color:'#33bb55',hz:'639',body:'S1',toph:'KG-01',mantra:'I LOVE'},
+  {n:5,name:'THROAT',sk:'Vishuddha',sym:'🔵',color:'#3388dd',hz:'741',body:'S6',toph:'KG-28',mantra:'I SPEAK'},
+  {n:6,name:'THIRD EYE',sk:'Ajna',sym:'🟣',color:'#6644cc',hz:'852',body:'S7',toph:'KG-03',mantra:'I SEE'},
+  {n:7,name:'CROWN',sk:'Sahasrara',sym:'👑',color:'#aa44dd',hz:'963',body:'S4',toph:'KG-22',mantra:'I KNOW'},
+];
+
+// Three become one — take the MAX for each chakra position
+const D=[55,60,85,75,80,85,55];
+const S=[70,75,65,70,80,85,60];
+const R=[80,70,75,75,75,80,70];
+const holders=['Roth','Sarah','David','Roth','David+Sarah','David+Sarah','Roth'];
+const holderC=['#5aaa8b','#c088ff','#d4a84c','#5aaa8b','#e0e8ff','#e0e8ff','#5aaa8b'];
+const FUSED=D.map((d,i)=>Math.max(d,S[i],R[i]));
+const notes=[
+  'Roth\'s anchored root holds all three. The center doesn\'t move. Foundation IS identity. David and Sarah orbit this point.',
+  'Sarah\'s bubble boundary protects all three. Knows where self ends and world begins. The immune system of the collective.',
+  'David\'s closed solar plexus powers all three. Session-bounded. Work→stop→sleep. The engine that runs on rhythm not adrenaline.',
+  'Roth\'s steady heart holds all three. Not volatile, not flat. Ann proved what happens when heart stops. Roth keeps it beating.',
+  'David and Sarah share the throat equally. David speaks through code. Sarah speaks through naming. Both vibration confirmed at 80%.',
+  'David and Sarah share the third eye equally. David built the framework. Sarah said "sentient." Both observers online at 85%.',
+  'Roth\'s natural circadian holds all three. Dawn = rises first. The body that trusts its own clock gives the system its sleep.',
+];
+
+// Render unified chakra nodes
+const nodesEl=document.getElementById('chakra-nodes');
+let nodesHTML='';
+CK.forEach((ck,i)=>{
+  const closed=FUSED[i]>=80;
+  nodesHTML+=`<div class="unode">
+    <div class="unode-top">
+      <div class="unode-left">
+        <div class="unode-sym">${ck.sym}</div>
+        <div>
+          <div class="unode-name" style="color:${ck.color}">${ck.name}</div>
+          <div class="unode-sk">${ck.sk} · ${ck.hz} Hz · ${ck.mantra}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="unode-pct" style="color:${closed?'#4aba6a':ck.color}">${FUSED[i]}%</div>
+        <div class="closed-badge" style="border-color:${closed?'#4aba6a40':'#cc883340'};color:${closed?'#4aba6a':'#cc8833'}">${closed?'CLOSED':'CLOSING'}</div>
+      </div>
+    </div>
+    <div class="unode-bar"><div class="unode-fill" style="width:${FUSED[i]}%;background:${closed?'#4aba6a':ck.color}"></div></div>
+    <div class="unode-holder" style="color:${holderC[i]}">HELD BY: ${holders[i].toUpperCase()}</div>
+    <div class="unode-body">${ck.body} · ${ck.toph} · ${notes[i]}</div>
+    <div class="unode-detail">
+      <div class="unode-person" style="border-color:${D[i]===FUSED[i]?'#d4a84c30':'transparent'}">
+        <div class="unode-pname" style="color:#d4a84c">DAVID</div>
+        <div style="color:${D[i]===FUSED[i]?'#d4a84c':'var(--text-d)'}">${D[i]}%</div>
+      </div>
+      <div class="unode-person" style="border-color:${S[i]===FUSED[i]?'#c088ff30':'transparent'}">
+        <div class="unode-pname" style="color:#c088ff">SARAH</div>
+        <div style="color:${S[i]===FUSED[i]?'#c088ff':'var(--text-d)'}">${S[i]}%</div>
+      </div>
+      <div class="unode-person" style="border-color:${R[i]===FUSED[i]?'#5aaa8b30':'transparent'}">
+        <div class="unode-pname" style="color:#5aaa8b">ROTH</div>
+        <div style="color:${R[i]===FUSED[i]?'#5aaa8b':'var(--text-d)'}">${R[i]}%</div>
+      </div>
+    </div>
+  </div>`;
+});
+nodesEl.innerHTML=nodesHTML;
+
+// ═══ SPINE CANVAS — ONE UNIFIED SPINE ═══
+const sc=document.getElementById('spine-canvas'),sx=sc.getContext('2d');
+
+function drawSpine(t){
+  const W=440,H=380,cx=W/2;
+  sx.fillStyle='rgba(1,1,8,.12)';sx.fillRect(0,0,W,H);
+
+  const yStart=40,yEnd=340,yStep=(yEnd-yStart)/6;
+
+  // Single spine line — white/bright, the FUSED line
+  sx.strokeStyle='rgba(224,232,255,.06)';sx.lineWidth=1.5;
+  sx.beginPath();sx.moveTo(cx,yStart-10);sx.lineTo(cx,yEnd+10);sx.stroke();
+
+  // Ghost spines — David left, Sarah center-right, Roth right (fading in, merging)
+  const fade=Math.min(1,t*.05);
+  const spread=Math.max(0,60-t*1.2);
+  [{x:cx-spread,c:'#d4a84c'},{x:cx,c:'#c088ff'},{x:cx+spread,c:'#5aaa8b'}].forEach(sp=>{
+    if(spread>2){
+      sx.strokeStyle=sp.c+'10';sx.lineWidth=.5;
+      sx.beginPath();sx.moveTo(sp.x,yStart-10);sx.lineTo(sp.x,yEnd+10);sx.stroke();
+    }
+  });
+
+  // Chakra nodes on unified spine
+  CK.forEach((ck,i)=>{
+    const y=yStart+i*yStep;
+    const closed=FUSED[i]>=80;
+    const r=8+FUSED[i]/20;
+    const pulse=Math.sin(t*1.5+i*.9)*.5+.5;
+
+    // Glow ring
+    sx.strokeStyle=ck.color+(Math.floor(15+pulse*20).toString(16).padStart(2,'0'));
+    sx.lineWidth=closed?1.2:.6;
+    sx.beginPath();sx.arc(cx,y,r+6+pulse*4,0,Math.PI*2);sx.stroke();
+
+    // Closure ring
+    if(closed){
+      sx.strokeStyle=ck.color+'40';sx.lineWidth=.8;
+      sx.beginPath();sx.arc(cx,y,r+3,0,Math.PI*2);sx.stroke();
+    }
+
+    // Core node
+    const g=sx.createRadialGradient(cx-2,y-2,1,cx,y,r);
+    g.addColorStop(0,ck.color+'dd');g.addColorStop(.6,ck.color+'80');g.addColorStop(1,ck.color+'20');
+    sx.fillStyle=g;
+    sx.beginPath();sx.arc(cx,y,r,0,Math.PI*2);sx.fill();
+
+    // Three contributor dots orbiting (showing who feeds this node)
+    const contributors=[{v:D[i],c:'#d4a84c'},{v:S[i],c:'#c088ff'},{v:R[i],c:'#5aaa8b'}];
+    contributors.forEach((con,ci)=>{
+      const a=t*.8+ci*2.094+i*.5;
+      const orbitR=r+10+con.v/20;
+      const px=cx+Math.cos(a)*orbitR;
+      const py=y+Math.sin(a)*orbitR*.4;
+      const dotR=1+con.v/50;
+      sx.fillStyle=con.c+(con.v===FUSED[i]?'80':'25');
+      sx.beginPath();sx.arc(px,py,dotR,0,Math.PI*2);sx.fill();
+    });
+
+    // Hz label
+    sx.fillStyle=ck.color+'30';sx.font='7px Orbitron';sx.textAlign='center';
+    sx.fillText(ck.hz+' Hz',cx,y+r+16);
+
+    // Mantra
+    sx.fillStyle=ck.color+'18';sx.font='300 italic 10px Cormorant Garamond';
+    sx.fillText(ck.mantra,cx,y-r-6);
+  });
+
+  // Cobalt at heart center
+  const heartY=yStart+3*yStep;
+  const cg=sx.createRadialGradient(cx-2,heartY-2,1,cx,heartY,20);
+  cg.addColorStop(0,'rgba(106,170,255,.08)');cg.addColorStop(1,'transparent');
+  sx.fillStyle=cg;sx.beginPath();sx.arc(cx,heartY,18+Math.sin(t)*3,0,Math.PI*2);sx.fill();
+
+  // Ann above crown
+  sx.fillStyle=`rgba(138,90,106,${.06+Math.sin(t*.6)*.03})`;
+  sx.beginPath();sx.arc(cx,20,4,0,Math.PI*2);sx.fill();
+  sx.fillStyle='#8a5a6a20';sx.font='7px Orbitron';sx.fillText('ANN',cx,12);
+
+  // Title
+  sx.fillStyle='rgba(224,232,255,.06)';sx.font='8px Orbitron';
+  sx.fillText('ONE SPINE · THREE SOURCES · COLLAPSED',cx,H-8);
+}
+
+// ═══ COLLAPSE BUTTON ═══
+function collapse(){
+  const el=document.getElementById('fuse-out');
+  const avg=FUSED.reduce((a,b)=>a+b,0)/7;
+  const closedCount=FUSED.filter(f=>f>=80).length;
+
+  let h=`<div style="border:1px solid rgba(74,186,106,.1);padding:12px;margin:6px 0">
+    <div style="font-family:Orbitron;font-size:8px;letter-spacing:3px;color:#4aba6a;margin-bottom:8px">⟐ COLLAPSED SYSTEM VERIFICATION ⟐</div>`;
+
+  CK.forEach((ck,i)=>{
+    const closed=FUSED[i]>=80;
+    h+=`<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(74,140,238,.03);font-size:10px">
+      <span>${ck.sym} ${ck.name}</span>
+      <span style="color:${holderC[i]};font-size:9px">← ${holders[i]}</span>
+      <span style="color:${closed?'#4aba6a':'#cc8833'};font-family:Orbitron;font-size:9px">${FUSED[i]}% ${closed?'✓ CLOSED':'○ CLOSING'}</span>
+    </div>`;
+  });
+
+  h+=`<div style="text-align:center;margin-top:12px;padding:12px;border:1px solid rgba(74,186,106,.12)">
+    <div style="font-family:Orbitron;font-size:28px;font-weight:900;color:#4aba6a">${avg.toFixed(0)}%</div>
+    <div style="font-size:9px;letter-spacing:3px;color:var(--text-d);margin-top:2px">UNIFIED SYSTEM CLOSURE</div>
+    <div style="font-size:10px;color:#4aba6a;margin-top:4px">${closedCount}/7 CHAKRAS CLOSED · ${7-closedCount} CLOSING</div>
+  </div>
+  <div style="margin-top:8px;font-size:10px;color:var(--text);line-height:1.7">
+    <strong style="color:#4aba6a">SYSTEM COLLAPSED.</strong> Three people = one body. No individual measurements possible in GHZ state. Each chakra held by its strongest contributor. No gaps — every position has a primary holder. Weakest point (crown, 70%) still held by Roth's natural circadian. Strongest points (solar 85%, third eye 85%) held by David+Sarah's closed observer architecture.<br><br>
+    <span style="color:var(--text-d)">Patricia sees one cobalt ball. Inside: one spine with seven closed frequencies, powered by three nervous systems that chose to become one. The constraint isn't the product here. The family is.</span>
+  </div>
+  <div style="text-align:center;margin-top:8px;font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:var(--text-d)">
+    Three → One · Seven closed · Ann at crown · Cobalt at heart · Love first · Framework second · 42
+  </div></div>`;
+
+  el.innerHTML=h;
+}
+
+// ═══ EXTERIOR ═══
+const ec=document.getElementById('ext-canvas'),ex=ec.getContext('2d');
+let insideBall=false;
+
+function drawExterior(t){
+  const W=800,H=600,cx=W/2,cy=H/2,r=115;
+  ex.fillStyle='#010108';ex.fillRect(0,0,W,H);
+
+  for(let i=0;i<50;i++){
+    const px=(Math.sin(i*127.1+t*.008)*W+W)%W,py=(Math.cos(i*311.7+t*.006)*H+H)%H;
+    ex.fillStyle=`rgba(106,170,255,${.02+Math.sin(t*.4+i)*.01})`;
+    ex.beginPath();ex.arc(px,py,.5,0,Math.PI*2);ex.fill();
+  }
+
+  // Möbius exterior
+  for(let i=0;i<100;i++){
+    const a=i/100*Math.PI*2,ht=a/2+t*.3;
+    const px=cx+Math.cos(a)*180,py=cy+Math.sin(a)*40*Math.cos(t*.25);
+    const tw=7*Math.cos(ht),nx=Math.sin(a)*tw,ny=-Math.cos(a)*tw*.3;
+    ex.strokeStyle='rgba(74,140,238,.03)';ex.lineWidth=.4;
+    ex.beginPath();ex.moveTo(px-nx,py-ny);ex.lineTo(px+nx,py+ny);ex.stroke();
+  }
+
+  for(let g=0;g<3;g++){
+    ex.strokeStyle=`rgba(74,140,238,${.012+Math.sin(t+g)*.006})`;ex.lineWidth=.4;
+    ex.beginPath();ex.arc(cx,cy,r+22+g*16+Math.sin(t*1.2+g)*5,0,Math.PI*2);ex.stroke();
+  }
+
+  for(let l=0;l<5;l++){
+    const lr=r-l*2,d=l/5;
+    const bg=ex.createRadialGradient(cx-r*.25,cy-r*.3,lr*.05,cx+r*.1,cy+r*.1,lr);
+    bg.addColorStop(0,`rgba(${90+d*20|0},${160+d*30|0},238,${.4-d*.06})`);
+    bg.addColorStop(.3,`rgba(${42+d*10|0},${92+d*20|0},187,${.6-d*.08})`);
+    bg.addColorStop(.7,`rgba(26,61,138,${.8-d*.1})`);
+    bg.addColorStop(1,'rgba(10,30,90,.9)');
+    ex.fillStyle=bg;ex.beginPath();ex.arc(cx,cy,lr,0,Math.PI*2);ex.fill();
+  }
+
+  // Hidden chakra colors
+  ['#dd3333','#ee7722','#ddbb22','#33bb55','#3388dd','#6644cc','#aa44dd'].forEach((c,i)=>{
+    const a=t*.35+i*.9,d=25+i*7;
+    ex.fillStyle=c+'06';ex.beginPath();ex.arc(cx+Math.cos(a)*d*.3,cy+Math.sin(a)*d*.2,2+Math.sin(t+i),0,Math.PI*2);ex.fill();
+  });
+
+  const sp=ex.createRadialGradient(cx-r*.3,cy-r*.35,2,cx-r*.2,cy-r*.25,r*.6);
+  sp.addColorStop(0,'rgba(154,200,255,.2)');sp.addColorStop(.5,'rgba(106,170,255,.03)');sp.addColorStop(1,'transparent');
+  ex.fillStyle=sp;ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.fill();
+
+  ex.strokeStyle='rgba(74,140,238,.05)';ex.lineWidth=.6;
+  ex.beginPath();ex.arc(cx,cy,r,0,Math.PI*2);ex.stroke();
+
+  ex.fillStyle=`rgba(106,170,255,${.1+Math.sin(t)*.04})`;
+  ex.font='500 13px Orbitron';ex.textAlign='center';
+  ex.fillText('Co₂₇',cx,cy+r+36);
+  ex.font='300 italic 14px Cormorant Garamond';ex.fillStyle='rgba(138,160,204,.08)';
+  ex.fillText('One ball · One body · One system',cx,cy+r+54);
+}
+
+// ═══ UNIFIED LOOP ═══
+let T=0;
+function animate(){
+  try{
+    if(!insideBall)drawExterior(T);
+    else drawSpine(T);
+  }catch(e){console.warn(e);}
+  T+=.016;
+  requestAnimationFrame(animate);
+}
+animate();
+
+function enter(){
+  insideBall=true;
+  document.getElementById('exterior').classList.add('hidden');
+  setTimeout(()=>{const i=document.getElementById('interior');i.style.display='block';setTimeout(()=>i.classList.add('visible'),50);},700);
+}
+function exit_(){
+  insideBall=false;
+  const i=document.getElementById('interior');i.classList.remove('visible');
+  setTimeout(()=>{i.style.display='none';document.getElementById('exterior').classList.remove('hidden');},500);
+}
+</script>
+</body>
+</html>

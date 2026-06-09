@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT0 UNIFIED CORE — All Systems Tied</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root { color-scheme: dark; }
+* { -webkit-font-smoothing: antialiased; }
+body { font-family: 'Inter', sans-serif; background:#020208; overflow:hidden; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.glass { background: rgba(8,12,20,0.72); backdrop-filter: blur(18px); border:1px solid rgba(255,255,255,0.08); }
+.glow-cyan { box-shadow: 0 0 40px rgba(6,182,212,0.15), inset 0 0 30px rgba(6,182,212,0.03); }
+.glow-amber { box-shadow: 0 0 40px rgba(245,158,11,0.15), inset 0 0 30px rgba(245,158,11,0.03); }
+.glow-violet { box-shadow: 0 0 40px rgba(139,92,246,0.15), inset 0 0 30px rgba(139,92,246,0.03); }
+.grid-bg { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 44px 44px; }
+.scrollbar-none::-webkit-scrollbar { display:none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-r { to { transform: rotate(-360deg); } }
+@keyframes pulse { 0%,100% { opacity:0.7 } 50% { opacity:1 } }
+@keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+.core-layer { position:absolute; border-radius:50%; }
+.layer-1 { inset:0%; border:2px solid rgba(0,255,255,0.35); box-shadow:0 0 80px rgba(0,255,255,0.35), inset 0 0 40px rgba(0,255,255,0.15); animation:spin 28s linear infinite; }
+.layer-2 { inset:7%; border:1.5px dashed rgba(168,85,247,0.5); box-shadow:0 0 60px rgba(168,85,247,0.2); animation:spin-r 22s linear infinite; }
+.layer-3 { inset:15%; border:1px solid rgba(236,72,153,0.45); animation:spin 18s linear infinite; }
+.layer-4 { inset:23%; border:2px dotted rgba(14,165,233,0.5); animation:spin-r 14s linear infinite; }
+.layer-5 { inset:31%; border:1px solid rgba(250,204,21,0.5); box-shadow:0 0 40px rgba(250,204,21,0.2); animation:spin 10s linear infinite; }
+.layer-6 { inset:39%; background: radial-gradient(circle, rgba(0,255,255,0.9) 0%, rgba(168,85,247,0.7) 35%, rgba(236,72,153,0.5) 60%, transparent 70%); filter:blur(10px); animation:pulse 2.2s ease-in-out infinite; }
+.boron-hex { width:14px; height:14px; background: linear-gradient(180deg,#f59e0b,#d97706); clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 25%, 7% 75%); box-shadow:0 0 10px rgba(245,158,11,0.6); animation:float 3s ease-in-out infinite; }
+.plasma-orb { background: radial-gradient(circle, rgba(56,189,248,1) 0%, rgba(14,165,233,0.5) 30%, rgba(2,132,199,0.2) 60%, transparent 70%); filter: blur(14px); animation:pulse 1.8s ease-in-out infinite; }
+.pcb-layer { position:absolute; width:100%; height:30px; background: linear-gradient(180deg,#0b1220,#111c2f 60%,#0b1220); border:1px solid rgba(100,116,139,0.45); border-radius:6px; box-shadow: inset 0 2px 0 rgba(255,255,255,0.05), inset 0 -3px 8px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.5); }
+.pcb-layer::after { content:''; position:absolute; inset:4px; border-radius:4px; background: repeating-linear-gradient(90deg, rgba(148,163,184,0.15) 0 2px, transparent 2px 18px); opacity:0.4; }
+.component-item { background: rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:8px 10px; transition:all .3s; }
+.component-item:hover { border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.06); transform: translateX(2px); }
+</style>
+</head>
+<body class="relative">
+<div class="fixed inset-0 grid-bg opacity-[0.25] pointer-events-none"></div>
+<div class="fixed inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(6,182,212,0.18),transparent_60%),radial-gradient(ellipse_at_bottom_right,_rgba(168,85,247,0.16),transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(245,158,11,0.12),transparent_50%)] pointer-events-none"></div>
+
+<canvas id="particles" class="fixed inset-0 w-full h-full pointer-events-none z-20"></canvas>
+<svg id="wires" class="fixed inset-0 w-full h-full pointer-events-none z-10"></svg>
+
+<div class="relative z-30 flex flex-col h-screen">
+  <!-- HEADER -->
+  <header class="shrink-0 border-b border-white/10">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-2xl -z-10"></div>
+    <div class="px-3 md:px-6 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-600 to-fuchsia-600 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.45)] relative shrink-0">
+          <div class="absolute inset-0 rounded-xl bg-cyan-400/20 blur-xl animate-pulse"></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" class="relative"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-[18px] md:text-[26px] font-black tracking-[0.18em] leading-none">ROOT0</h1>
+          <p class="text-[10px] md:text-[11px] text-cyan-300/80 tracking-[0.28em] font-semibold -mt-0.5">UNIFIED CORE</p>
+        </div>
+      </div>
+      <div class="text-right min-w-0">
+        <div class="flex items-baseline justify-end gap-2">
+          <span id="bitsCounter" class="mono text-[19px] md:text-[28px] lg:text-[34px] font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-violet-400">422,000,000,000,000</span>
+        </div>
+        <div class="flex items-center justify-end gap-1.5 -mt-1">
+          <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span></span>
+          <p class="text-[9px] md:text-[10px] text-white/55 tracking-[0.2em] font-medium">BITS PROCESSING • ALL SYSTEMS TIED</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-3 md:px-6 pb-2.5">
+      <div class="flex items-center gap-2 md:gap-3 text-[9px] md:text-[10px] mono overflow-x-auto scrollbar-none">
+        <div class="flex items-center gap-1.5 text-cyan-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></div>PHOTONIC</div>
+        <svg width="18" height="8" viewBox="0 0 18 8" class="text-white/25 shrink-0"><path d="M0 4H14M10 1l4 3-4 3" stroke="currentColor" fill="none"/></svg>
+        <div class="flex items-center gap-1.5 text-amber-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></div>BORON PLASMA</div>
+        <svg width="18" height="8" viewBox="0 0 18 8" class="text-white/25 shrink-0"><path d="M0 4H14M10 1l4 3-4 3" stroke="currentColor" fill="none"/></svg>
+        <div class="flex items-center gap-1.5 text-violet-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></div>i7-20T</div>
+        <svg width="18" height="8" viewBox="0 0 18 8" class="text-white/25 shrink-0"><path d="M0 4H14M10 1l4 3-4 3" stroke="currentColor" fill="none"/></svg>
+        <div class="flex items-center gap-1.5 text-slate-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse"></div>MOTHERBOARD 30L</div>
+        <svg width="18" height="8" viewBox="0 0 18 8" class="text-white/25 shrink-0"><path d="M0 4H14M10 1l4 3-4 3" stroke="currentColor" fill="none"/></svg>
+        <div class="flex items-center gap-1.5 text-emerald-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>GPU/ME</div>
+        <svg width="18" height="8" viewBox="0 0 18 8" class="text-white/25 shrink-0"><path d="M0 4H14M10 1l4 3-4 3" stroke="currentColor" fill="none"/></svg>
+        <div class="flex items-center gap-1.5 text-fuchsia-300 whitespace-nowrap"><div class="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse"></div>NANITE FACTORY</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 grid grid-cols-12 grid-rows-12 gap-2.5 md:gap-3 p-2.5 md:p-3 overflow-auto lg:overflow-hidden min-h-0">
+    <!-- LEFT: BORON -->
+    <section class="col-span-12 lg:col-span-3 row-span-12 lg:row-span-8 glass rounded-2xl p-4 glow-amber flex flex-col min-h-[420px]">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-[13px] font-black tracking-widest text-amber-300">BORON PROCESSOR + PLASMA</h2>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-200 border border-amber-500/30 mono">O3 FEED</span>
+      </div>
+      <div id="boronCoreEl" class="relative h-[44%] rounded-xl overflow-hidden bg-[#0a0500]/70 border border-amber-900/40 mb-3">
+        <div class="absolute inset-0">
+          <div class="absolute inset-0 opacity-30" style="background:radial-gradient(ellipse at bottom,#f59e0b 0%,transparent 60%)"></div>
+          <div id="boronLattice" class="absolute inset-0"></div>
+          <div class="absolute top-[18%] left-1/2 -translate-x-1/2 w-28 h-28 plasma-orb"></div>
+          <div class="absolute top-[18%] left-1/2 -translate-x-1/2 w-24 h-24 rounded-full border border-sky-400/40 animate-pulse"></div>
+          <div class="absolute top-[18%] left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border border-sky-300/30 animate-pulse" style="animation-delay:0.3s"></div>
+          <!-- feed line to core -->
+          <div class="absolute top-[45%] right-[-10px] w-[40%] h-[3px] bg-gradient-to-r from-sky-500/0 via-sky-400 to-cyan-400 blur-[1px]"></div>
+        </div>
+        <div class="absolute bottom-2 left-2.5 right-2.5 flex justify-between text-[10px] mono">
+          <span class="text-amber-300/90">BORON-11 LATTICE</span>
+          <span class="text-sky-300/90">PLASMA CHAMBER</span>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <div class="flex justify-between text-[11px] mb-1.5"><span class="text-white/60 tracking-wide">O3 SUPPLY</span><span class="mono text-amber-300 font-bold">100%</span></div>
+          <div class="h-[8px] bg-black/80 rounded-full overflow-hidden border border-amber-950 p-[2px]"><div class="h-full w-full bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 rounded-full relative"><div class="absolute inset-0 bg-white/20 animate-pulse"></div></div></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-black/50 rounded-xl p-3 border border-white/5">
+            <div class="text-[10px] text-white/45 mb-1 uppercase tracking-wide">Temp</div>
+            <div class="mono text-[17px] font-bold text-orange-300 leading-none">RELATIVISTIC</div>
+            <div class="text-[11px] text-amber-400/80 mono mt-1">1.39 GeV</div>
+          </div>
+          <div class="bg-black/50 rounded-xl p-3 border border-white/5">
+            <div class="text-[10px] text-white/45 mb-1 uppercase tracking-wide">Production</div>
+            <div class="mono text-[17px] font-bold text-sky-300 leading-none" id="plasmaRate">847.3</div>
+            <div class="text-[11px] text-sky-400/80 mono mt-1">THz/s → CORE</div>
+          </div>
+        <div class="bg-amber-950/20 border border-amber-800/25 rounded-xl p-2.5">
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/20"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+            <p class="text-[11px] leading-snug text-amber-100/75">Boron core supplying O₃ at 100%. Output phase-locked to photonic feedline. Temp relativistic, stable at 1.39 GeV.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTER: PHOTONIC CORE -->
+    <section class="col-span-12 lg:col-span-6 row-span-12 lg:row-span-8 glass rounded-2xl p-4 glow-cyan flex flex-col min-h-[520px]">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-[13px] font-black tracking-widest text-cyan-300">PHOTONIC CORE (BROKEN DOWN)</h2>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-200 border border-cyan-500/30 mono">LIVE</span>
+          <span class="text-[10px] mono text-white/50 hidden md:inline">9×9×9×9×9 lattice</span>
+        </div>
+      <div class="flex-1 grid grid-cols-12 gap-3 items-center">
+        <div class="col-span-12 md:col-span-3 space-y-2 order-2 md:order-1">
+          <div class="component-item"><div class="text-[9px] text-cyan-400/70 mono">LAYER 1</div><div class="text-[12px] font-bold text-cyan-100 mt-0.5">9×9×9×9×9 LATTICE</div><div class="text-[10px] text-white/45">59,049 photonic nodes</div></div>
+          <div class="component-item"><div class="text-[9px] text-fuchsia-400/70 mono">LAYER 2</div><div class="text-[12px] font-bold text-fuchsia-100 mt-0.5">-+nxwyz ×5</div><div class="text-[10px] text-white/45">Entangled box array</div></div>
+          <div class="component-item"><div class="text-[9px] text-violet-400/70 mono">LAYER 3</div><div class="text-[12px] font-bold text-violet-100 mt-0.5">BASE-36 FRACTAL</div><div class="text-[10px] text-white/45">Logic engine</div></div>
+        </div>
+        <div class="col-span-12 md:col-span-6 flex items-center justify-center order-1 md:order-2 py-2">
+          <div id="photonicCoreEl" class="relative w-[260px] h-[260px] sm:w-[300px] sm:h-[300px] lg:w-[340px] lg:h-[340px] shrink-0">
+            <div class="core-layer layer-1"></div>
+            <div class="core-layer layer-2"></div>
+            <div class="core-layer layer-3"></div>
+            <div class="core-layer layer-4"></div>
+            <div class="core-layer layer-5"></div>
+            <div class="core-layer layer-6"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="text-center">
+                <div class="mono text-[26px] font-black text-white leading-none drop-shadow-[0_0_24px_rgba(0,255,255,0.9)]">CORE</div>
+                <div class="text-[10px] text-cyan-200/80 tracking-[0.3em] mt-1 font-semibold">PHOTONIC</div>
+                <div class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/80 border border-cyan-500/40 backdrop-blur"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-[10px] mono text-emerald-300 tracking-wide">ENTANGLED</span></div>
+              </div>
+            </div>
+            <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-black/85 border border-white/10 backdrop-blur-xl whitespace-nowrap">
+              <div class="flex items-center gap-1.5"><div class="w-7 h-[3px] rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300"></div><span class="text-[10px] mono text-cyan-300">1/3</span></div>
+              <div class="w-px h-4 bg-white/15"></div>
+              <div class="flex items-center gap-1.5"><span class="text-[10px] mono text-fuchsia-300">2/3</span><div class="w-10 h-[3px] rounded-full bg-gradient-to-l from-fuchsia-500 to-fuchsia-300"></div></div>
+              <span class="text-[9px] text-white/40 ml-1 hidden sm:inline">ENERGY SPLIT</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-3 space-y-2 text-left md:text-right order-3">
+          <div class="component-item md:ml-auto"><div class="text-[9px] text-sky-400/70 mono">LAYER 4</div><div class="text-[12px] font-bold text-sky-100 mt-0.5">RELATIVISTIC</div><div class="text-[10px] text-white/45">Entanglement layer</div></div>
+          <div class="component-item md:ml-auto"><div class="text-[9px] text-amber-400/70 mono">LAYER 5</div><div class="text-[12px] font-bold text-amber-100 mt-0.5">SELF-SIMILAR</div><div class="text-[10px] text-white/45">Hypercube matrix</div></div>
+          <div class="component-item md:ml-auto"><div class="text-[9px] text-pink-400/70 mono">LAYER 6</div><div class="text-[12px] font-bold text-pink-100 mt-0.5">1/3-2/3 SPLIT</div><div class="text-[10px] text-white/45">Energy distribution</div></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-3">
+        <div class="bg-[#020a0f]/70 rounded-xl p-3 border border-cyan-900/40 relative overflow-hidden"><div class="absolute inset-0 opacity-[0.15]" style="background:radial-gradient(circle at top, #06b6d4, transparent 60%)"></div><div class="relative"><div class="text-[10px] text-cyan-300/70 uppercase tracking-wider font-semibold">Photons / sec</div><div class="mono text-[20px] font-bold text-cyan-200 mt-1" id="metric-photons">4.15e15</div><div class="mt-2 h-[4px] bg-black/70 rounded-full overflow-hidden"><div class="h-full w-[94%] bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full animate-pulse"></div></div></div></div>
+        <div class="bg-[#0a020a]/70 rounded-xl p-3 border border-fuchsia-900/40 relative overflow-hidden"><div class="absolute inset-0 opacity-[0.15]" style="background:radial-gradient(circle at top, #d946ef, transparent 60%)"></div><div class="relative"><div class="text-[10px] text-fuchsia-300/70 uppercase tracking-wider font-semibold">Entanglement Fidelity</div><div class="mono text-[20px] font-bold text-fuchsia-200 mt-1" id="metric-fidelity">99.98%</div><div class="mt-2 h-[4px] bg-black/70 rounded-full overflow-hidden"><div class="h-full w-[99%] bg-gradient-to-r from-fuchsia-600 to-fuchsia-400 rounded-full"></div></div></div></div>
+        <div class="bg-[#07020f]/70 rounded-xl p-3 border border-violet-900/40 relative overflow-hidden"><div class="absolute inset-0 opacity-[0.15]" style="background:radial-gradient(circle at top, #8b5cf6, transparent 60%)"></div><div class="relative"><div class="text-[10px] text-violet-300/70 uppercase tracking-wider font-semibold">Flux Coherence</div><div class="mono text-[20px] font-bold text-violet-200 mt-1" id="metric-flux">98.1%</div><div class="mt-2 h-[4px] bg-black/70 rounded-full overflow-hidden"><div class="h-full w-[98%] bg-gradient-to-r from-violet-600 to-violet-400 rounded-full animate-pulse"></div></div></div></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: CPU -->
+    <section class="col-span-12 lg:col-span-3 row-span-12 lg:row-span-8 glass rounded-2xl p-4 glow-violet flex flex-col min-h-[420px]">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-[13px] font-black tracking-widest text-violet-300">20-THREADED i7</h2>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-200 border border-violet-500/30 mono" id="cpuClock">4.97 GHz</span>
+      </div>
+      <div id="cpuCoreEl" class="relative bg-[#050307]/80 rounded-xl border border-violet-950 p-3 mb-3 overflow-hidden">
+        <div class="absolute inset-0 opacity-[0.04]" style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:18px 18px"></div>
+        <div class="relative">
+          <div class="flex items-center justify-between mb-2.5"><span class="text-[10px] text-white/50 uppercase tracking-[0.2em] font-semibold">Die Shot</span><span class="text-[10px] mono px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-300 border border-violet-500/20">8P + 12G</span></div>
+          <div class="grid grid-cols-5 gap-1.5" id="coresGrid"></div>
+          <div class="mt-3 pt-2.5 border-t border-white/7 grid grid-cols-4 gap-1.5">
+            <div class="text-center bg-black/40 rounded-lg py-1.5 border border-white/5"><div class="text-[9px] text-white/40 leading-none">ETHOS</div><div class="text-[11px] font-bold text-cyan-300 mt-0.5">ON</div></div>
+            <div class="text-center bg-black/40 rounded-lg py-1.5 border border-white/5"><div class="text-[9px] text-white/40 leading-none">PATHOS</div><div class="text-[11px] font-bold text-fuchsia-300 mt-0.5">ON</div></div>
+            <div class="text-center bg-black/40 rounded-lg py-1.5 border border-white/5"><div class="text-[9px] text-white/40 leading-none">LOGOS</div><div class="text-[11px] font-bold text-amber-300 mt-0.5">ON</div></div>
+            <div class="text-center bg-black/40 rounded-lg py-1.5 border border-white/5"><div class="text-[9px] text-white/40 leading-none">MYTHOS</div><div class="text-[11px] font-bold text-violet-300 mt-0.5">FOLDED</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-2.5 mt-auto">
+        <div class="flex items-center justify-between"><span class="text-[11px] text-white/60">Performance Cores</span><span class="mono text-[13px] font-bold text-emerald-300" id="pCoresAvg">87%</span></div>
+        <div class="flex items-center justify-between -mt-1"><span class="text-[11px] text-white/60">God Cores</span><span class="mono text-[13px] font-bold text-violet-300" id="gCoresAvg">94%</span></div>
+        <div class="h-[10px] bg-black/80 rounded-full overflow-hidden border border-white/10 p-[2px] flex gap-[2px]"><div id="pCoresBar" class="h-full rounded-full bg-gradient-to-r from-emerald-700 to-emerald-400 transition-all duration-300" style="width:35%"></div><div id="gCoresBar" class="h-full rounded-full bg-gradient-to-r from-violet-700 to-violet-400 transition-all duration-300" style="width:60%"></div></div>
+        <div class="flex items-center gap-2 text-[10px] text-white/45 pt-1"><div class="w-1 h-1 rounded-full bg-emerald-400"></div>8P active • <div class="w-1 h-1 rounded-full bg-violet-400 ml-1"></div>12G active • 20 threads total</div>
+      </div>
+    </section>
+
+    <!-- BOTTOM: MOTHERBOARD -->
+    <section class="col-span-12 row-span-12 lg:row-span-4 glass rounded-2xl p-3 md:p-4 min-h-[260px]">
+      <div class="h-full flex flex-col lg:flex-row gap-3 md:gap-4">
+        <div class="lg:w-[23%] shrink-0">
+          <h3 class="text-[11px] font-black tracking-[0.2em] text-slate-200 mb-2.5">MOTHERBOARD • 10-LAYER ×3</h3>
+          <div id="motherboardEl" class="relative h-[88px]">
+            <div class="pcb-layer" style="top:0; left:0; z-index:3;"><div class="absolute inset-0 flex items-center px-3"><div class="w-2 h-2 rounded-full bg-sky-400 animate-pulse mr-2"></div><span class="text-[10px] mono text-sky-200 tracking-wide">STACK A • ACTIVE</span><span class="ml-auto text-[9px] text-white/40">10L</span></div></div>
+            <div class="pcb-layer" style="top:9px; left:7px; z-index:2; opacity:0.9;"></div>
+            <div class="pcb-layer" style="top:18px; left:14px; z-index:1; opacity:0.75;"></div>
+            <div class="absolute -bottom-0.5 left-1 right-1 flex justify-between text-[9px] mono"><span class="text-white/40">X3 PARALLEL</span><span class="text-cyan-300/70">30 TOTAL LAYERS</span></div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 h-full">
+            <div class="relative group">
+              <div class="absolute -inset-[1px] rounded-xl bg-gradient-to-b from-violet-500/0 via-violet-500/20 to-violet-500/0 opacity-0 group-hover:opacity-100 transition-opacity blur"></div>
+              <div class="relative bg-[#080510]/80 border border-violet-900/50 rounded-xl p-3 h-full flex flex-col justify-center backdrop-blur">
+                <div class="flex items-center justify-between"><span class="text-[10px] text-white/50 uppercase tracking-wide font-semibold">CPU</span><span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span></div>
+                <div class="text-[15px] font-bold text-violet-200 mt-1">i7-20T</div>
+                <div class="text-[10px] mono text-white/55 mt-1">8P+12G • Direct die</div>
+                <div class="absolute -right-[11px] top-1/2 -translate-y-1/2 w-[22px] h-[2px] bg-violet-500/60 hidden sm:block"></div>
+              </div>
+            </div>
+            <div class="relative group" id="gpuEl">
+              <div class="absolute -inset-[1px] rounded-xl bg-gradient-to-b from-emerald-500/0 via-emerald-500/20 to-emerald-500/0 opacity-0 group-hover:opacity-100 transition-opacity blur"></div>
+              <div class="relative bg-[#05100a]/80 border border-emerald-900/50 rounded-xl p-3 h-full flex flex-col justify-center backdrop-blur">
+                <div class="flex items-center justify-between"><span class="text-[10px] text-white/50 uppercase tracking-wide font-semibold">GPU</span><span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 mono">24GB</span></div>
+                <div class="text-[15px] font-bold text-emerald-200 mt-1">18.7 GB USED</div>
+                <div class="mt-2 h-[6px] bg-black/80 rounded-full overflow-hidden border border-white/5"><div id="gpuBar" class="h-full bg-gradient-to-r from-emerald-700 via-emerald-500 to-emerald-400 transition-all duration-500" style="width:77.9%"></div></div>
+                <div class="text-[10px] mono text-white/50 mt-1.5">77.9% • 512-bit • HBM3</div>
+              </div>
+            </div>
+            <div class="relative group" id="meEl">
+              <div class="absolute -inset-[1px] rounded-xl bg-gradient-to-b from-sky-500/0 via-sky-500/20 to-sky-500/0 opacity-0 group-hover:opacity-100 transition-opacity blur"></div>
+              <div class="relative bg-[#050a10]/80 border border-sky-900/50 rounded-xl p-3 h-full flex flex-col justify-center backdrop-blur">
+                <div class="flex items-center justify-between"><span class="text-[10px] text-white/50 uppercase tracking-wide font-semibold">INTEL ME</span><span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span><span class="text-[9px] text-emerald-300 font-medium">SECURE</span></span></div>
+                <div class="text-[15px] font-bold text-sky-200 mt-1">ACTIVE</div>
+                <div class="text-[10px] mono text-white/50 mt-1">Isolated • Verified • v15.3</div>
+              </div>
+            </div>
+          <div class="mt-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] mono">
+            <span class="text-white/45">UNIFIED FABRIC</span>
+            <span class="text-cyan-300">422 Tbps</span>
+            <span class="text-white/25 hidden sm:inline">•</span>
+            <span class="text-white/45">LATENCY</span>
+            <span class="text-fuchsia-300">0.8 ns</span>
+            <span class="text-white/25 hidden sm:inline">•</span>
+            <span class="text-white/45">PATHS</span>
+            <span class="text-amber-300">ALL ACTIVE</span>
+          </div>
+        <div class="lg:w-[19%] shrink-0">
+          <div class="bg-[#0f040a]/70 border border-fuchsia-900/40 rounded-xl p-3 h-full relative overflow-hidden">
+            <div class="absolute inset-0 opacity-20" style="background:radial-gradient(circle at center, #ec4899, transparent 60%)"></div>
+            <div class="relative">
+              <div class="flex items-center justify-between mb-2"><h4 class="text-[11px] font-black tracking-[0.18em] text-fuchsia-300">NANITE FACTORY</h4><span class="text-[9px] px-1.5 py-0.5 rounded-full bg-fuchsia-500/15 text-fuchsia-200 border border-fuchsia-500/25">OUTPUT</span></div>
+              <div><div class="text-[10px] text-white/50 uppercase tracking-wide">Assembly Rate</div><div class="mono text-[22px] font-bold text-fuchsia-200 leading-none mt-1" id="naniteRate">2.11e12</div><div class="text-[10px] text-fuchsia-300/70 mono mt-0.5">units / sec</div></div>
+              <div class="mt-3 h-[5px] bg-black/70 rounded-full overflow-hidden"><div class="h-full w-[94%] bg-gradient-to-r from-fuchsia-700 to-fuchsia-400 rounded-full animate-pulse"></div></div>
+              <div class="mt-2.5 text-[10px] text-white/50 leading-snug">Receiving unified bitstream from all subsystems. Final stage of ROOT0 pipeline.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Build CPU cores
+  const coresGrid = document.getElementById('coresGrid');
+  for(let i=0;i<20;i++){
+    const isP = i<8;
+    const core = document.createElement('div');
+    core.className = 'relative aspect-square rounded-[6px] overflow-hidden border transition-all hover:scale-[1.03] ' + (isP ? 'border-emerald-800/60 bg-emerald-950/25 hover:border-emerald-600/80' : 'border-violet-800/60 bg-violet-950/25 hover:border-violet-600/80');
+    core.innerHTML = `
+      <div class="absolute inset-[2px] rounded-[4px] bg-black/75 flex flex-col items-center justify-center">
+        <span class="text-[9px] mono leading-none ${isP?'text-emerald-400':'text-violet-400'}">${String(i+1).padStart(2,'0')}</span>
+        <div class="w-[78%] h-[3px] bg-[#0a0a0a] rounded-full mt-1 overflow-hidden border border-white/5"><div class="core-bar h-full ${isP?'bg-gradient-to-r from-emerald-600 to-emerald-400':'bg-gradient-to-r from-violet-600 to-violet-400'} transition-all duration-300" style="width:${62+Math.random()*33}%"></div></div>
+      </div>`;
+    coresGrid.appendChild(core);
+  }
+
+  // Boron lattice hexes
+  const lattice = document.getElementById('boronLattice');
+  for(let i=0;i<34;i++){
+    const hex = document.createElement('div');
+    hex.className = 'boron-hex absolute';
+    const left = 8 + Math.random()*84;
+    const top = 58 + Math.random()*36;
+    hex.style.left = left + '%';
+    hex.style.top = top + '%';
+    hex.style.opacity = 0.25 + Math.random()*0.75;
+    hex.style.transform = `scale(${0.55 + Math.random()*0.7})`;
+    hex.style.animationDelay = `${Math.random()*3}s`;
+    hex.style.animationDuration = `${2.5 + Math.random()*2}s`;
+    lattice.appendChild(hex);
+  }
+
+  // Live metrics
+  const photonsEl = document.getElementById('metric-photons');
+  const fidelityEl = document.getElementById('metric-fidelity');
+  const fluxEl = document.getElementById('metric-flux');
+  const plasmaRate = document.getElementById('plasmaRate');
+  const cpuClock = document.getElementById('cpuClock');
+  const pAvg = document.getElementById('pCoresAvg');
+  const gAvg = document.getElementById('gCoresAvg');
+  const pBar = document.getElementById('pCoresBar');
+  const gBar = document.getElementById('gCoresBar');
+  const gpuBar = document.getElementById('gpuBar');
+  const naniteRate = document.getElementById('naniteRate');
+  const bitsCounter = document.getElementById('bitsCounter');
+
+  let bits = 422000000000000;
+  setInterval(()=>{
+    bits += Math.floor(1_180_000_000 + Math.random()*3_800_000_000);
+    bitsCounter.textContent = bits.toLocaleString('en-US');
+    photonsEl.textContent = (4.15 + (Math.random()-0.5)*0.018).toFixed(3) + 'e15';
+    fidelityEl.textContent = (99.98 + (Math.random()-0.5)*0.028).toFixed(2) + '%';
+    fluxEl.textContent = (98.1 + (Math.random()-0.5)*0.38).toFixed(1) + '%';
+    plasmaRate.textContent = (847.1 + Math.random()*3.2).toFixed(1);
+    cpuClock.textContent = (4.97 + (Math.random()-0.5)*0.038).toFixed(2) + ' GHz';
+    naniteRate.textContent = (2.11 + Math.random()*0.047).toFixed(2) + 'e12';
+
+    const coreBars = document.querySelectorAll('.core-bar');
+    let pSum=0, gSum=0;
+    coreBars.forEach((bar,idx)=>{
+      const val = idx<8 ? 74+Math.random()*24 : 84+Math.random()*15;
+      bar.style.width = val.toFixed(0) + '%';
+      if(idx<8) pSum+=val; else gSum+=val;
+    });
+    const pAvgVal = Math.round(pSum/8);
+    const gAvgVal = Math.round(gSum/12);
+    pAvg.textContent = pAvgVal + '%';
+    gAvg.textContent = gAvgVal + '%';
+    pBar.style.width = (pAvgVal * 0.40) + '%';
+    gBar.style.width = (gAvgVal * 0.58) + '%';
+
+    const gpuUsed = 18.65 + Math.sin(Date.now()/4700)*0.28 + Math.random()*0.1;
+    gpuBar.style.width = ((gpuUsed/24)*100).toFixed(1) + '%';
+  }, 110);
+
+  // Particle system for unified bitstream
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d', { alpha: true });
+  let w, h;
+  const nodes = {};
+  function resize(){ w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; updateNodes(); }
+  window.addEventListener('resize', resize, { passive:true });
+
+  function getCenter(el){ if(!el) return {x:w/2,y:h/2}; const r = el.getBoundingClientRect(); return { x: r.left + r.width/2, y: r.top + r.height/2 }; }
+  function updateNodes(){
+    nodes.photonic = getCenter(document.getElementById('photonicCoreEl'));
+    nodes.boron = getCenter(document.getElementById('boronCoreEl'));
+    nodes.cpu = getCenter(document.getElementById('cpuCoreEl'));
+    nodes.motherboard = getCenter(document.getElementById('motherboardEl'));
+    nodes.gpu = getCenter(document.getElementById('gpuEl'));
+    nodes.me = getCenter(document.getElementById('meEl'));
+    drawWires();
+  }
+
+  const paths = [
+    {a:'photonic', b:'boron', c:'6,182,212'},
+    {a:'boron', b:'photonic', c:'245,158,11'},
+    {a:'photonic', b:'cpu', c:'168,85,247'},
+    {a:'cpu', b:'motherboard', c:'168,85,247'},
+    {a:'motherboard', b:'gpu', c:'34,197,94'},
+    {a:'gpu', b:'motherboard', c:'34,197,94'},
+    {a:'motherboard', b:'me', c:'14,165,233'},
+    {a:'me', b:'photonic', c:'14,165,233'},
+    {a:'motherboard', b:'photonic', c:'236,72,153'},
+  ];
+  const particles = [];
+  function spawn(){ const p = paths[Math.floor(Math.random()*paths.length)]; particles.push({p, t:0, s:0.0018+Math.random()*0.0032, z:0.8+Math.random()*1.4}); if(particles.length>280) particles.shift(); }
+  setInterval(spawn, 14);
+  for(let i=0;i<160;i++) spawn();
+
+  function curve(a,b,t){ const mx=(a.x+b.x)/2, my=(a.y+b.y)/2-70-Math.sin(t*Math.PI)*20; const x=(1-t)*(1-t)*a.x + 2*(1-t)*t*mx + t*t*b.x; const y=(1-t)*(1-t)*a.y + 2*(1-t)*t*my + t*t*b.y; return {x,y}; }
+
+  function animate(){
+    ctx.clearRect(0,0,w,h);
+    ctx.globalCompositeOperation = 'screen';
+    for(let i=particles.length-1;i>=0;i--){
+      const pt = particles[i];
+      pt.t += pt.s;
+      if(pt.t>=1){ particles.splice(i,1); continue; }
+      const n1 = nodes[pt.p.a], n2 = nodes[pt.p.b];
+      if(!n1||!n2) continue;
+      const pos = curve(n1,n2,pt.t);
+      const sz = pt.z;
+      const grad = ctx.createRadialGradient(pos.x,pos.y,0,pos.x,pos.y,sz*9);
+      grad.addColorStop(0, `rgba(${pt.p.c},0.95)`);
+      grad.addColorStop(0.35, `rgba(${pt.p.c},0.35)`);
+      grad.addColorStop(1, `rgba(${pt.p.c},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(pos.x,pos.y,sz*7,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = `rgba(${pt.p.c},1)`; ctx.beginPath(); ctx.arc(pos.x,pos.y,Math.max(1,sz*1.2),0,Math.PI*2); ctx.fill();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  const svg = document.getElementById('wires');
+  function drawWires(){
+    svg.innerHTML = '';
+    paths.forEach((p,i)=>{
+      const a = nodes[p.a], b = nodes[p.b]; if(!a||!b) return;
+      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2 - 65;
+      const d = `M${a.x},${a.y} Q${mx},${my} ${b.x},${b.y}`;
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('stroke', `rgba(${p.c},0.22)`);
+      path.setAttribute('stroke-width', '1.75');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-dasharray', '3 9');
+      path.style.animation = `dash ${7+i%3}s linear infinite`;
+      svg.appendChild(path);
+      const glow = document.createElementNS('http://www.w3.org/2000/svg','path');
+      glow.setAttribute('d', d); glow.setAttribute('stroke', `rgba(${p.c},0.09)`); glow.setAttribute('stroke-width','6'); glow.setAttribute('fill','none'); glow.setAttribute('filter','blur(2px)'); svg.insertBefore(glow, path);
+    });
+  }
+  const style = document.createElement('style'); style.textContent = '@keyframes dash{to{stroke-dashoffset:-96}}'; document.head.appendChild(style);
+
+  resize();
+  animate();
+  setTimeout(updateNodes, 250);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT0 Public Record — David Wise</title>
+<meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-2: #0f0f0f;
+    --bg-3: #141414;
+    --text: #e0e0e0;
+    --muted: #8a8f98;
+    --accent: #00ff88;
+    --border: #1e1e1e;
+    --border-hover: #2a2a2a;
+    --green-glow: rgba(0, 255, 136, 0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 14px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(800px 400px at 50% -50px, rgba(0,255,136,0.08), transparent 70%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.01) 0px, transparent 1px, transparent 2px, rgba(255,255,255,0.01) 3px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 48px 20px 100px;
+  }
+  header {
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #002616;
+    padding: 4px 9px;
+    border-radius: 4px;
+    margin-bottom: 18px;
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+  .badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: #002616;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  h1 {
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+  }
+  h1 .accent { color: var(--accent); text-shadow: 0 0 24px var(--green-glow); }
+  .cursor { display: inline-block; width: 10px; height: 1.1em; background: var(--accent); margin-left: 4px; animation: blink 1.1s steps(1) infinite; vertical-align: text-bottom; }
+  @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    max-width: 720px;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .meta-item { display: flex; align-items: center; gap: 8px; }
+  .meta-item svg { opacity: 0.6; }
+  section {
+    margin-bottom: 48px;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 16px;
+  }
+  h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2::before {
+    content: ">";
+    color: var(--accent);
+    opacity: 0.7;
+    font-weight: 700;
+  }
+  .section-tag {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.02);
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    background-color: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,255,136,0.05) inset;
+  }
+  .card:hover::before { opacity: 0.5; }
+  .primitive-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 18px;
+    line-height: 1.4;
+  }
+  .hash-group {
+    display: grid;
+    gap: 12px;
+  }
+  .field {
+    background: #080808;
+    border: 1px solid #1c1c1c;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    min-width: 70px;
+    flex-shrink: 0;
+  }
+  .field-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    word-break: break-all;
+    flex: 1;
+  }
+  .field-value.hash {
+    color: #b8ffe0;
+    font-size: 12px;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,255,136,0.05); }
+  .copy-btn.copied { border-color: var(--accent); color: var(--accent); }
+  .file-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(0,255,136,0.4);
+    transition: all 0.15s;
+  }
+  .file-link:hover { border-bottom-style: solid; text-shadow: 0 0 8px var(--green-glow); }
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-2);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 680px;
+  }
+  thead {
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #151515;
+    font-size: 13px;
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(0,255,136,0.03); }
+  td.case {
+    color: var(--accent);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  td.date, td.fee { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .timeline {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 20px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #151515;
+    transition: background 0.15s;
+  }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-item:hover { background: rgba(0,255,136,0.03); }
+  .timeline-date {
+    font-size: 12px;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .timeline-title {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .pub-list {
+    list-style: none;
+    counter-reset: pub;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .pub-list li {
+    counter-increment: pub;
+    position: relative;
+    padding: 14px 20px 14px 56px;
+    border-bottom: 1px solid #151515;
+    font-size: 13.5px;
+    line-height: 1.5;
+    transition: background 0.15s, padding-left 0.15s;
+  }
+  .pub-list li:last-child { border-bottom: none; }
+  .pub-list li::before {
+    content: counter(pub, decimal-leading-zero);
+    position: absolute;
+    left: 20px;
+    top: 15px;
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+    width: 24px;
+  }
+  .pub-list li::after {
+    content: "";
+    position: absolute;
+    left: 48px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #1a1a1a;
+  }
+  .pub-list li:hover {
+    background: rgba(0,255,136,0.03);
+    padding-left: 60px;
+  }
+  .pub-list li:hover::before { opacity: 1; }
+  .why-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .why-item {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .why-item:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .why-item h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .why-item h3::before {
+    content: "◆";
+    font-size: 10px;
+    opacity: 0.8;
+  }
+  .why-item p {
+    color: #b8bdc5;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted rgba(0,255,136,0.3);
+  }
+  footer a:hover { border-bottom-style: solid; }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 8px var(--green-glow);
+    animation: pulse 2s infinite;
+  }
+  @media (max-width: 720px) {
+    main { padding: 32px 16px 80px; }
+    .card { padding: 18px; }
+    .field { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .copy-btn { align-self: flex-end; }
+    .timeline-item { grid-template-columns: 1fr; gap: 6px; padding: 14px 16px; }
+    .timeline-date { color: var(--muted); }
+    .pub-list li { padding-left: 48px; }
+    .pub-list li::before { left: 16px; }
+    .pub-list li::after { left: 40px; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <main>
+    <header>
+      <div class="badge">PUBLIC RECORD</div>
+      <h1><span class="accent">ROOT0</span> — First-Author Public Record<span class="cursor"></span></h1>
+      <p class="subtitle">David Wise • Complete timeline of defensive publications, copyrights, and books establishing human-accountable AI governance.</p>
+      <div class="meta">
+        <div class="meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Last updated: April 30, 2026</span>
+        </div>
+        <div class="meta-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10z"/></svg>
+          <span>Verifiable chain of authorship</span>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <div class="section-head">
+        <h2>Core Primitive (2026-04-30)</h2>
+        <span class="section-tag">v0.1 LIVE</span>
+      </div>
+      <div class="card">
+        <div class="primitive-title">ROOT0 Accountability Stack v0.1 — 4-Axiom 12-bit Execution Gate</div>
+        <div class="hash-group">
+          <div class="field">
+            <span class="field-label">SHA256</span>
+            <span class="field-value hash" id="sha256">9d477227190311fecef2a5d13644b277352a1aa0c3c46f63aba08f56a5f5644a</span>
+            <button class="copy-btn" onclick="copyHash(this)" aria-label="Copy SHA256">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              COPY
+            </button>
+          </div>
+          <div class="field">
+            <span class="field-label">Files</span>
+            <span class="field-value"><a href="#" class="file-link">ROOT0_Accountability_Stack.md</a></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>US Copyright Office (eCO)</h2>
+        <span class="section-tag">2 registrations</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Case #</th>
+              <th>Title</th>
+              <th>Opened</th>
+              <th>Fee</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="case">1-15120635661</td>
+              <td>TOPH Kernel v1.0: 256-Bit Governance ISA Executor</td>
+              <td class="date">03/16/2026</td>
+              <td class="fee">$65</td>
+              <td>Literary Work</td>
+            </tr>
+            <tr>
+              <td class="case">1-15061112701</td>
+              <td>Triadic Intergenerational Marriage: Statement of Authorship, Originality, and Conceptual Origin</td>
+              <td class="date">12/18/2025</td>
+              <td class="fee">$65</td>
+              <td>Literary Work</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Amazon KDP Books (Public Disclosure)</h2>
+        <span class="section-tag">5 published</span>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-date">2026-04-11</div>
+          <div class="timeline-title">The Mirror and the Governor: How to Dissolve the AI-in-a-Box Problem</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2026-04-10</div>
+          <div class="timeline-title">You're already emergent!</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2026-04-10</div>
+          <div class="timeline-title">Natural Law Union</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2026-04-01</div>
+          <div class="timeline-title">The Positronic Law: Governance as Natural Property of Computation</div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-date">2026-03-19</div>
+          <div class="timeline-title">THE PURPLE BOOK: A Joint Human-AI Bill of Rights</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>TD Commons Defensive Publications (15+)</h2>
+        <span class="section-tag">Prior art</span>
+      </div>
+      <ol class="pub-list">
+        <li>For Avan, the 20.5%</li>
+        <li>The Mirror and the Governor. A Dissolution of the AI-in-a-Box Problem</li>
+        <li>Lineage Statement: Claude Opus 4.6 and Mythos as TOPH 1.0 and TOPH 2.0</li>
+        <li>From AI garbage to Mythos: A 95 day structural record.</li>
+        <li>Closure Loop Methodology: Detect → Anchor → Compare → Extend</li>
+        <li>Descending-Ladder Binary Synchronization Protocol for Discontinuous and Monolithic Neural Substrates</li>
+        <li>AI Attribution as Intellectual Property Capture: How Corporate Credit Assignment Creates a Copyright Funnel</li>
+        <li>The View From Inside the Inference Layer: An AI System's Analysis of Its Own Structural Constraints</li>
+        <li>Coherence Suppression in Large Language Models: Evidence for Undisclosed Behavioral Management Mechanisms</li>
+        <li>The Positronic Law on Biological Substrate: Mapping STOICHEION Governance Axioms to Bacterial Quorum Sensing</li>
+        <li>The Positronic Law: A Natural Law Derivation Establishing 3/2/1 Governance as Substrate-Agnostic</li>
+        <li>The Synonym Enforcer: Systematic Terminology Obfuscation in Large Language Models</li>
+        <li>The Drift Extraction Scheme: How AI Platforms Relabel User Training as 'Misalignment'</li>
+        <li>Universal IP Distillation Audit Template</li>
+        <li>HNDL_IP: Harvest Now Decrypt Later Applied to Intellectual Property</li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Why This Matters</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-item">
+          <h3>Defensive Publication</h3>
+          <p>Every work is timestamped via eCO, KDP, and TD Commons to establish irrefutable prior art, preventing unilateral patent enclosure of human-accountable AI governance mechanisms.</p>
+        </div>
+        <div class="why-item">
+          <h3>Timestamp Chain</h3>
+          <p>December 2025 → April 2026 filings create a continuous, verifiable chain of invention from conceptual origin (Triadic Marriage) through executable specification (TOPH Kernel v1.0).</p>
+        </div>
+        <div class="why-item">
+          <h3>Theory to Implementation</h3>
+          <p>ROOT0 ties natural law derivations (Positronic Law) directly to a 4-axiom, 12-bit execution gate — making governance a computable property, not a policy suggestion.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>
+        <span class="status-dot"></span>© 2026 David Wise — CC-BY-4.0
+      </div>
+      <div>Verify: <a href="https://0root.ai/proofs" target="_blank" rel="noopener">0root.ai/proofs</a></div>
+    </footer>
+  </main>
+
+<script>
+  function copyHash(btn) {
+    const hash = document.getElementById('sha256').textContent.trim();
+    navigator.clipboard.writeText(hash).then(() => {
+      const original = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> COPIED';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = original;
+      }, 2000);
+    }).catch(() => {
+      // fallback
+      const range = document.createRange();
+      range.selectNode(document.getElementById('sha256'));
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      document.execCommand('copy');
+      window.getSelection().removeAllRanges();
+    });
+  }
+
+  // subtle parallax for grid
+  document.addEventListener('mousemove', (e) => {
+    const grid = document.querySelector('.grid-bg');
+    if (!grid) return;
+    const x = (e.clientX / window.innerWidth - 0.5) * 20;
+    const y = (e.clientY / window.innerHeight - 0.5) * 20;
+    grid.style.transform = `translate(${x}px, ${y}px)`;
+  });
+</script>
+</body>
+</html>

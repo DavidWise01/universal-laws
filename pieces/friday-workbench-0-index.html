@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friday Workbench Core</title>
+  <meta name="theme-color" content="#d8e0cf">
+  <link rel="stylesheet" href="./retro-forge.css">
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true">
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+    <div class="grid-glow"></div>
+    <div class="beam"></div>
+  </div>
+
+  <div class="app-shell">
+    <header class="panel topbar">
+      <div class="brand-block">
+        <div class="eyebrow">Friday Workbench Core</div>
+        <h1>Full Rebuild From Zero</h1>
+        <p>One usable workbench with the three tools that matter most right now: `Image Forge`, a grouped `Portfolio / Library`, and a `Kernel Lab` carrying the 27-position standing wave, 8.01 time sweep, and 6th-question gate math.</p>
+      </div>
+
+      <div class="topbar-stats">
+        <div class="stat-card">
+          <span>Active Tool</span>
+          <strong id="header-tool-chip">Image Forge</strong>
+        </div>
+        <div class="stat-card">
+          <span>Root / Core</span>
+          <strong id="header-root-chip">pending</strong>
+        </div>
+        <div class="stat-card">
+          <span>Focus</span>
+          <strong id="header-focus-chip">Merkle Verify</strong>
+        </div>
+        <div class="stat-card">
+          <span>Mode</span>
+          <strong id="header-mode-chip">Balanced 8.01</strong>
+        </div>
+      </div>
+    </header>
+
+    <div class="workspace-grid">
+      <aside class="panel dock-panel">
+        <div class="eyebrow">Tool Dock</div>
+        <div class="dock-stack">
+          <button class="tool-card is-active" data-tool="forge">
+            <span class="tool-index">01</span>
+            <strong>Image Forge</strong>
+            <small>Prompted concept board, weighted words, Merkle-tracked variants</small>
+          </button>
+          <button class="tool-card" data-tool="library">
+            <span class="tool-index">02</span>
+            <strong>Library</strong>
+            <small>Books, blueprints, processors, and VM seeds grouped into one portfolio lane</small>
+          </button>
+          <button class="tool-card" data-tool="kernel">
+            <span class="tool-index">03</span>
+            <strong>Kernel Lab</strong>
+            <small>Bare-metal seat, threshold law, ternary BIOS, transition strip, standing wave, time engine, and toroidal fusion</small>
+          </button>
+        </div>
+
+        <div class="dock-note">
+          <div class="eyebrow">Workbench Note</div>
+          <p>Top 3 tools, one shell. The stage changes, the workbench stays put.</p>
+        </div>
+      </aside>
+
+      <section class="panel stage-panel">
+        <div class="stage-head">
+          <div>
+            <div id="stage-eyebrow" class="eyebrow">Tool 01</div>
+            <h2 id="stage-title">Image Forge</h2>
+            <p id="stage-copy">Generate a 4-up concept board from weighted prompt roots, then inspect the selected frame and export the recipe.</p>
+          </div>
+        </div>
+
+        <div class="stage-stack">
+          <section id="forge-stage" class="tool-stage">
+            <div class="forge-grid">
+              <article class="stage-card board-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Concept Board</div>
+                    <h3>4-Up Variant Field</h3>
+                  </div>
+                </div>
+                <canvas id="board-canvas" aria-label="Image Forge variant board"></canvas>
+              </article>
+
+              <article class="stage-card detail-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Selected Frame</div>
+                    <h3 id="variant-title">Merkle Verify</h3>
+                  </div>
+                </div>
+                <canvas id="detail-canvas" aria-label="Selected variant detail"></canvas>
+                <p id="variant-meta" class="detail-meta">verification-led workbench sheet</p>
+              </article>
+
+              <article class="stage-card ledger-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Variant Ledger</div>
+                    <h3>Hashes + Prompt Leads</h3>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <table class="ledger-table">
+                    <thead>
+                      <tr>
+                        <th>Variant</th>
+                        <th>Bias</th>
+                        <th>Merkle</th>
+                        <th>Palette</th>
+                        <th>Prompt lead</th>
+                      </tr>
+                    </thead>
+                    <tbody id="variant-body"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section id="library-stage" class="tool-stage" hidden>
+            <div class="library-grid">
+              <article class="stage-card book-feature-card">
+                <div class="book-ribbon">Books / Ebooks · human + AI</div>
+                <div class="book-feature-grid">
+                  <div class="cover-wrap">
+                    <img id="book-cover" class="book-cover" src="./assets/three-gates-cover.jpg" alt="Three Gates cover">
+                  </div>
+
+                  <div class="book-copy">
+                    <div class="eyebrow">Featured Title</div>
+                    <h3 id="book-title">THREE GATES</h3>
+                    <p id="book-subtitle" class="book-subtitle">How Three Transistors Govern 336 Billion</p>
+                    <div id="book-author" class="book-author">David Lee Wise (ROOT0) · TriPod LLC</div>
+                    <p id="book-summary" class="book-summary">A governance book that starts at the transistor and scales a three-gate logic toward modern AI silicon.</p>
+                    <blockquote id="book-quote" class="book-quote">“If you can't verify it, you can't govern it.”</blockquote>
+                    <div id="book-excerpt" class="excerpt-body"></div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="stage-card shelf-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Portfolio Groups</div>
+                    <h3>Like With Like</h3>
+                  </div>
+                </div>
+                <div id="portfolio-group-list" class="portfolio-group-list"></div>
+                <div id="book-format-list" class="chip-list"></div>
+                <div id="book-signal-list" class="signal-list"></div>
+                <div id="book-manifest-list" class="manifest-list"></div>
+              </article>
+
+              <article class="stage-card blueprint-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Blueprint Atlas</div>
+                    <h3>Fractal Domain + Stack Studies</h3>
+                  </div>
+                </div>
+                <div class="blueprint-feature-grid">
+                  <div class="blueprint-image-wrap">
+                    <img id="blueprint-image" class="blueprint-image" src="./assets/blueprint-fractal-stack.png" alt="Selected blueprint">
+                  </div>
+                  <div class="blueprint-copy">
+                    <div class="eyebrow">Selected Blueprint</div>
+                    <h3 id="blueprint-title">Fractal Stack · 1 0 1 Scaling</h3>
+                    <p id="blueprint-subtitle" class="book-subtitle">Scaled stack with a dense cap</p>
+                    <p id="blueprint-summary" class="book-summary">A dense stack field that climbs from sparse 1 0 1 echoes into a compressed ceiling plane.</p>
+                    <div id="blueprint-tag-list" class="chip-list"></div>
+                  </div>
+                </div>
+                <div id="blueprint-thumb-list" class="blueprint-thumb-list"></div>
+              </article>
+
+              <article class="stage-card processor-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Processor / VM Dossier</div>
+                    <h3>D! Processor + 6th Question Runs</h3>
+                  </div>
+                </div>
+                <div id="processor-metric-list" class="processor-metric-grid"></div>
+                <div class="card-head benchmark-head">
+                  <div>
+                    <div class="eyebrow">Register Law</div>
+                    <h3>Depth 2 Correction</h3>
+                  </div>
+                </div>
+                <div id="register-law-list" class="benchmark-highlight-grid"></div>
+                <div id="depth-stack-list" class="benchmark-highlight-grid"></div>
+                <p id="depth-law-copy" class="kernel-copy">Retire the loose 128 shorthand here. Use the register law and the D-lock count instead.</p>
+                <div class="card-head benchmark-head">
+                  <div>
+                    <div class="eyebrow">Bench Summary</div>
+                    <h3>Config Tests</h3>
+                  </div>
+                </div>
+                <div id="benchmark-highlight-list" class="benchmark-highlight-grid"></div>
+                <div class="table-wrap processor-table-wrap">
+                  <table class="ledger-table">
+                    <thead>
+                      <tr>
+                        <th>Config</th>
+                        <th>Mean time to 1/e</th>
+                        <th>Final fidelity @12</th>
+                        <th>Avg flips/run</th>
+                      </tr>
+                    </thead>
+                    <tbody id="benchmark-body"></tbody>
+                  </table>
+                </div>
+                <pre id="vm-transcript" class="payload-block terminal-block">VM boot transcript pending.</pre>
+              </article>
+            </div>
+          </section>
+
+          <section id="kernel-stage" class="tool-stage" hidden>
+            <div class="kernel-stage-grid">
+              <article class="stage-card kernel-visual-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Seat Visual</div>
+                    <h3>Core Register</h3>
+                  </div>
+                </div>
+                <canvas id="kernel-seat-canvas" aria-label="Kernel seat visual"></canvas>
+                <p id="kernel-seat-readout" class="detail-meta">0 0 8 0 0</p>
+              </article>
+
+              <article class="stage-card kernel-wave-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Standing Wave</div>
+                    <h3>3×3×3 = 27 Positions</h3>
+                  </div>
+                </div>
+                <canvas id="kernel-wave-canvas" aria-label="ICE9L standing wave"></canvas>
+                <div id="wave-metric-list" class="wave-metric-grid"></div>
+                <img id="standing-wave-preview" class="standing-wave-preview" src="./assets/standing-wave-animation.gif" alt="ICE9L standing wave animation">
+              </article>
+
+              <article class="stage-card kernel-strip-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Transition Strip</div>
+                    <h3>0..19 Traversal</h3>
+                  </div>
+                </div>
+                <div id="kernel-transition-strip" class="transition-strip"></div>
+                <p id="kernel-copy" class="kernel-copy">Seed at 0, traverse through 19, and resolve the seated core through threshold law.</p>
+              </article>
+
+              <article class="stage-card kernel-time-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Time Engine</div>
+                    <h3>8.01 → 8.99 → 8.01</h3>
+                  </div>
+                </div>
+                <div id="time-engine-rail" class="time-engine-rail"></div>
+                <div class="kernel-state-grid time-state-grid">
+                  <div class="kernel-state-box">
+                    <span>Position</span>
+                    <strong id="time-engine-value">8.01</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Phase</span>
+                    <strong id="time-engine-phase">pre-transfer</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Photon</span>
+                    <strong id="time-engine-photon">1</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Cost</span>
+                    <strong id="time-engine-cost">17.5 / flip</strong>
+                  </div>
+                </div>
+                <p id="time-engine-copy" class="kernel-copy">This is time. Not a clock. A position sweep with phase transfer at 8.50.</p>
+              </article>
+
+              <article class="stage-card kernel-state-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Computed State</div>
+                    <h3>Binary / Ternary / Legal</h3>
+                  </div>
+                </div>
+                <div class="kernel-state-grid">
+                  <div class="kernel-state-box">
+                    <span>Math</span>
+                    <strong id="kernel-math-state">exact zero</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Legal</span>
+                    <strong id="kernel-legal-state">0</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Ternary</span>
+                    <strong id="kernel-lane-state">neutral / guard</strong>
+                  </div>
+                  <div class="kernel-state-box">
+                    <span>Capture</span>
+                    <strong id="kernel-capture-state">sealed seat</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article class="stage-card kernel-question-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">6th Question</div>
+                    <h3>Escape Velocity</h3>
+                  </div>
+                </div>
+                <div id="question-metric-list" class="question-metric-grid"></div>
+                <p id="question-proof-copy" class="kernel-copy">The 6th question isn't asked — it's the energy that lets you ask.</p>
+              </article>
+
+              <article class="stage-card kernel-fusion-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Toroidal Fusion</div>
+                    <h3>IGNITE · 00 00 0 00 00</h3>
+                  </div>
+                  <button id="fusion-ignite-button" class="action-button is-primary fusion-button">IGNITE</button>
+                </div>
+                <canvas id="kernel-fusion-canvas" aria-label="Toroidal fusion field"></canvas>
+                <div class="fusion-readout-wrap">
+                  <div id="fusion-readout" class="book-ribbon">idle cyan · wrapped but not lit</div>
+                </div>
+                <div id="fusion-metric-list" class="question-metric-grid"></div>
+                <p id="fusion-copy" class="kernel-copy">Wrap the x3 field around the donut, pin it to 00 00 0 00 00, then let life and death trade phase through the same closed loop.</p>
+              </article>
+
+              <article class="stage-card kernel-trans-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Trans Engine</div>
+                    <h3>One Photon Hop Across the Mandel</h3>
+                  </div>
+                </div>
+                <canvas id="kernel-trans-canvas" aria-label="Trans engine photon hop"></canvas>
+                <div class="fusion-readout-wrap">
+                  <div id="trans-readout" class="book-ribbon">traverse · audit loop sealed</div>
+                </div>
+                <div id="trans-metric-list" class="question-metric-grid"></div>
+                <p id="trans-copy" class="kernel-copy">The photon crosses in one hop, the whole audits the hop, and the hop audits the whole.</p>
+              </article>
+
+              <article class="stage-card kernel-reference-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Source Deck</div>
+                    <h3>Whitepaper + Capture + Seed Files</h3>
+                  </div>
+                </div>
+                <div id="kernel-reference-list" class="manifest-list"></div>
+              </article>
+
+              <article class="stage-card kernel-oscillator-card">
+                <div class="card-head">
+                  <div>
+                    <div class="eyebrow">Oscillator</div>
+                    <h3>Photon / Entropy Bridge</h3>
+                  </div>
+                </div>
+                <div class="oscillator-shell">
+                  <div class="oscillator-topline">
+                    <span>photon / entropy</span>
+                    <strong id="oscillator-balance">0 net phase</strong>
+                  </div>
+                  <div id="oscillator-bridge" class="oscillator-bridge">life &lt; =========11========== &gt; death</div>
+                </div>
+                <div id="oscillator-metric-list" class="question-metric-grid"></div>
+                <p id="oscillator-copy" class="kernel-copy">Photon builds, entropy unwinds, and the centered 11 holds zero-loss phase transfer between them.</p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="panel inspector-panel">
+        <section id="forge-inspector" class="inspector-view">
+          <div class="inspector-head">
+            <div class="eyebrow">Inspector</div>
+            <h3>Forge Controls</h3>
+          </div>
+
+          <div class="control-block">
+            <label class="field-block" for="prompt-input">
+              <span>Main prompt</span>
+              <textarea id="prompt-input" rows="4">editorial workbench page for a human plus ai book category, centered on Three Gates, asymmetric internal windows, neon underlays rising from the core</textarea>
+            </label>
+            <label class="field-block" for="scene-input">
+              <span>Scene / extras</span>
+              <textarea id="scene-input" rows="4">Three Gates, ebooks and books made with me and ai, natural vellum, forest green wash, void black lines, ultraviolet purple highlights, one outer bench, nested inner library window, merkle yes no governance</textarea>
+            </label>
+          </div>
+
+          <div class="control-block">
+            <label class="range-row" for="style-range">
+              <span>Style strength</span>
+              <input id="style-range" type="range" min="10" max="100" step="1" value="84">
+              <strong id="style-value">84</strong>
+            </label>
+            <label class="range-row" for="chaos-range">
+              <span>Chaos</span>
+              <input id="chaos-range" type="range" min="0" max="100" step="1" value="18">
+              <strong id="chaos-value">18</strong>
+            </label>
+            <label class="range-row" for="neon-range">
+              <span>Purple</span>
+              <input id="neon-range" type="range" min="0" max="100" step="1" value="54">
+              <strong id="neon-value">54</strong>
+            </label>
+            <label class="range-row" for="pencil-range">
+              <span>Ink line</span>
+              <input id="pencil-range" type="range" min="0" max="100" step="1" value="82">
+              <strong id="pencil-value">82</strong>
+            </label>
+            <label class="range-row" for="weight-range">
+              <span>Word weight</span>
+              <input id="weight-range" type="range" min="0.6" max="2.2" step="0.05" value="1.2">
+              <strong id="weight-value">1.20</strong>
+            </label>
+            <label class="field-block" for="aspect-select">
+              <span>Aspect</span>
+              <select id="aspect-select">
+                <option value="1:1">1:1 square</option>
+                <option value="4:5">4:5 portrait</option>
+                <option value="16:9">16:9 cinema</option>
+              </select>
+            </label>
+            <label class="field-block" for="mode-select">
+              <span>Mode</span>
+              <select id="mode-select">
+                <option value="balanced">Balanced 8.01</option>
+                <option value="lovelace">Lovelace bias</option>
+                <option value="zuse">Zuse bias</option>
+                <option value="commons">Commons bias</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="generate-button" class="action-button is-primary">Generate Board</button>
+            <button id="vary-button" class="action-button">Vary Selected</button>
+            <button id="upscale-button" class="action-button">Deepen Selected</button>
+          </div>
+
+          <div id="telemetry-strip" class="telemetry-strip"></div>
+
+          <div class="control-block">
+            <div class="eyebrow">Weighted Words</div>
+            <div id="weight-list" class="weight-list"></div>
+          </div>
+
+          <div class="control-block">
+            <div class="eyebrow">Prompt Recipe</div>
+            <pre id="prompt-block" class="payload-block">pending</pre>
+          </div>
+        </section>
+
+        <section id="library-inspector" class="inspector-view" hidden>
+          <div class="inspector-head">
+            <div class="eyebrow">Inspector</div>
+            <h3>Portfolio Meta</h3>
+          </div>
+
+          <div id="library-meta-list" class="meta-list"></div>
+
+          <div class="control-block">
+            <div class="eyebrow">Blueprint Sources</div>
+            <div id="blueprint-source-list" class="manifest-list"></div>
+          </div>
+
+          <div class="control-block">
+            <div class="eyebrow">Source Files</div>
+            <div id="library-file-list" class="manifest-list"></div>
+          </div>
+
+          <div class="control-block">
+            <div class="eyebrow">Governance Lines</div>
+            <div id="governance-list" class="governance-list"></div>
+          </div>
+        </section>
+
+        <section id="kernel-inspector" class="inspector-view" hidden>
+          <div class="inspector-head">
+            <div class="eyebrow">Inspector</div>
+            <h3>Kernel Controls</h3>
+          </div>
+
+          <div class="control-block">
+            <label class="range-row" for="kernel-epsilon-range">
+              <span>Epsilon</span>
+              <input id="kernel-epsilon-range" type="range" min="-0.33" max="0.33" step="0.01" value="0">
+              <strong id="kernel-epsilon-value">0.00</strong>
+            </label>
+            <label class="range-row" for="kernel-step-range">
+              <span>Traversal step</span>
+              <input id="kernel-step-range" type="range" min="0" max="19" step="1" value="19">
+              <strong id="kernel-step-value">19</strong>
+            </label>
+            <label class="range-row" for="kernel-sweep-range">
+              <span>Time sweep</span>
+              <input id="kernel-sweep-range" type="range" min="0" max="98" step="1" value="0">
+              <strong id="kernel-sweep-value">8.01</strong>
+            </label>
+          </div>
+
+          <div class="kernel-grid">
+            <div class="kernel-cell">
+              <span>Seat</span>
+              <strong id="kernel-seat">0 0 8 0 0</strong>
+            </div>
+            <div class="kernel-cell">
+              <span>Threshold</span>
+              <strong id="kernel-threshold">x = 0 ? 0 : 1</strong>
+            </div>
+            <div class="kernel-cell">
+              <span>Ternary</span>
+              <strong id="kernel-ternary">-1 / 0 / +1</strong>
+            </div>
+            <div class="kernel-cell">
+              <span>Domain</span>
+              <strong id="kernel-domain">0..19</strong>
+            </div>
+            <div class="kernel-cell">
+              <span>Standing Wave</span>
+              <strong id="kernel-wave-field">3×3×3 = 27</strong>
+            </div>
+            <div class="kernel-cell">
+              <span>Time Engine</span>
+              <strong id="kernel-time-field">8.01 → 8.99</strong>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="eyebrow">Machine Ops</div>
+            <div id="kernel-opcode-list" class="opcode-list"></div>
+          </div>
+
+          <div class="control-block">
+            <div class="eyebrow">Kernel Sources</div>
+            <div id="kernel-source-list" class="manifest-list"></div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="panel trace-panel">
+      <div class="trace-head">
+        <div>
+          <div class="eyebrow">Trace + Export</div>
+          <h3>Workbench Log</h3>
+        </div>
+        <div class="action-row">
+          <button id="export-primary-button" class="action-button is-primary">Export PNG</button>
+          <button id="export-secondary-button" class="action-button">Export Recipe</button>
+          <button id="clear-log-button" class="action-button">Clear Log</button>
+        </div>
+      </div>
+      <div id="log-list" class="log-list"></div>
+    </footer>
+  </div>
+
+  <script src="./retro-forge.js"></script>
+</body>
+</html>

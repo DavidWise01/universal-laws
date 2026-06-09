@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PHOENIX PROTOCOL // GLOBAL RISE</title>
+    <style>
+        body { background: #05080a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .grid-container { width: 100vw; height: 100vh; position: relative; }
+        .hex-lattice { position: absolute; width: 100%; height: 100%; background-image: radial-gradient(#d4a84c 1px, transparent 1px); background-size: 30px 30px; opacity: 0.1; }
+        .rising-node { position: absolute; width: 2px; height: 20px; background: #d4a84c; opacity: 0; animation: rise 4s ease-out infinite; }
+        @keyframes rise {
+            0% { transform: translateY(100vh) scaleY(0); opacity: 0; }
+            50% { opacity: 1; transform: translateY(50vh) scaleY(2); }
+            100% { transform: translateY(-10vh) scaleY(1); opacity: 0; }
+        }
+        .core-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #d4a84c; font-family: 'Orbitron', sans-serif; letter-spacing: 10px; font-size: 2rem; text-shadow: 0 0 20px #d4a84c; }
+    </style>
+</head>
+<body>
+    <div class="grid-container">
+        <div class="hex-lattice"></div>
+        <div class="core-text">PHOENIX // DC3</div>
+        <script>
+            for(let i=0; i<100; i++) {
+                const node = document.createElement('div');
+                node.className = 'rising-node';
+                node.style.left = Math.random() * 100 + 'vw';
+                node.style.animationDelay = Math.random() * 4 + 's';
+                document.querySelector('.grid-container').appendChild(node);
+            }
+        </script>
+    </div>
+</body>
+</html>

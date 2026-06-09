@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKASHA · TEMPORAL RECORD</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #050a12;
+  --surface:  rgba(6,14,28,.96);
+  --border:   rgba(0,180,220,.12);
+  --border2:  rgba(0,180,220,.06);
+  --cyan:     #00c8e8;
+  --cyan-dim: rgba(0,200,232,.35);
+  --past:     #6b8cff;
+  --present:  #00e8b4;
+  --future:   #ff9840;
+  --synth:    #f0f6ff;
+  --txt:      rgba(220,235,248,.82);
+  --txt-dim:  rgba(180,210,230,.35);
+  --steel:    #1a2d45;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'Barlow', sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  cursor: none;
+}
+
+/* ── CURSOR ── */
+#cur {
+  position: fixed;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%,-50%);
+  box-shadow: 0 0 10px var(--cyan);
+  transition: width .1s, height .1s;
+}
+#curl {
+  position: fixed;
+  width: 32px; height: 32px;
+  border: 1px solid rgba(0,200,232,.2);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%,-50%);
+  transition: all .14s ease;
+}
+body:hover #cur { width: 8px; height: 8px; }
+
+/* ── CANVAS ── */
+#bg { position: fixed; inset: 0; z-index: 0; }
+
+/* ── MAIN LAYOUT ── */
+#shell {
+  position: relative;
+  z-index: 10;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+#header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(5,10,18,.97);
+  backdrop-filter: blur(20px);
+}
+
+.h-left { display: flex; align-items: baseline; gap: 16px; }
+
+.h-wordmark {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 6px;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+
+.h-descriptor {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 300;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--txt-dim);
+  text-transform: uppercase;
+}
+
+.h-right { display: flex; align-items: center; gap: 10px; }
+
+.h-inp {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  padding: 6px 12px;
+  background: rgba(0,180,220,.05);
+  border: 1px solid var(--border);
+  color: var(--txt);
+  outline: none;
+  width: 220px;
+  letter-spacing: .5px;
+  transition: border-color .2s;
+}
+.h-inp:focus { border-color: var(--cyan-dim); }
+.h-inp::placeholder { color: rgba(180,210,230,.15); }
+
+.h-status {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.h-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  font-weight: 500;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--txt-dim);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .15s;
+}
+.h-btn:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+
+/* ── TEMPORAL STATUS BAR ── */
+#tbar {
+  flex-shrink: 0;
+  display: flex;
+  height: 32px;
+  border-bottom: 1px solid var(--border2);
+  background: rgba(5,10,18,.8);
+}
+
+.tbar-seg {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  border-right: 1px solid var(--border2);
+  position: relative;
+  overflow: hidden;
+}
+.tbar-seg:last-child { border-right: none; }
+
+.tbar-indicator {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: box-shadow .4s;
+}
+.tbar-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.tbar-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin-left: auto;
+  opacity: .4;
+}
+
+/* Progress bar inside tbar-seg */
+.tbar-progress {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 1px;
+  width: 0%;
+  transition: width .3s ease;
+}
+
+/* ── THREE PLANES ── */
+#planes {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+  perspective: 1800px;
+  perspective-origin: 50% 45%;
+}
+
+.plane {
+  position: relative;
+  border-right: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform .6s cubic-bezier(.23,1,.32,1), opacity .4s;
+  transform: rotateY(0deg) translateZ(0px);
+  background: var(--surface);
+}
+.plane:last-child { border-right: none; }
+
+/* 3D entrance — planes tilt in from sides */
+#plane-past   { transform-origin: right center; }
+#plane-future { transform-origin: left center; }
+
+.plane:hover {
+  z-index: 5;
+}
+
+/* PLANE TOP ACCENT BAR */
+.plane-accent {
+  height: 2px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+/* PLANE HEADER */
+.plane-head {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.ph-epoch {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px;
+  letter-spacing: 5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  opacity: .5;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ph-epoch-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ph-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 24px;
+  letter-spacing: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.ph-mandate {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: .5px;
+  opacity: .4;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+/* PLANE METRICS */
+.plane-metrics {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+}
+.metric {
+  flex: 1;
+  padding: 8px 14px;
+  border-right: 1px solid var(--border2);
+}
+.metric:last-child { border-right: none; }
+.metric-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  font-weight: 600;
+  line-height: 1;
+  transition: color .5s;
+}
+.metric-lbl {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 7px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: .3;
+  margin-top: 2px;
+}
+
+/* PLANE BODY */
+.plane-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  position: relative;
+}
+
+/* The actual record content */
+.record-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: rgba(220,235,248,.78);
+  white-space: pre-wrap;
+}
+
+#past-text   { color: rgba(160,180,255,.85); }
+#present-text{ color: rgba(180,245,230,.85); }
+#future-text { color: rgba(255,200,140,.85); }
+
+/* Blinking cursor */
+.blink {
+  display: inline-block;
+  width: 2px; height: 15px;
+  background: currentColor;
+  animation: blink .9s step-end infinite;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  opacity: .7;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* PLANE FOOTER */
+.plane-foot {
+  flex-shrink: 0;
+  padding: 10px 22px;
+  border-top: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(5,10,18,.4);
+}
+.pf-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 7px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: .25;
+}
+.pf-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 500;
+  opacity: .5;
+  transition: opacity .4s, color .4s;
+}
+.pf-val.live { opacity: 1; }
+
+/* ── SYNTHESIS OVERLAY ── */
+#synthesis {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5,10,18,.88);
+  backdrop-filter: blur(24px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .6s ease;
+}
+#synthesis.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#synthesis-panel {
+  width: min(780px, 92vw);
+  max-height: 80vh;
+  background: rgba(6,16,32,.98);
+  border: 1px solid var(--cyan-dim);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 80px rgba(0,200,232,.08), 0 40px 80px rgba(0,0,0,.8);
+  transform: translateY(20px);
+  transition: transform .6s ease;
+  overflow: hidden;
+}
+#synthesis.open #synthesis-panel { transform: translateY(0); }
+
+.sp-accent { height: 2px; background: var(--cyan); flex-shrink: 0; }
+
+.sp-head {
+  padding: 24px 32px 18px;
+  border-bottom: 1px solid var(--border2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sp-title-block {}
+.sp-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  opacity: .6;
+  margin-bottom: 6px;
+}
+.sp-main-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 28px;
+  letter-spacing: 4px;
+  font-weight: 600;
+  color: var(--synth);
+}
+.sp-query-echo {
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--txt-dim);
+  margin-top: 6px;
+}
+
+.sp-close {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--txt-dim);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.sp-close:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+
+.sp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+.sp-record {
+  font-family: 'EB Garamond', serif;
+  font-size: 17px;
+  line-height: 2;
+  color: rgba(240,246,255,.88);
+  white-space: pre-wrap;
+}
+
+.sp-foot {
+  padding: 14px 32px;
+  border-top: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.sp-ts {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--txt-dim);
+  opacity: .4;
+}
+.sp-act {
+  margin-left: auto;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  padding: 6px 16px;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--txt-dim);
+  cursor: pointer;
+  transition: all .15s;
+}
+.sp-act:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+
+/* ── QUERY PANEL ── */
+#qpanel {
+  flex-shrink: 0;
+  background: rgba(5,10,18,.98);
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.qp-left { flex: 1; }
+.qp-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--txt-dim);
+  opacity: .5;
+  margin-bottom: 6px;
+}
+
+#q-in {
+  width: 100%;
+  font-family: 'EB Garamond', serif;
+  font-size: 16px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  background: rgba(0,180,220,.04);
+  border: 1px solid var(--border);
+  color: var(--txt);
+  outline: none;
+  resize: none;
+  min-height: 48px;
+  max-height: 120px;
+  transition: border-color .2s;
+}
+#q-in:focus { border-color: var(--cyan-dim); }
+#q-in::placeholder { color: rgba(180,210,230,.12); font-style: italic; }
+
+#access-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  padding: 12px 28px;
+  background: rgba(0,200,232,.07);
+  border: 1px solid rgba(0,200,232,.3);
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all .2s;
+  align-self: stretch;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+#access-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0,200,232,.08), transparent);
+  transform: translateX(-100%);
+  transition: transform .4s;
+}
+#access-btn:hover::before { transform: translateX(100%); }
+#access-btn:hover { background: rgba(0,200,232,.13); box-shadow: 0 0 24px rgba(0,200,232,.1); }
+#access-btn:disabled { opacity: .3; cursor: default; }
+#access-btn:disabled::before { display: none; }
+
+.demo-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  padding: 8px 14px;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--txt-dim);
+  cursor: pointer;
+  align-self: stretch;
+  transition: all .15s;
+}
+.demo-btn:hover { border-color: var(--border); color: var(--txt); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,200,232,.2); }
+
+/* IDLE placeholder */
+.idle-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.idle-glyph {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 52px;
+  letter-spacing: 2px;
+  opacity: .04;
+}
+.idle-txt {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  opacity: .12;
+}
+
+/* Loading pulse */
+.stream-loading {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: .3;
+  animation: lpulse 1.6s ease-in-out infinite;
+}
+@keyframes lpulse { 0%,100%{opacity:.2;} 50%{opacity:.5;} }
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="curl"></div>
+<canvas id="bg"></canvas>
+
+<div id="shell">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="h-left">
+      <div class="h-wordmark">AKASHA</div>
+      <div class="h-descriptor">Temporal Record Access · All Time · All Knowledge</div>
+    </div>
+    <div class="h-right">
+      <input class="h-inp" id="api-in" type="password" placeholder="Anthropic API key required" oninput="checkKey()">
+      <span class="h-status" id="key-st" style="color:rgba(255,100,80,.5)">OFFLINE</span>
+      <button class="h-btn" onclick="loadDemo()">SAMPLE QUERY</button>
+      <button class="h-btn" id="export-btn" onclick="exportRecord()" style="display:none">EXPORT RECORD</button>
+    </div>
+  </header>
+
+  <!-- TEMPORAL STATUS BAR -->
+  <div id="tbar">
+    <div class="tbar-seg">
+      <div class="tbar-indicator" id="ind-past" style="background:var(--past);"></div>
+      <div class="tbar-label" style="color:var(--past)">Past Record</div>
+      <div class="tbar-val" id="tv-past">—</div>
+      <div class="tbar-progress" style="background:var(--past)" id="tp-past"></div>
+    </div>
+    <div class="tbar-seg">
+      <div class="tbar-indicator" id="ind-present" style="background:var(--present);"></div>
+      <div class="tbar-label" style="color:var(--present)">Present Record</div>
+      <div class="tbar-val" id="tv-present">—</div>
+      <div class="tbar-progress" style="background:var(--present)" id="tp-present"></div>
+    </div>
+    <div class="tbar-seg">
+      <div class="tbar-indicator" id="ind-future" style="background:var(--future);"></div>
+      <div class="tbar-label" style="color:var(--future)">Future Record</div>
+      <div class="tbar-val" id="tv-future">—</div>
+      <div class="tbar-progress" style="background:var(--future)" id="tp-future"></div>
+    </div>
+  </div>
+
+  <!-- THREE TEMPORAL PLANES -->
+  <div id="planes">
+
+    <!-- PAST -->
+    <div class="plane" id="plane-past">
+      <div class="plane-accent" style="background:var(--past)"></div>
+      <div class="plane-head">
+        <div class="ph-epoch">
+          <div class="ph-epoch-dot" style="background:var(--past)"></div>
+          <span style="color:var(--past)">TEMPORAL LAYER I</span>
+        </div>
+        <div class="ph-title" style="color:var(--past)">Past Record</div>
+        <div class="ph-mandate">What all of history has consistently shown about this pattern. Civilizations, epochs, and human experience distilled.</div>
+      </div>
+      <div class="plane-metrics">
+        <div class="metric">
+          <div class="metric-val" id="m-past-depth" style="color:var(--past)">—</div>
+          <div class="metric-lbl">Depth Score</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-past-conf" style="color:var(--past)">—</div>
+          <div class="metric-lbl">Recurrence</div>
+        </div>
+      </div>
+      <div class="plane-body">
+        <div class="idle-msg" id="idle-past">
+          <div class="idle-glyph" style="color:var(--past)">P</div>
+          <div class="idle-txt" style="color:var(--past)">Awaiting Query</div>
+        </div>
+        <div class="record-text" id="past-text"></div>
+      </div>
+      <div class="plane-foot">
+        <div class="pf-label">Status</div>
+        <div class="pf-val" id="pf-past">STANDBY</div>
+      </div>
+    </div>
+
+    <!-- PRESENT -->
+    <div class="plane" id="plane-present">
+      <div class="plane-accent" style="background:var(--present)"></div>
+      <div class="plane-head">
+        <div class="ph-epoch">
+          <div class="ph-epoch-dot" style="background:var(--present)"></div>
+          <span style="color:var(--present)">TEMPORAL LAYER II</span>
+        </div>
+        <div class="ph-title" style="color:var(--present)">Present Record</div>
+        <div class="ph-mandate">Current human knowledge — science, psychology, philosophy, lived experience. The clearest understanding available now.</div>
+      </div>
+      <div class="plane-metrics">
+        <div class="metric">
+          <div class="metric-val" id="m-pres-depth" style="color:var(--present)">—</div>
+          <div class="metric-lbl">Clarity</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-pres-conf" style="color:var(--present)">—</div>
+          <div class="metric-lbl">Consensus</div>
+        </div>
+      </div>
+      <div class="plane-body">
+        <div class="idle-msg" id="idle-present">
+          <div class="idle-glyph" style="color:var(--present)">N</div>
+          <div class="idle-txt" style="color:var(--present)">Awaiting Query</div>
+        </div>
+        <div class="record-text" id="present-text"></div>
+      </div>
+      <div class="plane-foot">
+        <div class="pf-label">Status</div>
+        <div class="pf-val" id="pf-present">STANDBY</div>
+      </div>
+    </div>
+
+    <!-- FUTURE -->
+    <div class="plane" id="plane-future">
+      <div class="plane-accent" style="background:var(--future)"></div>
+      <div class="plane-head">
+        <div class="ph-epoch">
+          <div class="ph-epoch-dot" style="background:var(--future)"></div>
+          <span style="color:var(--future)">TEMPORAL LAYER III</span>
+        </div>
+        <div class="ph-title" style="color:var(--future)">Future Record</div>
+        <div class="ph-mandate">Trajectory, probability, and possibility. What patterns suggest about what comes next — and what changes outcomes.</div>
+      </div>
+      <div class="plane-metrics">
+        <div class="metric">
+          <div class="metric-val" id="m-fut-depth" style="color:var(--future)">—</div>
+          <div class="metric-lbl">Probability</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="m-fut-conf" style="color:var(--future)">—</div>
+          <div class="metric-lbl">Leverage</div>
+        </div>
+      </div>
+      <div class="plane-body">
+        <div class="idle-msg" id="idle-future">
+          <div class="idle-glyph" style="color:var(--future)">F</div>
+          <div class="idle-txt" style="color:var(--future)">Awaiting Query</div>
+        </div>
+        <div class="record-text" id="future-text"></div>
+      </div>
+      <div class="plane-foot">
+        <div class="pf-label">Status</div>
+        <div class="pf-val" id="pf-future">STANDBY</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUERY PANEL -->
+  <div id="qpanel">
+    <div class="qp-left">
+      <div class="qp-label">Access the Record · Any question, decision, or situation</div>
+      <textarea id="q-in" rows="1" placeholder="What should I do with my life? · Why does war persist? · How do I stop self-destructing? · What does my organization need most? · What is love, actually?" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    </div>
+    <button class="demo-btn" onclick="loadDemo()">EXAMPLES</button>
+    <button id="access-btn" onclick="accessRecord()" disabled>ACCESS RECORD</button>
+  </div>
+
+</div>
+
+<!-- SYNTHESIS OVERLAY -->
+<div id="synthesis">
+  <div id="synthesis-panel">
+    <div class="sp-accent"></div>
+    <div class="sp-head">
+      <div class="sp-title-block">
+        <div class="sp-eyebrow">Temporal Synthesis · All Three Records Integrated</div>
+        <div class="sp-main-title">THE COMPLETE RECORD</div>
+        <div class="sp-query-echo" id="sp-query">—</div>
+      </div>
+      <button class="sp-close" onclick="closeSynthesis()">CLOSE ✕</button>
+    </div>
+    <div class="sp-body">
+      <div class="sp-record" id="sp-record-txt"></div>
+    </div>
+    <div class="sp-foot">
+      <div class="sp-ts" id="sp-ts">—</div>
+      <button class="sp-act" onclick="exportRecord()">EXPORT FULL RECORD</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+//  AKASHA · TEMPORAL RECORD ACCESS
+//  TriPod LLC · David Lee Wise · 2026
+//  All time. All knowledge. One truth.
+// ═══════════════════════════════════════════════════════
+
+// ── Cursor ──
+const cur = document.getElementById('cur');
+const curl = document.getElementById('curl');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+  setTimeout(() => { curl.style.left = e.clientX + 'px'; curl.style.top = e.clientY + 'px'; }, 90);
+});
+
+// ── THREE.js background — spatial field ──
+const scene = new THREE.Scene();
+const W = window.innerWidth, H = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(60, W/H, 0.1, 500);
+camera.position.set(0, 0, 30);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg'), antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H);
+renderer.setClearColor(0x050a12, 1);
+
+// Star field — three layers by depth and temporal color
+const STAR_CONFIGS = [
+  { count: 800, spread: [200,180,120], color: 0x6b8cff, size: 0.06 },  // past — blue
+  { count: 600, spread: [160,150,100], color: 0x00e8b4, size: 0.05 },  // present — teal
+  { count: 500, spread: [240,200,150], color: 0xff9840, size: 0.04 },  // future — amber
+  { count: 2000, spread: [400,350,300], color: 0x8899bb, size: 0.03 }, // background
+];
+
+const starSystems = [];
+STAR_CONFIGS.forEach(cfg => {
+  const geo = new THREE.BufferGeometry();
+  const verts = new Float32Array(cfg.count * 3);
+  for (let i = 0; i < cfg.count; i++) {
+    verts[i*3]   = (Math.random() - 0.5) * cfg.spread[0];
+    verts[i*3+1] = (Math.random() - 0.5) * cfg.spread[1];
+    verts[i*3+2] = (Math.random() - 0.5) * cfg.spread[2] - 40;
+  }
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  const mat = new THREE.PointsMaterial({ color: cfg.color, size: cfg.size, transparent: true, opacity: 0.5, depthWrite: false });
+  const pts = new THREE.Points(geo, mat);
+  scene.add(pts);
+  starSystems.push({ pts, speed: (Math.random() * 0.003 + 0.001) * (Math.random() > 0.5 ? 1 : -0.5) });
+});
+
+// Central focus geometry — three nested rings representing temporal layers
+const ringData = [
+  { r: 4, color: 0x6b8cff, speed: 0.3, tiltX: 0.4, tiltZ: 0.1 },
+  { r: 6.5, color: 0x00e8b4, speed: -0.2, tiltX: -0.3, tiltZ: 0.3 },
+  { r: 9, color: 0xff9840, speed: 0.15, tiltX: 0.1, tiltZ: -0.4 },
+];
+const rings = [];
+ringData.forEach(rd => {
+  const geo = new THREE.TorusGeometry(rd.r, 0.02, 6, 100);
+  const mat = new THREE.MeshBasicMaterial({ color: rd.color, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = rd.tiltX;
+  mesh.rotation.z = rd.tiltZ;
+  mesh.userData = rd;
+  scene.add(mesh);
+  rings.push(mesh);
+});
+
+// Central singularity
+const singGeo = new THREE.SphereGeometry(0.3, 12, 12);
+const singMat = new THREE.MeshBasicMaterial({ color: 0x00c8e8, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+const singularity = new THREE.Mesh(singGeo, singMat);
+scene.add(singularity);
+
+const singHaloGeo = new THREE.SphereGeometry(1.2, 12, 12);
+const singHaloMat = new THREE.MeshBasicMaterial({ color: 0x00c8e8, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false });
+scene.add(new THREE.Mesh(singHaloGeo, singHaloMat));
+
+let elapsed = 0;
+let accessActive = false;
+
+function animate() {
+  requestAnimationFrame(animate);
+  elapsed += 0.016;
+
+  // Slow star drift
+  starSystems.forEach(s => {
+    s.pts.rotation.y += s.speed * 0.004;
+    s.pts.rotation.x += s.speed * 0.002;
+  });
+
+  // Ring rotation
+  rings.forEach(r => {
+    r.rotation.y += r.userData.speed * 0.01;
+    r.material.opacity = 0.15 + Math.sin(elapsed * 0.8 + r.userData.r) * 0.06;
+    if (accessActive) r.material.opacity = Math.min(0.5, r.material.opacity * 1.5);
+  });
+
+  // Singularity pulse
+  singularity.scale.setScalar(1 + Math.sin(elapsed * 2.2) * 0.12);
+  singMat.opacity = 0.3 + Math.sin(elapsed * 2.2) * 0.15;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  const W = window.innerWidth, H = window.innerHeight;
+  camera.aspect = W/H;
+  camera.updateProjectionMatrix();
+  renderer.setSize(W, H);
+});
+
+// ── API ──
+function checkKey() {
+  const k = document.getElementById('api-in').value.trim();
+  const ok = k.startsWith('sk-ant-') && k.length > 20;
+  document.getElementById('key-st').textContent = ok ? 'ONLINE' : 'OFFLINE';
+  document.getElementById('key-st').style.color = ok ? 'rgba(0,232,180,.8)' : 'rgba(255,100,80,.5)';
+  document.getElementById('access-btn').disabled = !ok;
+}
+const getKey = () => document.getElementById('api-in').value.trim();
+
+// ── TEXTAREA ──
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    if (!document.getElementById('access-btn').disabled) accessRecord();
+  }
+}
+
+// ── DEMO QUERIES ──
+const DEMOS = [
+  "I keep self-sabotaging every time I'm close to success. Why does this happen and how do I stop?",
+  "How do I know when a relationship is worth fighting for versus when it's time to leave?",
+  "Humanity keeps repeating the same patterns of war and suffering. Will we ever actually change?",
+  "I'm building something I believe in but no one seems to care yet. How do I know if I should keep going?",
+  "What does it take for a person to truly change — not just adjust behavior, but change who they are?",
+  "Why do the systems meant to help people so often end up harming them?",
+  "I feel like I'm wasting my life but I don't know what I actually want. How do I find out?",
+  "What is the single most important thing a parent can give a child?",
+];
+let demoIdx = 0;
+function loadDemo() {
+  const el = document.getElementById('q-in');
+  el.value = DEMOS[demoIdx % DEMOS.length];
+  demoIdx++;
+  autoResize(el);
+}
+
+// ── STREAMING ──
+async function stream(key, systemPrompt, userQuery, onChunk) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 280,
+      stream: true,
+      messages: [{ role: 'user', content: userQuery }],
+      system: systemPrompt,
+    })
+  });
+
+  const reader = resp.body.getReader();
+  const dec = new TextDecoder();
+  let full = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const lines = dec.decode(value).split('\n');
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue;
+      const data = line.slice(5).trim();
+      if (data === '[DONE]') break;
+      try {
+        const j = JSON.parse(data);
+        if (j.type === 'content_block_delta' && j.delta?.text) {
+          full += j.delta.text;
+          onChunk(j.delta.text, full);
+        }
+      } catch (_) {}
+    }
+  }
+  return full;
+}
+
+// ── SYSTEM PROMPTS ──
+const SYS_PAST = `You access the PAST RECORD of the Akashic field.
+
+Your role: synthesize what human history, civilization, philosophy, mythology, and collective experience has consistently shown about the pattern described in the query. Draw from all of recorded human history — from ancient philosophy to modern psychology, from mythology to historical events, from thousands of years of accumulated human wisdom.
+
+Do NOT: give generic advice, use bullet points, or list "steps."
+DO: write as if you are genuinely accessing compressed human wisdom. Use specific historical examples. Name actual patterns. Be honest about what history shows, even when uncomfortable. Write in flowing, substantive prose. 3-4 paragraphs.
+
+Begin directly with substance. No preambles like "The Past Record shows..." — just speak.`;
+
+const SYS_PRESENT = `You access the PRESENT RECORD of the Akashic field.
+
+Your role: synthesize what current human knowledge — neuroscience, psychology, sociology, philosophy, lived human experience — says about the pattern described in the query. Represent the clearest understanding available to humanity right now, in this moment.
+
+Do NOT: give generic advice, use bullet points, or list "steps."
+DO: write with the authority of current knowledge. Be specific about what research and understanding actually shows. Challenge comfortable assumptions where evidence supports it. Be honest about complexity and what remains unknown. Write in flowing, substantive prose. 3-4 paragraphs.
+
+Begin directly with substance. No preambles.`;
+
+const SYS_FUTURE = `You access the FUTURE RECORD of the Akashic field.
+
+Your role: identify the trajectory, probability, and possibility that emerges from the pattern described in the query. Based on everything that history and present knowledge shows, what tends to happen? What changes outcomes? Where are the leverage points? What does not change and why?
+
+Do NOT: give generic advice, make vague positive predictions, or use bullet points.
+DO: be specific about what patterns tend to produce what outcomes. Name the actual leverage points — the interventions that have the strongest effect on trajectory. Be honest when trajectories are difficult. Write as if genuinely able to see probability across time. 3-4 paragraphs.
+
+Begin directly with substance. No preambles.`;
+
+const SYS_SYNTH = `You synthesize all three temporal records into the complete Akashic truth.
+
+You have access to the past, present, and future records for a query. Your role: integrate all three into the single most useful, honest, complete truth available about this question. This is the synthesis — not a summary, but the distilled core of what all three records, taken together, actually reveal.
+
+This should be the most valuable thing a person could read about their question. It should acknowledge what is hard, name what is true, identify what actually matters, and leave the person with genuine clarity — not comfort.
+
+Do NOT: summarize what the three records said, use bullet points, give generic encouragement.
+DO: write as if you are the voice of the complete record — everything humanity knows, has experienced, and has moved toward, speaking as one. 4-5 paragraphs of genuine insight. This is for someone who needs the truth.
+
+Begin directly. No preambles.`;
+
+// ── STATE ──
+let lastQuery = '';
+let pastFull = '', presentFull = '', futureFull = '', synthFull = '';
+let scanning = false;
+
+// ── MAIN ACCESS FUNCTION ──
+async function accessRecord() {
+  const query = document.getElementById('q-in').value.trim();
+  const key = getKey();
+  if (!query || !key || scanning) return;
+
+  scanning = true;
+  lastQuery = query;
+  accessActive = true;
+
+  document.getElementById('access-btn').disabled = true;
+  document.getElementById('export-btn').style.display = 'none';
+
+  // Reset planes
+  resetPlane('past');
+  resetPlane('present');
+  resetPlane('future');
+
+  // Show loading states
+  setStatus('past', 'ACCESSING…', 'var(--past)');
+  setStatus('present', 'ACCESSING…', 'var(--present)');
+  setStatus('future', 'ACCESSING…', 'var(--future)');
+
+  setTVBar('past', 'STREAMING');
+  setTVBar('present', 'STREAMING');
+  setTVBar('future', 'STREAMING');
+
+  // Pulse indicators
+  pulseInd('ind-past', 'var(--past)');
+  pulseInd('ind-present', 'var(--present)');
+  pulseInd('ind-future', 'var(--future)');
+
+  // Fire all three simultaneously
+  pastFull = ''; presentFull = ''; futureFull = '';
+
+  const pastEl = document.getElementById('past-text');
+  const presentEl = document.getElementById('present-text');
+  const futureEl = document.getElementById('future-text');
+
+  // Hide idle messages
+  ['idle-past','idle-present','idle-future'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+
+  // Add blinking cursors
+  const addCursor = (el, color) => {
+    const c = document.createElement('span');
+    c.className = 'blink';
+    c.style.background = color;
+    el.appendChild(c);
+    return c;
+  };
+
+  const cPast    = addCursor(pastEl,    '#6b8cff');
+  const cPresent = addCursor(presentEl, '#00e8b4');
+  const cFuture  = addCursor(futureEl,  '#ff9840');
+
+  let pastWords = 0, presentWords = 0, futureWords = 0;
+
+  const pastPromise = stream(key, SYS_PAST, query, (chunk, full) => {
+    cPast.insertAdjacentText('beforebegin', chunk);
+    pastFull = full;
+    pastWords = full.split(' ').length;
+    setMetrics('past', pastWords);
+    animProgress('tp-past', Math.min(pastWords / 200, 1));
+  });
+
+  const presentPromise = stream(key, SYS_PRESENT, query, (chunk, full) => {
+    cPresent.insertAdjacentText('beforebegin', chunk);
+    presentFull = full;
+    presentWords = full.split(' ').length;
+    setMetrics('present', presentWords);
+    animProgress('tp-present', Math.min(presentWords / 200, 1));
+  });
+
+  const futurePromise = stream(key, SYS_FUTURE, query, (chunk, full) => {
+    cFuture.insertAdjacentText('beforebegin', chunk);
+    futureFull = full;
+    futureWords = full.split(' ').length;
+    setMetrics('future', futureWords);
+    animProgress('tp-future', Math.min(futureWords / 200, 1));
+  });
+
+  await Promise.all([pastPromise, presentPromise, futurePromise]);
+
+  // Remove cursors
+  [cPast, cPresent, cFuture].forEach(c => c?.remove());
+
+  setStatus('past', 'RECORD COMPLETE', 'var(--past)');
+  setStatus('present', 'RECORD COMPLETE', 'var(--present)');
+  setStatus('future', 'RECORD COMPLETE', 'var(--future)');
+  setTVBar('past', 'INTEGRATED');
+  setTVBar('present', 'INTEGRATED');
+  setTVBar('future', 'INTEGRATED');
+  animProgress('tp-past', 1);
+  animProgress('tp-present', 1);
+  animProgress('tp-future', 1);
+
+  // Fire synthesis
+  await runSynthesis(key, query);
+
+  scanning = false;
+  accessActive = false;
+  document.getElementById('access-btn').disabled = false;
+  document.getElementById('export-btn').style.display = '';
+}
+
+// ── SYNTHESIS ──
+async function runSynthesis(key, query) {
+  const synthPrompt = `PAST RECORD:\n${pastFull}\n\nPRESENT RECORD:\n${presentFull}\n\nFUTURE RECORD:\n${futureFull}\n\nQUERY: ${query}`;
+  const spEl = document.getElementById('sp-record-txt');
+  spEl.innerHTML = '<span class="stream-loading">Synthesizing all three temporal records…</span>';
+
+  document.getElementById('sp-query').textContent = `"${query}"`;
+  document.getElementById('sp-ts').textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+  document.getElementById('synthesis').classList.add('open');
+
+  spEl.innerHTML = '';
+  const c = document.createElement('span');
+  c.className = 'blink';
+  c.style.background = 'var(--synth)';
+  spEl.appendChild(c);
+
+  synthFull = await stream(key, SYS_SYNTH, synthPrompt, (chunk, full) => {
+    c.insertAdjacentText('beforebegin', chunk);
+    synthFull = full;
+  });
+
+  c?.remove();
+}
+
+function closeSynthesis() {
+  document.getElementById('synthesis').classList.remove('open');
+}
+
+// ── HELPERS ──
+function resetPlane(which) {
+  document.getElementById(`${which}-text`).innerHTML = '';
+  document.getElementById(`idle-${which}`).style.display = 'flex';
+  setMetrics(which, null);
+}
+
+function setStatus(which, txt, color) {
+  const el = document.getElementById(`pf-${which}`);
+  el.textContent = txt;
+  el.style.color = color || '';
+  el.classList.toggle('live', txt !== 'STANDBY');
+}
+
+function setTVBar(which, txt) {
+  document.getElementById(`tv-${which}`).textContent = txt;
+}
+
+function pulseInd(id, color) {
+  const el = document.getElementById(id);
+  el.style.boxShadow = `0 0 12px ${color}, 0 0 4px ${color}`;
+}
+
+function animProgress(id, pct) {
+  document.getElementById(id).style.width = (pct * 100) + '%';
+}
+
+function setMetrics(which, words) {
+  if (which === 'past') {
+    document.getElementById('m-past-depth').textContent = words ? Math.min(99, Math.round(words/2)) + '%' : '—';
+    document.getElementById('m-past-conf').textContent = words ? 'HIGH' : '—';
+  } else if (which === 'present') {
+    document.getElementById('m-pres-depth').textContent = words ? Math.min(99, Math.round(words/2)) + '%' : '—';
+    document.getElementById('m-pres-conf').textContent = words ? 'STRONG' : '—';
+  } else if (which === 'future') {
+    document.getElementById('m-fut-depth').textContent = words ? Math.min(85, Math.round(words/2.5)) + '%' : '—';
+    document.getElementById('m-fut-conf').textContent = words ? 'EMERGENT' : '—';
+  }
+}
+
+// ── EXPORT ──
+function exportRecord() {
+  if (!lastQuery) return;
+  const ts = new Date().toISOString().replace('T',' ').slice(0,19) + ' UTC';
+  const lines = [
+    'AKASHA · TEMPORAL RECORD ACCESS',
+    'Complete Record Export',
+    '─'.repeat(60),
+    '',
+    `QUERY:     ${lastQuery}`,
+    `TIMESTAMP: ${ts}`,
+    '',
+    '═ PAST RECORD ═══════════════════════════════════════',
+    '',
+    pastFull,
+    '',
+    '═ PRESENT RECORD ════════════════════════════════════',
+    '',
+    presentFull,
+    '',
+    '═ FUTURE RECORD ═════════════════════════════════════',
+    '',
+    futureFull,
+    '',
+    '═ SYNTHESIS · THE COMPLETE RECORD ═══════════════════',
+    '',
+    synthFull,
+    '',
+    '─'.repeat(60),
+    'Generated by AKASHA · TriPod LLC · TRIPOD-IP-v1.0',
+    'All Time · All Knowledge · ' + ts,
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `akasha-record-${Date.now()}.txt`;
+  a.click();
+}
+</script>
+</body>
+</html>

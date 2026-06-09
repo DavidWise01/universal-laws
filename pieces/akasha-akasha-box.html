@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKASHA BOX — RUNS ANYWHERE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--c:#00ffff;--bg:#000;--dim:#001a1a;--dim2:#003333;--red:#ff0040}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--c);font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;line-height:1.5;overflow-x:hidden}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:#000}::-webkit-scrollbar-thumb{background:var(--dim2)}
+header{border-bottom:1px solid var(--c);padding:12px 16px;text-align:center;position:sticky;top:0;background:#000;z-index:10;box-shadow:0 0 20px rgba(0,255,255,.1)}
+h1{margin:0;font-size:16px;letter-spacing:.2em;font-weight:600;text-shadow:0 0 8px rgba(0,255,255,.7)}
+nav{display:flex;gap:6px;padding:8px;overflow:auto;background:#000;border-bottom:1px solid var(--dim2);justify-content:center;flex-wrap:wrap}
+nav button{background:#000;color:var(--c);border:1px solid var(--dim2);padding:8px 14px;cursor:pointer;font:inherit;text-transform:uppercase;font-size:12px;letter-spacing:.08em;transition:.15s}
+nav button:hover{border-color:var(--c);box-shadow:0 0 10px rgba(0,255,255,.2) inset}
+nav button.active{background:var(--c);color:#000;border-color:var(--c);box-shadow:0 0 12px rgba(0,255,255,.5);font-weight:600}
+main{max-width:1100px;margin:0 auto;padding:16px;min-height:calc(100vh - 140px)}
+.tab{display:none;animation:fade .2s ease}
+.tab.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.panel{border:1px solid var(--dim2);background:rgba(0,30,30,.15);padding:16px;margin-bottom:16px}
+.panel h2{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.15em;color:var(--c);opacity:.9}
+.dropzone{border:2px dashed var(--dim2);padding:36px 16px;text-align:center;cursor:pointer;transition:.2s;background:rgba(0,255,255,.02)}
+.dropzone:hover,.dropzone.dragover{border-color:var(--c);background:rgba(0,255,255,.05);box-shadow:0 0 20px rgba(0,255,255,.1) inset}
+.dropzone b{font-size:13px;letter-spacing:.1em}
+input,select,textarea,button{font:inherit;background:#000;color:var(--c);border:1px solid var(--dim2);padding:8px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--c);box-shadow:0 0 0 1px var(--c)}
+button{cursor:pointer;text-transform:uppercase;font-size:12px;letter-spacing:.08em}
+button.primary{background:var(--c);color:#000;border-color:var(--c);font-weight:600}
+button.danger{color:var(--red);border-color:var(--red)}
+button:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--dim2);text-align:left;vertical-align:top}
+th{color:var(--c);opacity:.7;text-transform:uppercase;letter-spacing:.06em;font-size:11px;position:sticky;top:0;background:#000}
+td.hash{font-size:11px;word-break:break-all;opacity:.9}
+td.pi{color:#7fffff;white-space:nowrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.row label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.8;display:block;margin-bottom:4px}
+.row > div{flex:1 1 200px}
+.grid-64{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.grid-64 label{display:flex;align-items:center;gap:6px;border:1px solid var(--dim2);padding:6px;font-size:11px;cursor:pointer;background:rgba(0,255,255,.02)}
+.grid-64 label:hover{border-color:var(--c)}
+.grid-64 input{accent-color:var(--c)}
+.progress{height:6px;background:var(--dim);border:1px solid var(--dim2);margin:8px 0 12px;overflow:hidden}
+.progress > div{height:100%;background:var(--c);width:0%;transition:.3s;box-shadow:0 0 10px var(--c)}
+.jane-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.box-card{border:1px solid var(--dim2);padding:10px;background:rgba(0,255,255,.03)}
+.box-card .id{font-weight:600;margin-bottom:6px;font-size:12px}
+.gates{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.toggle{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--dim2);padding:8px 10px;background:rgba(0,255,255,.02);cursor:pointer}
+.toggle input{display:none}
+.toggle .dot{width:36px;height:20px;background:var(--dim);border:1px solid var(--dim2);position:relative;border-radius:12px;transition:.2s}
+.toggle .dot::after{content:'';position:absolute;width:14px;height:14px;background:#000;border:1px solid var(--c);left:2px;top:2px;border-radius:50%;transition:.2s}
+.toggle input:checked + .dot{background:var(--c);box-shadow:0 0 8px var(--c)}
+.toggle input:checked + .dot::after{left:18px;background:#000}
+.log{max-height:200px;overflow:auto;font-size:11px;border:1px solid var(--dim2);padding:8px;background:#000;margin-top:12px}
+.log div{padding:2px 0;border-bottom:1px dotted var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;padding:2px 6px;border:1px solid var(--c);font-size:10px;margin-left:6px;letter-spacing:.05em}
+footer{text-align:center;padding:20px 10px;font-size:11px;opacity:.6;border-top:1px solid var(--dim2);margin-top:20px;letter-spacing:.08em}
+small{opacity:.7}
+@media(max-width:700px){.grid-64{grid-template-columns:repeat(4,1fr)}nav button{flex:1 1 auto}main{padding:12px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AKASHA BOX — RUNS ANYWHERE</h1>
+</header>
+<nav id="tabs">
+  <button data-tab="witness" class="active">1 WITNESS</button>
+  <button data-tab="records">2 RECORDS</button>
+  <button data-tab="insurance">3 INSURANCE</button>
+  <button data-tab="deployer">4 DEPLOYER</button>
+  <button data-tab="jane">5 JANE</button>
+</nav>
+
+<main>
+  <section id="witness" class="tab active">
+    <div class="panel">
+      <h2>Witness Engine — SHA-256 + π Time</h2>
+      <div id="drop" class="dropzone">
+        <b>DRAG FILES OR FOLDERS HERE</b><br>
+        <small>or click to select — runs 100% in browser</small>
+        <input type="file" id="fileInput" multiple style="display:none">
+      </div>
+      <div class="log" id="witnessLog"><div>Ready. No files witnessed yet.</div></div>
+    </div>
+    <div class="panel">
+      <h2>Status</h2>
+      <div id="dbStatus">Initializing IndexedDB...</div>
+    </div>
+  </section>
+
+  <section id="records" class="tab">
+    <div class="panel">
+      <h2>Records Viewer — Immutable</h2>
+      <div class="row">
+        <div style="flex:1"><label>Search</label><input id="search" placeholder="name or hash"></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label><button id="exportJson">Export JSON</button></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label><button id="exportCsv">Export CSV</button></div>
+        <div style="flex:0 0 auto"><label>&nbsp;</label><button id="clearAll" class="danger">Clear All</button></div>
+      </div>
+      <div style="overflow:auto;max-height:55vh;border:1px solid var(--dim2)">
+        <table>
+          <thead><tr><th>π TIME</th><th>NAME</th><th>SIZE</th><th>SHA-256</th></tr></thead>
+          <tbody id="recordsBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="insurance" class="tab">
+    <div class="panel">
+      <h2>Insurance Tool — Claim 300-0073283-2026</h2>
+      <div class="row">
+        <div><label>Claim Number</label><input id="ins-claim" value="300-0073283-2026"></div>
+        <div><label>Insured Name</label><input id="ins-name" placeholder="Full legal name"></div>
+        <div><label>Insurer</label><input id="ins-insurer" placeholder="Insurance Co."></div>
+      </div>
+      <div class="row">
+        <div><label>Policy #</label><input id="ins-policy" placeholder="POL-..."></div>
+        <div><label>Date of Loss</label><input id="ins-dol" type="date"></div>
+        <div><label>Amount Demanded</label><input id="ins-amount" type="number" placeholder="50000"></div>
+      </div>
+      <div class="row">
+        <div style="flex:1 1 100%"><label>Description of Loss</label><textarea id="ins-desc" rows="3" placeholder="Brief factual description..."></textarea></div>
+      </div>
+      <div class="row">
+        <button id="genLetter" class="primary">Generate Demand Letter</button>
+        <button id="copyLetter">Copy to Clipboard</button>
+        <span id="ins-hash" class="badge">no hash</span>
+      </div>
+      <textarea id="letterOutput" rows="16" style="width:100%;margin-top:8px" placeholder="Generated letter will appear here..."></textarea>
+    </div>
+  </section>
+
+  <section id="deployer" class="tab">
+    <div class="panel">
+      <h2>Deployer — 64 Parallel Actions</h2>
+      <div class="progress"><div id="depProgress"></div></div>
+      <div id="deployerGrid" class="grid-64"></div>
+      <div style="margin-top:12px"><button id="depReset" class="danger">Reset All</button> <span id="depCount" class="badge">0/64</span></div>
+    </div>
+  </section>
+
+  <section id="jane" class="tab">
+    <div class="panel">
+      <h2>Jane — Box Tracker (12)</h2>
+      <div id="janeBoxes" class="jane-grid"></div>
+    </div>
+    <div class="panel">
+      <h2>Gatekeepers</h2>
+      <div id="janeGates" class="gates"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Copy this file to any server. No install needed.</footer>
+
+<script>
+(()=>{const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const tabs=$$('#tabs button'),panels=$$('.tab');
+tabs.forEach(b=>b.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));panels.forEach(p=>p.classList.remove('active'));b.classList.add('active');$('#'+b.dataset.tab).classList.add('active');if(b.dataset.tab==='records')loadRecords()});
+
+// --- DB ---
+let db;const DB_NAME='akasha-box',DB_VER=1;
+const dbReady=new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('witness'))d.createObjectStore('witness',{keyPath:'id'})};r.onsuccess=e=>{db=e.target.result;$('#dbStatus').textContent='IndexedDB ready — data stays in this browser.';res()};r.onerror=()=>{$('#dbStatus').textContent='IndexedDB failed.';rej()}});
+async function addRec(r){await dbReady;return new Promise((res,rej)=>{const tx=db.transaction('witness','readwrite');tx.objectStore('witness').put(r);tx.oncomplete=()=>res();tx.onerror=()=>rej()})}
+async function getAll(){await dbReady;return new Promise((res,rej)=>{const tx=db.transaction('witness','readonly');const q=tx.objectStore('witness').getAll();q.onsuccess=()=>res(q.result.sort((a,b)=>b.ts-a.ts));q.onerror=()=>rej()})}
+async function clearAll(){await dbReady;return new Promise((res,rej)=>{const tx=db.transaction('witness','readwrite');tx.objectStore('witness').clear();tx.oncomplete=res;tx.onerror=rej})}
+
+// --- WITNESS ---
+const drop=$('#drop'),fileInput=$('#fileInput'),log=$('#witnessLog');
+function logMsg(t){const d=document.createElement('div');d.textContent=t;log.prepend(d)}
+async function sha256(buf){if(crypto&&crypto.subtle){const h=await crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')}else{throw new Error('Web Crypto unavailable')}} 
+function piTime(){return (Date.now()/1000/Math.PI).toFixed(10)}
+async function witnessFile(f,path=''){try{logMsg(`Hashing ${f.name}...`);const buf=await f.arrayBuffer();const hash=await sha256(buf);const pi=piTime();const rec={id:crypto.randomUUID(),hash,name:path||f.webkitRelativePath||f.name,size:f.size,type:f.type||'application/octet-stream',iso:new Date().toISOString(),pi,ts:Date.now(),immutable:true};await addRec(rec);logMsg(`✓ ${rec.name} → ${hash.slice(0,12)}… π${pi}`)}catch(e){logMsg(`✗ ${f.name}: ${e.message}`)}}
+async function traverse(entry,path=''){if(entry.isFile){return new Promise(res=>entry.file(f=>{f._path=path+f.name;res(f)}))}if(entry.isDirectory){const reader=entry.createReader();const entries=await new Promise(res=>reader.readEntries(res));const files=await Promise.all(entries.map(e=>traverse(e,path+entry.name+'/')));return files.flat()}}
+drop.onclick=()=>fileInput.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('dragover')};
+drop.ondragleave=()=>drop.classList.remove('dragover');
+drop.ondrop=async e=>{e.preventDefault();drop.classList.remove('dragover');const items=[...e.dataTransfer.items];let files=[];for(const it of items){const en=it.webkitGetAsEntry?.();if(en){const f=await traverse(en);files=files.concat(f.flat?f.flat(Infinity):f)}else if(it.getAsFile())files.push(it.getAsFile())}for(const f of files){await witnessFile(f,f._path)}};
+fileInput.onchange=async e=>{for(const f of e.target.files)await witnessFile(f);fileInput.value=''};
+
+// --- RECORDS ---
+const search=$('#search'),body=$('#recordsBody');
+async function loadRecords(){const all=await getAll();renderRecords(all)} 
+function renderRecords(list){const q=(search.value||'').toLowerCase();const f=list.filter(r=>!q||r.name.toLowerCase().includes(q)||r.hash.includes(q));body.innerHTML=f.length?f.map(r=>`<tr><td class="pi" title="${r.iso}">π${r.pi}</td><td>${escapeHtml(r.name)}</td><td>${formatSize(r.size)}</td><td class="hash">${r.hash} 🔒</td></tr>`).join(''):`<tr><td colspan="4">No records</td></tr>`}
+search.oninput=()=>loadRecords();
+$('#exportJson').onclick=async()=>{const d=await getAll();download('akasha-records.json',JSON.stringify(d,null,2),'application/json')};
+$('#exportCsv').onclick=async()=>{const d=await getAll();const csv=['iso,pi_time,name,size,sha256',...d.map(r=>`"${r.iso}",${r.pi},"${r.name.replace(/"/g,'""')}",${r.size},${r.hash}`)].join('\n');download('akasha-records.csv',csv,'text/csv')};
+$('#clearAll').onclick=async()=>{if(confirm('Delete all witnessed records from this browser?')){await clearAll();loadRecords();logMsg('All records cleared')}};
+function download(name,content,type){const b=new Blob([content],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
+function formatSize(n){if(n<1024)return n+' B';if(n<1e6)return (n/1024).toFixed(1)+' KB';return (n/1e6).toFixed(2)+' MB'}
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+// --- INSURANCE ---
+const insFields=['claim','name','insurer','policy','dol','amount','desc'].map(id=>$('#ins-'+id));
+const LS_INS='akasha-ins';function saveIns(){localStorage.setItem(LS_INS,JSON.stringify(Object.fromEntries(insFields.map((el,i)=>[el.id,el.value]))))}function loadIns(){try{const d=JSON.parse(localStorage.getItem(LS_INS)||'{}');insFields.forEach(el=>{if(d[el.id])el.value=d[el.id]})}catch{}};insFields.forEach(el=>el.addEventListener('input',saveIns));loadIns();
+$('#genLetter').onclick=async()=>{const [claim,name,insurer,policy,dol,amount,desc]=insFields.map(e=>e.value||'');const date=new Date().toLocaleDateString();const pi=piTime();const txt=`VIA CERTIFIED MAIL - RETURN RECEIPT
+
+${date}
+
+${insurer||'[INSURER]'}
+Attn: Claims Department
+RE: Formal Demand for Payment
+Claim Number: ${claim||'300-0073283-2026'}
+Insured: ${name||'[NAME]'}
+Policy: ${policy||'[POLICY]'}
+Date of Loss: ${dol||'[DATE]'}
+
+To Whom It May Concern:
+
+This letter constitutes a formal demand for full and fair payment under the above-referenced claim.
+
+Amount Demanded: $${amount||'0.00'}
+
+Statement of Facts:
+${desc||'[Provide factual description of loss, damages, and prior communications]'}
+
+This demand is witnessed via AKASHA BOX. All correspondence is immutably recorded with SHA-256 verification. π-timestamp: ${pi}
+
+You have fifteen (15) business days from receipt to tender payment or provide written coverage position. Failure to respond will result in escalation including regulatory complaint and legal action.
+
+Preserve all evidence.
+
+Sincerely,
+
+${name||'[SIGNATURE]'}
+---
+AKASHA WITNESS`;
+$('#letterOutput').value=txt;const hash=await sha256(new TextEncoder().encode(txt));$('#ins-hash').textContent='sha256:'+hash.slice(0,16)+'…';saveIns();await addRec({id:crypto.randomUUID(),hash,name:`DEMAND-${claim}.txt`,size:txt.length,type:'text/plain',iso:new Date().toISOString(),pi,ts:Date.now(),immutable:true});logMsg(`Demand letter witnessed ${hash.slice(0,12)}…`)};
+$('#copyLetter').onclick=async()=>{const t=$('#letterOutput').value;if(!t)return;await navigator.clipboard.writeText(t);$('#copyLetter').textContent='Copied!';setTimeout(()=>$('#copyLetter').textContent='Copy to Clipboard',1200)};
+
+// --- DEPLOYER ---
+const DEP_KEY='akasha-deployer';const depGrid=$('#deployerGrid'),depProg=$('#depProgress'),depCount=$('#depCount');
+function loadDep(){try{return JSON.parse(localStorage.getItem(DEP_KEY)||'[]')}catch{return[]}}function saveDep(a){localStorage.setItem(DEP_KEY,JSON.stringify(a));updateDep(a)}
+function updateDep(arr){const c=arr.filter(Boolean).length;depProg.style.width=(c/64*100)+'%';depCount.textContent=`${c}/64`}
+function initDep(){const arr=loadDep();depGrid.innerHTML='';for(let i=0;i<64;i++){const id=i+1;const lab=document.createElement('label');lab.innerHTML=`<input type="checkbox" ${arr[i]?'checked':''}><span>ACTION-${String(id).padStart(2,'0')}</span>`;const cb=lab.querySelector('input');cb.onchange=()=>{arr[i]=cb.checked;saveDep(arr)};depGrid.appendChild(lab)}updateDep(arr)}initDep();
+$('#depReset').onclick=()=>{if(confirm('Reset all 64?')){localStorage.removeItem(DEP_KEY);initDep()}};
+
+// --- JANE ---
+const JANE_BOX='akasha-jane-boxes',JANE_GATE='akasha-jane-gates';
+function loadBoxes(){try{return JSON.parse(localStorage.getItem(JANE_BOX)||'null')}catch{return null}}
+function saveBoxes(d){localStorage.setItem(JANE_BOX,JSON.stringify(d))}
+function initJaneBoxes(){let data=loadBoxes();if(!data){data=Array.from({length:12},(_,i)=>({id:i+1,status:'Idle',note:''}))}const wrap=$('#janeBoxes');wrap.innerHTML='';data.forEach((b,i)=>{const c=document.createElement('div');c.className='box-card';c.innerHTML=`<div class="id">BOX-${String(b.id).padStart(2,'0')}</div><select><option>Idle</option><option>Active</option><option>Witnessed</option><option>Offline</option><option>Deployed</option></select><input placeholder="location/note" style="width:100%;margin-top:6px">`;const sel=c.querySelector('select'),inp=c.querySelector('input');sel.value=b.status;inp.value=b.note;sel.onchange=()=>{data[i].status=sel.value;saveBoxes(data)};inp.oninput=()=>{data[i].note=inp.value;saveBoxes(data)};wrap.appendChild(c)})}
+initJaneBoxes();
+function initGates(){const defaults=['Netlify','GitHub Pages','IPFS','USB Stick','Phone','Localhost','Vercel','Cloudflare'];let state={};try{state=JSON.parse(localStorage.getItem(JANE_GATE)||'{}')}catch{}const wrap=$('#janeGates');wrap.innerHTML='';defaults.forEach(name=>{const id=name.toLowerCase().replace(/\s+/g,'-');const div=document.createElement('label');div.className='toggle';div.innerHTML=`<span>${name}</span><input type="checkbox" ${state[id]?'checked':''}><span class="dot"></span>`;const cb=div.querySelector('input');cb.onchange=()=>{state[id]=cb.checked;localStorage.setItem(JANE_GATE,JSON.stringify(state))};wrap.appendChild(div)})}initGates();
+
+// init
+dbReady.then(loadRecords);
+})();
+</script>
+</body>
+</html>

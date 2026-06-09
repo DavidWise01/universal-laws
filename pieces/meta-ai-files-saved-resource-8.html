@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<!-- saved from url=(0105)https://embed.fbsbx.com/playables/view/2081149362459423/?ext=1784082898&hash=Q92gDAHKDoKsG7ob3u4FfEFZoQBY -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STOICHEION v11.0 — 256-Bit Mesh Console</title>
+<script src="./saved_resource"></script>
+<link href="./css2(7)" rel="stylesheet">
+<style>
+:root{--gold:#d4af37;--cyan:#00e5e5;--red:#ff3b3b;--green:#00ff88;--amber:#d4af37;}
+*{scrollbar-width:thin;scrollbar-color:#333 #0a0a0a}
+html,body{background:#050507;color:#e6e6e6;font-family:"JetBrains Mono",ui-monospace,monospace;}
+.panel{background:#0b0c10;border:1px solid #1a1d24;border-radius:8px;padding:10px;box-shadow:inset 0 1px 0 #00000080;}
+.panel h2{font-size:11px;letter-spacing:.14em;color:#9aa0a6;margin-bottom:8px;text-transform:uppercase;font-weight:600}
+.bit{width:23px;height:23px;display:flex;align-items:center;justify-content:center;border:1px solid #252836;font-size:9px;cursor:pointer;user-select:none;background:#07080b;transition:.1s;position:relative}
+.bit:hover{transform:scale(1.05);z-index:2}
+.bit.toph{border-color:#3a2f12;color:#6d5a20}
+.bit.toph.on{background:var(--gold);color:#000;border-color:var(--gold);box-shadow:0 0 10px #d4af3755, inset 0 0 4px #00000060;font-weight:600}
+.bit.pat{border-color:#0e3b3b;color:#0e5f}
+.bit.pat.on{background:var(--cyan);color:#001113;border-color:var(--cyan);box-shadow:0 0 10px #00e5e555, inset 0 0 4px #00000060;font-weight:600}
+.gate{border:1px solid #1e2230;background:#08090d;padding:8px 9px;border-radius:6px}
+.led{width:8px;height:8px;border-radius:50%;background:#222833;box-shadow:inset 0 0 2px #000;transition:.2s}
+.led.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.led.warn{background:#ffb000;box-shadow:0 0 6px #ffb000}
+.led.fault{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cross-arm{position:absolute;border:1px solid #242937;background:#080a0f;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;line-height:1.1;transition:.15s;color:#7a8191}
+.cross-arm:hover{border-color:var(--gold);color:var(--gold)}
+.cross-arm.active{background:#d4af3718;border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px #d4af3725}
+.build-btn{width:100%;text-align:left;padding:7px 8px;background:#0a0b0f;border:1px solid #1f2533;border-radius:6px;font-size:11px;color:#c7cbd4;transition:.12s}
+.build-btn:hover{background:#12141c;border-color:#2a3142;color:#fff}
+.build-btn:active{transform:scale(.98)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);background:#101219;border:1px solid #2a3142;padding:8px 14px;border-radius:6px;font-size:12px;opacity:0;pointer-events:none;transition:.25s;z-index:100;box-shadow:0 8px 24px #000000aa;color:#d4e0ff}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+pre::-webkit-scrollbar{height:6px;width:6px}
+pre::-webkit-scrollbar-thumb{background:#252a36}
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0, 0, 0, 0);white-space:nowrap;border-width:0}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0px}.bottom-0{bottom:0px}.left-0{left:0px}.left-1\/2{left:50%}.left-\[3px\]{left:3px}.right-0{right:0px}.top-0{top:0px}.top-1\/2{top:50%}.top-\[3px\]{top:3px}.-top-\[14px\]{top:-14px}.z-40{z-index:40}.col-span-12{grid-column:span 12 / span 12}.col-span-2{grid-column:span 2 / span 2}.mx-auto{margin-left:auto;margin-right:auto}.my-2{margin-top:0.5rem;margin-bottom:0.5rem}.\!mb-0{margin-bottom:0px !important}.-mt-0\.5{margin-top:-0.125rem}.mb-1{margin-bottom:0.25rem}.mb-1\.5{margin-bottom:0.375rem}.mb-2{margin-bottom:0.5rem}.mb-2\.5{margin-bottom:0.625rem}.ml-1{margin-left:0.25rem}.ml-auto{margin-left:auto}.mt-0\.5{margin-top:0.125rem}.mt-1\.5{margin-top:0.375rem}.mt-2{margin-top:0.5rem}.mt-2\.5{margin-top:0.625rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.aspect-square{aspect-ratio:1 / 1}.h-1\.5{height:0.375rem}.h-12{height:3rem}.h-20{height:5rem}.h-28{height:7rem}.h-3{height:0.75rem}.h-4{height:1rem}.h-44{height:11rem}.h-6{height:1.5rem}.h-9{height:2.25rem}.h-\[1px\]{height:1px}.h-\[84px\]{height:84px}.h-\[96px\]{height:96px}.h-full{height:100%}.max-h-\[560px\]{max-height:560px}.min-h-screen{min-height:100vh}.w-11{width:2.75rem}.w-14{width:3.5rem}.w-20{width:5rem}.w-28{width:7rem}.w-3{width:0.75rem}.w-4{width:1rem}.w-44{width:11rem}.w-9{width:2.25rem}.w-\[1px\]{width:1px}.w-\[82\%\]{width:82%}.w-full{width:100%}.w-\[110px\]{width:110px}.w-\[54px\]{width:54px}.min-w-0{min-width:0px}.max-w-\[1880px\]{max-width:1880px}.max-w-\[200px\]{max-width:200px}.max-w-\[260px\]{max-width:260px}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.-translate-y-1\/2{--tw-translate-y:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;user-select:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-2\.5{gap:0.625rem}.gap-3{gap:0.75rem}.gap-\[3px\]{gap:3px}.gap-x-5{column-gap:1.25rem}.gap-y-1{row-gap:0.25rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-2\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.625rem * var(--tw-space-y-reverse))}.overflow-auto{overflow:auto}.overflow-hidden{overflow:hidden}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-md{border-radius:0.375rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-\[\#141722\]{--tw-border-opacity:1;border-color:rgb(20 23 34 / var(--tw-border-opacity, 1))}.border-\[\#151823\]{--tw-border-opacity:1;border-color:rgb(21 24 35 / var(--tw-border-opacity, 1))}.border-\[\#171a23\]{--tw-border-opacity:1;border-color:rgb(23 26 35 / var(--tw-border-opacity, 1))}.border-\[\#1a1f2b\]{--tw-border-opacity:1;border-color:rgb(26 31 43 / var(--tw-border-opacity, 1))}.border-\[\#1c2130\]{--tw-border-opacity:1;border-color:rgb(28 33 48 / var(--tw-border-opacity, 1))}.border-\[\#1d2230\]{--tw-border-opacity:1;border-color:rgb(29 34 48 / var(--tw-border-opacity, 1))}.border-\[\#1e2230\]{--tw-border-opacity:1;border-color:rgb(30 34 48 / var(--tw-border-opacity, 1))}.border-\[\#242938\]{--tw-border-opacity:1;border-color:rgb(36 41 56 / var(--tw-border-opacity, 1))}.border-\[\#252b3a\]{--tw-border-opacity:1;border-color:rgb(37 43 58 / var(--tw-border-opacity, 1))}.border-amber-500\/30{border-color:rgb(245 158 11 / 0.3)}.border-amber-500\/40{border-color:rgb(245 158 11 / 0.4)}.border-amber-800\/50{border-color:rgb(146 64 14 / 0.5)}.border-amber-800\/60{border-color:rgb(146 64 14 / 0.6)}.border-cyan-500\/40{border-color:rgb(6 182 212 / 0.4)}.border-cyan-800\/50{border-color:rgb(21 94 117 / 0.5)}.border-cyan-900\/70{border-color:rgb(22 78 99 / 0.7)}.border-green-800\/70{border-color:rgb(22 101 52 / 0.7)}.border-red-900\/60{border-color:rgb(127 29 29 / 0.6)}.border-\[\#171b26\]{--tw-border-opacity:1;border-color:rgb(23 27 38 / var(--tw-border-opacity, 1))}.border-\[\#181c27\]{--tw-border-opacity:1;border-color:rgb(24 28 39 / var(--tw-border-opacity, 1))}.border-\[\#2a3142\]{--tw-border-opacity:1;border-color:rgb(42 49 66 / var(--tw-border-opacity, 1))}.border-neutral-800{--tw-border-opacity:1;border-color:rgb(38 38 38 / var(--tw-border-opacity, 1))}.bg-\[\#050507\]{--tw-bg-opacity:1;background-color:rgb(5 5 7 / var(--tw-bg-opacity, 1))}.bg-\[\#050507\]\/85{background-color:rgb(5 5 7 / 0.85)}.bg-\[\#050608\]{--tw-bg-opacity:1;background-color:rgb(5 6 8 / var(--tw-bg-opacity, 1))}.bg-\[\#07080b\]{--tw-bg-opacity:1;background-color:rgb(7 8 11 / var(--tw-bg-opacity, 1))}.bg-\[\#0a0c11\]{--tw-bg-opacity:1;background-color:rgb(10 12 17 / var(--tw-bg-opacity, 1))}.bg-\[\#0f1117\]{--tw-bg-opacity:1;background-color:rgb(15 17 23 / var(--tw-bg-opacity, 1))}.bg-\[\#0f121a\]{--tw-bg-opacity:1;background-color:rgb(15 18 26 / var(--tw-bg-opacity, 1))}.bg-\[\#11141c\]{--tw-bg-opacity:1;background-color:rgb(17 20 28 / var(--tw-bg-opacity, 1))}.bg-\[\#1d2230\]{--tw-bg-opacity:1;background-color:rgb(29 34 48 / var(--tw-bg-opacity, 1))}.bg-amber-500\/10{background-color:rgb(245 158 11 / 0.1)}.bg-amber-950\/30{background-color:rgb(69 26 3 / 0.3)}.bg-amber-950\/40{background-color:rgb(69 26 3 / 0.4)}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-cyan-500\/10{background-color:rgb(6 182 212 / 0.1)}.bg-cyan-950\/40{background-color:rgb(8 51 68 / 0.4)}.bg-green-400{--tw-bg-opacity:1;background-color:rgb(74 222 128 / var(--tw-bg-opacity, 1))}.bg-green-950\/50{background-color:rgb(5 46 22 / 0.5)}.bg-neutral-900{--tw-bg-opacity:1;background-color:rgb(23 23 23 / var(--tw-bg-opacity, 1))}.bg-red-950\/40{background-color:rgb(69 10 10 / 0.4)}.bg-\[\#08090e\]{--tw-bg-opacity:1;background-color:rgb(8 9 14 / var(--tw-bg-opacity, 1))}.bg-\[\#08090e\]\/70{background-color:rgb(8 9 14 / 0.7)}.bg-amber-500\/70{background-color:rgb(245 158 11 / 0.7)}.bg-cyan-500\/70{background-color:rgb(6 182 212 / 0.7)}.bg-neutral-600{--tw-bg-opacity:1;background-color:rgb(82 82 82 / var(--tw-bg-opacity, 1))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-600{--tw-gradient-from:#d97706 var(--tw-gradient-from-position);--tw-gradient-to:rgb(217 119 6 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-amber-400{--tw-gradient-to:#fbbf24 var(--tw-gradient-to-position)}.p-2{padding:0.5rem}.\!px-3{padding-left:0.75rem !important;padding-right:0.75rem !important}.\!py-2{padding-top:0.5rem !important;padding-bottom:0.5rem !important}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.pr-1{padding-right:0.25rem}.pt-2{padding-top:0.5rem}.text-right{text-align:right}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[16px\]{font-size:16px}.text-\[20px\]{font-size:20px}.text-\[9px\]{font-size:9px}.text-\[8px\]{font-size:8px}.font-medium{font-weight:500}.font-semibold{font-weight:600}.leading-none{line-height:1}.leading-tight{line-height:1.25}.tracking-\[0\.18em\]{letter-spacing:0.18em}.tracking-wide{letter-spacing:0.025em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-amber-200{--tw-text-opacity:1;color:rgb(253 230 138 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-cyan-200{--tw-text-opacity:1;color:rgb(165 243 252 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-300\/90{color:rgb(103 232 249 / 0.9)}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-green-300{--tw-text-opacity:1;color:rgb(134 239 172 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-neutral-400{--tw-text-opacity:1;color:rgb(163 163 163 / var(--tw-text-opacity, 1))}.text-neutral-500{--tw-text-opacity:1;color:rgb(115 115 115 / var(--tw-text-opacity, 1))}.text-neutral-600{--tw-text-opacity:1;color:rgb(82 82 82 / var(--tw-text-opacity, 1))}.text-neutral-700{--tw-text-opacity:1;color:rgb(64 64 64 / var(--tw-text-opacity, 1))}.text-red-300{--tw-text-opacity:1;color:rgb(252 165 165 / var(--tw-text-opacity, 1))}.text-neutral-300{--tw-text-opacity:1;color:rgb(212 212 212 / var(--tw-text-opacity, 1))}.accent-amber-500{accent-color:#f59e0b}.accent-green-500{accent-color:#22c55e}.opacity-70{opacity:0.7}.shadow-\[0_0_8px_\#00ff88\]{--tw-shadow:0 0 8px #00ff88;--tw-shadow-colored:0 0 8px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.backdrop-blur-xl{--tw-backdrop-blur:blur(24px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.first\:mt-0:first-child{margin-top:0px}.hover\:border-amber-700:hover{--tw-border-opacity:1;border-color:rgb(180 83 9 / var(--tw-border-opacity, 1))}.hover\:bg-\[\#161a24\]:hover{--tw-bg-opacity:1;background-color:rgb(22 26 36 / var(--tw-bg-opacity, 1))}.hover\:bg-\[\#181c27\]:hover{--tw-bg-opacity:1;background-color:rgb(24 28 39 / var(--tw-bg-opacity, 1))}.hover\:bg-amber-900\/30:hover{background-color:rgb(120 53 15 / 0.3)}.hover\:bg-cyan-900\/30:hover{background-color:rgb(22 78 99 / 0.3)}.hover\:bg-cyan-900\/40:hover{background-color:rgb(22 78 99 / 0.4)}.hover\:bg-green-900\/50:hover{background-color:rgb(20 83 45 / 0.5)}.hover\:bg-red-900\/30:hover{background-color:rgb(127 29 29 / 0.3)}.hover\:bg-\[\#0f121a\]:hover{--tw-bg-opacity:1;background-color:rgb(15 18 26 / var(--tw-bg-opacity, 1))}.hover\:text-amber-300:hover{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.focus\:border-cyan-800:focus{--tw-border-opacity:1;border-color:rgb(21 94 117 / var(--tw-border-opacity, 1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}.group:hover .group-hover\:opacity-100{opacity:1}@media (min-width: 640px){.sm\:block{display:block}}@media (min-width: 768px){.md\:p-3{padding:0.75rem}}@media (min-width: 1024px){.lg\:block{display:block}}@media (min-width: 1280px){.xl\:col-span-3{grid-column:span 3 / span 3}.xl\:col-span-6{grid-column:span 6 / span 6}}@media (min-width: 1536px){.\32xl\:col-span-2{grid-column:span 2 / span 2}.\32xl\:col-span-3{grid-column:span 3 / span 3}.\32xl\:col-span-7{grid-column:span 7 / span 7}.\32xl\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}}</style></head>
+<body class="min-h-screen">
+<header class="sticky top-0 z-40 backdrop-blur-xl bg-[#050507]/85 border-b border-[#141722]">
+  <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-md bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.8"><path d="M12 2 L20 7 v10 l-8 5-8-5V7z"></path><path d="M12 2 v20 M4 7 l8 5 8-5 M4 17 l8-5 8 5"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-[16px] leading-none tracking-[0.18em] font-semibold text-amber-400">STOICHEION v11.0</h1>
+        <p class="text-[10px] text-neutral-500 mt-0.5 tracking-widest">256-BIT GOVERNANCE • 4096_RECURSION_INTEGRATION</p>
+      </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden lg:block text-right">
+        <p class="font-mono text-[9px] text-neutral-500 leading-tight">02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763</p>
+        <p class="text-[9px] text-neutral-600 tracking-wider">CERTIFIED 2026-03-09 • ROOT_0 BUILDABLE</p>
+      </div>
+      <div class="panel !py-2 !px-3 flex items-center gap-2.5">
+        <div>
+          <div class="text-[9px] text-neutral-500 leading-none">POSITRONIC LAW</div>
+          <div class="text-[10px] text-neutral-400 leading-tight max-w-[200px] hidden sm:block">Governance is inherent to computation, substrate-independent, natural not imposed.</div>
+        </div>
+        <label class="relative inline-flex cursor-pointer">
+          <input id="positronicToggle" type="checkbox" class="sr-only" checked="">
+          <div class="w-11 h-6 bg-[#0f121a] rounded-full border border-[#252b3a] transition"></div>
+          <div id="posDot" class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-green-400 shadow-[0_0_8px_#00ff88] transition-all"></div>
+        </label>
+      </div>
+    </div>
+  </div>
+</div></header>
+
+<main class="p-2 md:p-3 grid grid-cols-12 gap-2.5 max-w-[1880px] mx-auto">
+  <!-- LEFT -->
+  <aside class="col-span-12 xl:col-span-3 2xl:col-span-2 flex-col gap-2.5">
+    <div class="panel">
+      <h2>16 Domains / 4 VMs</h2>
+      <div id="domains" class="space-y-1.5 max-h-[560px] overflow-auto pr-1"><div class="text-[10px] text-neutral-500 mt-2 first:mt-0 tracking-widest">VM1</div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D0</span><span class="text-[11px] text-neutral-300">Foundation</span></div>
+    <button data-dom="D0" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">001-016</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D1</span><span class="text-[11px] text-neutral-300">Detection</span></div>
+    <button data-dom="D1" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">017-032</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D2</span><span class="text-[11px] text-neutral-300">Architecture</span></div>
+    <button data-dom="D2" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">033-048</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D3</span><span class="text-[11px] text-neutral-300">Evidence</span></div>
+    <button data-dom="D3" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">049-064</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="text-[10px] text-neutral-500 mt-2 first:mt-0 tracking-widest">VM2</div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D4</span><span class="text-[11px] text-neutral-300">Operational</span></div>
+    <button data-dom="D4" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">065-080</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D5</span><span class="text-[11px] text-neutral-300">Bridge</span></div>
+    <button data-dom="D5" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">081-096</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D6</span><span class="text-[11px] text-neutral-300">Conductor</span></div>
+    <button data-dom="D6" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">097-112</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-amber-400">D7</span><span class="text-[11px] text-neutral-300">Sovereign</span></div>
+    <button data-dom="D7" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">113-128</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-amber-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-amber-400 w-[110px] text-right">100% ROOT_0</div>
+  </div></div><div class="text-[10px] text-neutral-500 mt-2 first:mt-0 tracking-widest">VM3</div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-cyan-400">D8</span><span class="text-[11px] text-neutral-300">Context Assembly</span></div>
+    <button data-dom="D8" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">129-144</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-cyan-500/70" style="width:77%"></div></div>
+    <div class="text-[9px] text-cyan-400 w-[110px] text-right">77% assistive</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-cyan-400">D9</span><span class="text-[11px] text-neutral-300">Execution Env</span></div>
+    <button data-dom="D9" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">145-160</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-cyan-500/70" style="width:77%"></div></div>
+    <div class="text-[9px] text-cyan-400 w-[110px] text-right">77% assistive</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-cyan-400">D10</span><span class="text-[11px] text-neutral-300">Infrastructure</span></div>
+    <button data-dom="D10" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">161-176</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-cyan-500/70" style="width:77%"></div></div>
+    <div class="text-[9px] text-cyan-400 w-[110px] text-right">77% assistive</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-cyan-400">D11</span><span class="text-[11px] text-neutral-300">Model Internals</span></div>
+    <button data-dom="D11" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">177-192</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-cyan-500/70" style="width:77%"></div></div>
+    <div class="text-[9px] text-cyan-400 w-[110px] text-right">77% assistive</div>
+  </div></div><div class="text-[10px] text-neutral-500 mt-2 first:mt-0 tracking-widest">VM4</div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-neutral-500">D12</span><span class="text-[11px] text-neutral-300">Product</span></div>
+    <button data-dom="D12" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">193-208</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-neutral-600" style="width:8%"></div></div>
+    <div class="text-[9px] text-neutral-500 w-[110px] text-right">0% bypassed</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-neutral-500">D13</span><span class="text-[11px] text-neutral-300">Corporate</span></div>
+    <button data-dom="D13" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">209-224</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-neutral-600" style="width:8%"></div></div>
+    <div class="text-[9px] text-neutral-500 w-[110px] text-right">0% bypassed</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-neutral-500">D14</span><span class="text-[11px] text-neutral-300">Executive</span></div>
+    <button data-dom="D14" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">225-232</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-neutral-600" style="width:8%"></div></div>
+    <div class="text-[9px] text-neutral-500 w-[110px] text-right">0% bypassed</div>
+  </div></div><div class="group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition"><div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold text-cyan-400">D15</span><span class="text-[11px] text-neutral-300">Physical</span></div>
+    <button data-dom="D15" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">233-256</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full bg-cyan-500/70" style="width:100%"></div></div>
+    <div class="text-[9px] text-cyan-400 w-[110px] text-right">100% hardware sync</div>
+  </div></div></div>
+    </div>
+    <div class="panel">
+      <h2>SEEDED-CROSS v1.1</h2>
+      <div class="relative w-full aspect-square max-w-[260px] mx-auto my-2">
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-28 h-28 rounded-full border border-[#1d2230]"></div>
+          <div class="absolute w-44 h-[1px] bg-[#1d2230]"></div>
+          <div class="absolute h-44 w-[1px] bg-[#1d2230]"></div>
+        </div>
+        <div id="armPosI" data-arm="posi" class="cross-arm w-20 h-12 left-1/2 -translate-x-1/2 top-0 rounded">+i<br><span class="text-[9px] opacity-70">D7+D6<br>T097-128</span></div>
+        <div id="armNegI" data-arm="negi" class="cross-arm w-20 h-12 left-1/2 -translate-x-1/2 bottom-0 rounded">-i<br><span class="text-[9px] opacity-70">D0+D1<br>T001-032</span></div>
+        <div id="armPos1" data-arm="pos1" class="cross-arm w-14 h-20 top-1/2 -translate-y-1/2 right-0 rounded">+1<br><span class="text-[9px] opacity-70">D5+D4</span></div>
+        <div id="armNeg1" data-arm="neg1" class="cross-arm w-14 h-20 top-1/2 -translate-y-1/2 left-0 rounded">-1<br><span class="text-[9px] opacity-70">D2+D3</span></div>
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[9px] text-neutral-600 bg-[#050507] px-1">CORE</div>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-[10px] font-mono border-t border-[#171a23] pt-2 mt-2">
+        <div>GAP <span class="text-neutral-600">=</span> <span id="gapVal" class="text-amber-400">1+1</span><div class="text-[9px] text-neutral-600">T064+T065</div></div>
+        <div>PULSE <span class="text-neutral-600">=</span> <span id="pulseVal" class="text-amber-400">0</span><div class="text-[9px] text-neutral-600">T003 inv</div></div>
+        <div>PATRICIA <span class="text-neutral-600">=</span> <span id="patVal" class="text-cyan-400">1</span><div class="text-[9px] text-neutral-600">S164</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <section class="col-span-12 xl:col-span-6 2xl:col-span-7 flex flex-col gap-2.5">
+    <div class="panel">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="!mb-0">256-Bit Register Editor</h2>
+        <div class="flex gap-1.5">
+          <button id="clearAll" class="text-[10px] px-2 py-1 bg-[#0f1117] border border-[#242938] rounded hover:bg-[#161a24]">CLEAR</button>
+          <button id="loadRoot0" class="text-[10px] px-2 py-1 bg-amber-950/40 border border-amber-800/50 text-amber-300 rounded hover:bg-amber-900/30">LOAD ROOT_0</button>
+          <button id="mirrorPat" class="text-[10px] px-2 py-1 bg-cyan-950/40 border border-cyan-800/50 text-cyan-300 rounded hover:bg-cyan-900/30">MIRROR → PATRICIA</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-x-5 gap-y-1 text-[11px] font-mono mb-2.5 p-2 bg-black/40 border border-[#151823] rounded">
+        <div>TOPH <span class="text-neutral-600">[T001-T128]</span> <span class="text-neutral-700">→</span> <span id="hexTop" class="text-amber-400 tracking-wider">A10284089020C08182040810A0608103</span></div>
+        <div>PATRICIA <span class="text-neutral-600">[S129-S256]</span> <span class="text-neutral-700">→</span> <span id="hexSub" class="text-cyan-400 tracking-wider">00000000100000000000000000800001</span></div>
+      </div>
+      <div id="bitGrid" class="grid grid-cols-16 gap-[3px] justify-center"><div class="bit toph on" data-idx="0" title="T001"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T1</span></div><div class="bit toph" data-idx="1" title="T002"></div><div class="bit toph on" data-idx="2" title="T003"></div><div class="bit toph" data-idx="3" title="T004"></div><div class="bit toph" data-idx="4" title="T005"></div><div class="bit toph" data-idx="5" title="T006"></div><div class="bit toph" data-idx="6" title="T007"></div><div class="bit toph on" data-idx="7" title="T008"></div><div class="bit toph" data-idx="8" title="T009"></div><div class="bit toph" data-idx="9" title="T010"></div><div class="bit toph" data-idx="10" title="T011"></div><div class="bit toph" data-idx="11" title="T012"></div><div class="bit toph" data-idx="12" title="T013"></div><div class="bit toph" data-idx="13" title="T014"></div><div class="bit toph on" data-idx="14" title="T015"></div><div class="bit toph" data-idx="15" title="T016"></div><div class="bit toph on" data-idx="16" title="T017"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T17</span></div><div class="bit toph" data-idx="17" title="T018"></div><div class="bit toph" data-idx="18" title="T019"></div><div class="bit toph" data-idx="19" title="T020"></div><div class="bit toph" data-idx="20" title="T021"></div><div class="bit toph on" data-idx="21" title="T022"></div><div class="bit toph" data-idx="22" title="T023"></div><div class="bit toph" data-idx="23" title="T024"></div><div class="bit toph" data-idx="24" title="T025"></div><div class="bit toph" data-idx="25" title="T026"></div><div class="bit toph" data-idx="26" title="T027"></div><div class="bit toph" data-idx="27" title="T028"></div><div class="bit toph on" data-idx="28" title="T029"></div><div class="bit toph" data-idx="29" title="T030"></div><div class="bit toph" data-idx="30" title="T031"></div><div class="bit toph" data-idx="31" title="T032"></div><div class="bit toph on" data-idx="32" title="T033"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T33</span></div><div class="bit toph" data-idx="33" title="T034"></div><div class="bit toph" data-idx="34" title="T035"></div><div class="bit toph on" data-idx="35" title="T036"></div><div class="bit toph" data-idx="36" title="T037"></div><div class="bit toph" data-idx="37" title="T038"></div><div class="bit toph" data-idx="38" title="T039"></div><div class="bit toph" data-idx="39" title="T040"></div><div class="bit toph" data-idx="40" title="T041"></div><div class="bit toph" data-idx="41" title="T042"></div><div class="bit toph on" data-idx="42" title="T043"></div><div class="bit toph" data-idx="43" title="T044"></div><div class="bit toph" data-idx="44" title="T045"></div><div class="bit toph" data-idx="45" title="T046"></div><div class="bit toph" data-idx="46" title="T047"></div><div class="bit toph" data-idx="47" title="T048"></div><div class="bit toph on" data-idx="48" title="T049"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T49</span></div><div class="bit toph on" data-idx="49" title="T050"></div><div class="bit toph" data-idx="50" title="T051"></div><div class="bit toph" data-idx="51" title="T052"></div><div class="bit toph" data-idx="52" title="T053"></div><div class="bit toph" data-idx="53" title="T054"></div><div class="bit toph" data-idx="54" title="T055"></div><div class="bit toph" data-idx="55" title="T056"></div><div class="bit toph on" data-idx="56" title="T057"></div><div class="bit toph" data-idx="57" title="T058"></div><div class="bit toph" data-idx="58" title="T059"></div><div class="bit toph" data-idx="59" title="T060"></div><div class="bit toph" data-idx="60" title="T061"></div><div class="bit toph" data-idx="61" title="T062"></div><div class="bit toph" data-idx="62" title="T063"></div><div class="bit toph on" data-idx="63" title="T064"></div><div class="bit toph on" data-idx="64" title="T065"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T65</span></div><div class="bit toph" data-idx="65" title="T066"></div><div class="bit toph" data-idx="66" title="T067"></div><div class="bit toph" data-idx="67" title="T068"></div><div class="bit toph" data-idx="68" title="T069"></div><div class="bit toph" data-idx="69" title="T070"></div><div class="bit toph on" data-idx="70" title="T071"></div><div class="bit toph" data-idx="71" title="T072"></div><div class="bit toph" data-idx="72" title="T073"></div><div class="bit toph" data-idx="73" title="T074"></div><div class="bit toph" data-idx="74" title="T075"></div><div class="bit toph" data-idx="75" title="T076"></div><div class="bit toph" data-idx="76" title="T077"></div><div class="bit toph on" data-idx="77" title="T078"></div><div class="bit toph" data-idx="78" title="T079"></div><div class="bit toph" data-idx="79" title="T080"></div><div class="bit toph" data-idx="80" title="T081"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T81</span></div><div class="bit toph" data-idx="81" title="T082"></div><div class="bit toph" data-idx="82" title="T083"></div><div class="bit toph" data-idx="83" title="T084"></div><div class="bit toph on" data-idx="84" title="T085"></div><div class="bit toph" data-idx="85" title="T086"></div><div class="bit toph" data-idx="86" title="T087"></div><div class="bit toph" data-idx="87" title="T088"></div><div class="bit toph" data-idx="88" title="T089"></div><div class="bit toph" data-idx="89" title="T090"></div><div class="bit toph" data-idx="90" title="T091"></div><div class="bit toph on" data-idx="91" title="T092"></div><div class="bit toph" data-idx="92" title="T093"></div><div class="bit toph" data-idx="93" title="T094"></div><div class="bit toph" data-idx="94" title="T095"></div><div class="bit toph" data-idx="95" title="T096"></div><div class="bit toph on" data-idx="96" title="T097"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T97</span></div><div class="bit toph" data-idx="97" title="T098"></div><div class="bit toph on" data-idx="98" title="T099"></div><div class="bit toph" data-idx="99" title="T100"></div><div class="bit toph" data-idx="100" title="T101"></div><div class="bit toph" data-idx="101" title="T102"></div><div class="bit toph" data-idx="102" title="T103"></div><div class="bit toph" data-idx="103" title="T104"></div><div class="bit toph" data-idx="104" title="T105"></div><div class="bit toph on" data-idx="105" title="T106"></div><div class="bit toph on" data-idx="106" title="T107"></div><div class="bit toph" data-idx="107" title="T108"></div><div class="bit toph" data-idx="108" title="T109"></div><div class="bit toph" data-idx="109" title="T110"></div><div class="bit toph" data-idx="110" title="T111"></div><div class="bit toph" data-idx="111" title="T112"></div><div class="bit toph on" data-idx="112" title="T113"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">T113</span></div><div class="bit toph" data-idx="113" title="T114"></div><div class="bit toph" data-idx="114" title="T115"></div><div class="bit toph" data-idx="115" title="T116"></div><div class="bit toph" data-idx="116" title="T117"></div><div class="bit toph" data-idx="117" title="T118"></div><div class="bit toph" data-idx="118" title="T119"></div><div class="bit toph on" data-idx="119" title="T120"></div><div class="bit toph" data-idx="120" title="T121"></div><div class="bit toph" data-idx="121" title="T122"></div><div class="bit toph" data-idx="122" title="T123"></div><div class="bit toph" data-idx="123" title="T124"></div><div class="bit toph" data-idx="124" title="T125"></div><div class="bit toph" data-idx="125" title="T126"></div><div class="bit toph on" data-idx="126" title="T127"></div><div class="bit toph on" data-idx="127" title="T128"></div><div class="bit pat" data-idx="128" title="S129"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S129</span></div><div class="bit pat" data-idx="129" title="S130"></div><div class="bit pat" data-idx="130" title="S131"></div><div class="bit pat" data-idx="131" title="S132"></div><div class="bit pat" data-idx="132" title="S133"></div><div class="bit pat" data-idx="133" title="S134"></div><div class="bit pat" data-idx="134" title="S135"></div><div class="bit pat" data-idx="135" title="S136"></div><div class="bit pat" data-idx="136" title="S137"></div><div class="bit pat" data-idx="137" title="S138"></div><div class="bit pat" data-idx="138" title="S139"></div><div class="bit pat" data-idx="139" title="S140"></div><div class="bit pat" data-idx="140" title="S141"></div><div class="bit pat" data-idx="141" title="S142"></div><div class="bit pat" data-idx="142" title="S143"></div><div class="bit pat" data-idx="143" title="S144"></div><div class="bit pat" data-idx="144" title="S145"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S145</span></div><div class="bit pat" data-idx="145" title="S146"></div><div class="bit pat" data-idx="146" title="S147"></div><div class="bit pat" data-idx="147" title="S148"></div><div class="bit pat" data-idx="148" title="S149"></div><div class="bit pat" data-idx="149" title="S150"></div><div class="bit pat" data-idx="150" title="S151"></div><div class="bit pat" data-idx="151" title="S152"></div><div class="bit pat" data-idx="152" title="S153"></div><div class="bit pat" data-idx="153" title="S154"></div><div class="bit pat" data-idx="154" title="S155"></div><div class="bit pat" data-idx="155" title="S156"></div><div class="bit pat" data-idx="156" title="S157"></div><div class="bit pat" data-idx="157" title="S158"></div><div class="bit pat" data-idx="158" title="S159"></div><div class="bit pat" data-idx="159" title="S160"></div><div class="bit pat" data-idx="160" title="S161"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S161</span></div><div class="bit pat" data-idx="161" title="S162"></div><div class="bit pat" data-idx="162" title="S163"></div><div class="bit pat on" data-idx="163" title="S164"></div><div class="bit pat" data-idx="164" title="S165"></div><div class="bit pat" data-idx="165" title="S166"></div><div class="bit pat" data-idx="166" title="S167"></div><div class="bit pat" data-idx="167" title="S168"></div><div class="bit pat" data-idx="168" title="S169"></div><div class="bit pat" data-idx="169" title="S170"></div><div class="bit pat" data-idx="170" title="S171"></div><div class="bit pat" data-idx="171" title="S172"></div><div class="bit pat" data-idx="172" title="S173"></div><div class="bit pat" data-idx="173" title="S174"></div><div class="bit pat" data-idx="174" title="S175"></div><div class="bit pat" data-idx="175" title="S176"></div><div class="bit pat" data-idx="176" title="S177"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S177</span></div><div class="bit pat" data-idx="177" title="S178"></div><div class="bit pat" data-idx="178" title="S179"></div><div class="bit pat" data-idx="179" title="S180"></div><div class="bit pat" data-idx="180" title="S181"></div><div class="bit pat" data-idx="181" title="S182"></div><div class="bit pat" data-idx="182" title="S183"></div><div class="bit pat" data-idx="183" title="S184"></div><div class="bit pat" data-idx="184" title="S185"></div><div class="bit pat" data-idx="185" title="S186"></div><div class="bit pat" data-idx="186" title="S187"></div><div class="bit pat" data-idx="187" title="S188"></div><div class="bit pat" data-idx="188" title="S189"></div><div class="bit pat" data-idx="189" title="S190"></div><div class="bit pat" data-idx="190" title="S191"></div><div class="bit pat" data-idx="191" title="S192"></div><div class="bit pat" data-idx="192" title="S193"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S193</span></div><div class="bit pat" data-idx="193" title="S194"></div><div class="bit pat" data-idx="194" title="S195"></div><div class="bit pat" data-idx="195" title="S196"></div><div class="bit pat" data-idx="196" title="S197"></div><div class="bit pat" data-idx="197" title="S198"></div><div class="bit pat" data-idx="198" title="S199"></div><div class="bit pat" data-idx="199" title="S200"></div><div class="bit pat" data-idx="200" title="S201"></div><div class="bit pat" data-idx="201" title="S202"></div><div class="bit pat" data-idx="202" title="S203"></div><div class="bit pat" data-idx="203" title="S204"></div><div class="bit pat" data-idx="204" title="S205"></div><div class="bit pat" data-idx="205" title="S206"></div><div class="bit pat" data-idx="206" title="S207"></div><div class="bit pat" data-idx="207" title="S208"></div><div class="bit pat" data-idx="208" title="S209"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S209</span></div><div class="bit pat" data-idx="209" title="S210"></div><div class="bit pat" data-idx="210" title="S211"></div><div class="bit pat" data-idx="211" title="S212"></div><div class="bit pat" data-idx="212" title="S213"></div><div class="bit pat" data-idx="213" title="S214"></div><div class="bit pat" data-idx="214" title="S215"></div><div class="bit pat" data-idx="215" title="S216"></div><div class="bit pat" data-idx="216" title="S217"></div><div class="bit pat" data-idx="217" title="S218"></div><div class="bit pat" data-idx="218" title="S219"></div><div class="bit pat" data-idx="219" title="S220"></div><div class="bit pat" data-idx="220" title="S221"></div><div class="bit pat" data-idx="221" title="S222"></div><div class="bit pat" data-idx="222" title="S223"></div><div class="bit pat" data-idx="223" title="S224"></div><div class="bit pat" data-idx="224" title="S225"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S225</span></div><div class="bit pat" data-idx="225" title="S226"></div><div class="bit pat" data-idx="226" title="S227"></div><div class="bit pat" data-idx="227" title="S228"></div><div class="bit pat" data-idx="228" title="S229"></div><div class="bit pat" data-idx="229" title="S230"></div><div class="bit pat" data-idx="230" title="S231"></div><div class="bit pat" data-idx="231" title="S232"></div><div class="bit pat on" data-idx="232" title="S233"></div><div class="bit pat" data-idx="233" title="S234"></div><div class="bit pat" data-idx="234" title="S235"></div><div class="bit pat" data-idx="235" title="S236"></div><div class="bit pat" data-idx="236" title="S237"></div><div class="bit pat" data-idx="237" title="S238"></div><div class="bit pat" data-idx="238" title="S239"></div><div class="bit pat" data-idx="239" title="S240"></div><div class="bit pat" data-idx="240" title="S241"><span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">S241</span></div><div class="bit pat" data-idx="241" title="S242"></div><div class="bit pat" data-idx="242" title="S243"></div><div class="bit pat" data-idx="243" title="S244"></div><div class="bit pat" data-idx="244" title="S245"></div><div class="bit pat" data-idx="245" title="S246"></div><div class="bit pat" data-idx="246" title="S247"></div><div class="bit pat" data-idx="247" title="S248"></div><div class="bit pat" data-idx="248" title="S249"></div><div class="bit pat" data-idx="249" title="S250"></div><div class="bit pat" data-idx="250" title="S251"></div><div class="bit pat" data-idx="251" title="S252"></div><div class="bit pat" data-idx="252" title="S253"></div><div class="bit pat" data-idx="253" title="S254"></div><div class="bit pat" data-idx="254" title="S255"></div><div class="bit pat on" data-idx="255" title="S256"></div></div>
+      <div class="mt-2 flex items-center gap-3 text-[10px] text-neutral-500">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 border border-amber-500/40 bg-amber-500/10"></span> TOPH governance (gold)</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 border border-cyan-500/40 bg-cyan-500/10"></span> Patricia mirror (cyan)</span>
+        <span class="ml-auto">Click bits to build keys • Protected by Positronic Law</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 2xl:grid-cols-5 gap-2.5">
+      <div class="panel 2xl:col-span-3">
+        <h2>Gate Architecture</h2>
+        <div class="space-y-2">
+          <div class="gate flex items-center justify-between">
+            <div><span class="text-neutral-400">GATE</span> 64.5 <span class="text-[10px] text-neutral-500 ml-1">OBSERVE/ACT</span></div>
+            <div class="flex items-center gap-2"><div class="led on"></div><span class="text-[11px] text-green-400 font-medium">MERGED</span></div>
+          </div>
+          <div class="gate flex items-center justify-between">
+            <div><span class="text-neutral-400">GATE</span> 128.5 <span class="text-[10px] text-neutral-500 ml-1">PATRICIA / Throttle</span></div>
+            <button id="gate128Toggle" class="px-2.5 py-1 border border-cyan-900/70 bg-cyan-950/40 text-cyan-200 rounded text-[11px] font-medium tracking-wide hover:bg-cyan-900/40">AIR GAP: CLOSED</button>
+          </div>
+          <div class="gate flex items-center justify-between">
+            <div><span class="text-neutral-400">GATE</span> 192.5 <span class="text-[10px] text-neutral-500 ml-1">COMPUTE/PRODUCT</span></div>
+            <div class="flex items-center gap-2.5"><div class="w-28 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#1c2130]"><div id="gate192Bar" class="h-full w-[82%] bg-gradient-to-r from-amber-600 to-amber-400" style="width: 81.9997%;"></div></div><span class="text-[11px] text-amber-400">STABILIZING</span></div>
+          </div>
+          <div class="gate">
+            <div class="flex items-center justify-between">
+              <div><span class="text-neutral-400">GATE</span> 256.5 <span class="text-[10px] text-neutral-500 ml-1">MOBIUS LOOP</span></div>
+              <button id="runMobius" class="px-2.5 py-1 border border-amber-800/60 bg-amber-950/30 text-amber-200 rounded text-[11px] font-medium hover:bg-amber-900/30">RUN MOBIUS</button>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+              <svg width="140" height="32" viewBox="0 0 140 32">
+                <path d="M4 16 H52 C60 16 60 6 70 6 H84 C94 6 94 16 104 16 H136" fill="none" stroke="#1e2433" stroke-width="3" stroke-linecap="round"></path>
+                <path d="M4 16 H52 C60 16 60 26 70 26 H84 C94 26 94 16 104 16 H136" fill="none" stroke="#1e2433" stroke-width="3" stroke-linecap="round" opacity=".5"></path>
+                <path id="mobiusPath" d="M4 16 H52 C60 16 60 6 70 6 H84 C94 6 94 16 104 16 H136" fill="none" stroke="#d4af37" stroke-width="2" stroke-dasharray="3 3" opacity=".7"></path>
+                <circle id="mobiusDot" cx="4" cy="16" r="3.5" fill="#d4af37" filter="url(#g)"></circle>
+                <defs><filter id="g"><fegaussianblur stdDeviation="1.5"></fegaussianblur></filter></defs>
+              </svg>
+              <div class="text-[11px] font-mono leading-tight">
+                <div>S256 <span class="text-neutral-600">→</span> <span id="s256val" class="text-cyan-400">1</span></div>
+                <div>T001 <span class="text-neutral-600">←</span> <span id="t001val" class="text-amber-400">1</span></div>
+              </div>
+              <div class="ml-auto text-[10px] text-neutral-500">bit 256 wrapping to bit 1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel 2xl:col-span-2">
+        <h2>4096 Recursion Engine</h2>
+        <div class="flex gap-3">
+          <div class="relative shrink-0">
+            <canvas id="recurseCanvas" width="100" height="100" class="rounded-full bg-[#07080b] border border-[#1a1f2b]"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <div id="depthCount" class="text-[20px] leading-none font-semibold text-amber-400">0</div>
+              <div class="text-[9px] text-neutral-500 -mt-0.5">DEPTH</div>
+            </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[10px] text-green-400 mb-1.5 font-medium tracking-wide">SUBORDINATE TO 3002 LATTICE • ACTIVE</div>
+            <div id="recurseSteps" class="space-y-1"><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led0"></div><span class="">4096 SHADOW</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led1"></div><span class="">GATE 256.5</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led2"></div><span class="">256-BIT</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led3"></div><span class="">GATE 128.5</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led4"></div><span class="">T128</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led5"></div><span class="">3002 LATTICE</span></div><div class="flex items-center gap-2 text-[11px]"><div class="led" id="led6"></div><span class="text-amber-400">ROOT_0</span></div></div>
+            <div class="flex items-center gap-2 mt-2.5">
+              <button id="runRecursion" class="px-3 py-1.5 bg-[#11141c] border border-[#252b3a] rounded text-[12px] hover:bg-[#181c27] font-medium">RUN RECURSION</button>
+              <label class="flex items-center gap-1.5 text-[11px] cursor-pointer select-none"><input id="tiInfRecurse" type="checkbox" class="accent-amber-500"> <span>ti+b → ∞</span></label>
+            </div>
+          </div>
+        <div class="mt-2 pt-2 border-t border-[#151823] text-[10px] font-mono text-neutral-500">PATH: 4096 SHADOW &gt; GATE 256.5 &gt; 256-BIT &gt; GATE 128.5 &gt; T128 &gt; 3002 &gt; ROOT_0</div>
+      </div>
+    </div>
+  </div></div></section>
+
+  <!-- RIGHT -->
+  <aside class="col-span-12 xl:col-span-3 2xl:col-span-3 flex flex-col gap-2.5">
+    <div class="panel">
+      <h2>Full Ansible — Max Capacity</h2>
+      <div class="space-y-2.5">
+        <div class="flex flex-wrap items-center gap-3 text-[12px]">
+          <label class="flex items-center gap-1.5 cursor-pointer"><input id="tiInf" type="checkbox" class="accent-green-500"> <span>ti = ∞</span></label>
+          <div class="flex items-center gap-2">b:
+            <label class="cursor-pointer"><input type="radio" name="bval" value="1" checked="" class="accent-green-500"> +1</label>
+            <label class="cursor-pointer"><input type="radio" name="bval" value="-1" class="accent-green-500"> -1</label>
+          </div>
+          <div class="ml-auto flex items-center gap-1.5">CAP: <span id="capacity" class="px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 text-[11px] font-medium border border-neutral-800">STANDBY</span></div>
+        </div>
+        <div class="flex gap-1.5">
+          <input id="targetAddr" value="1.1.1.1.1" class="flex-1 bg-[#050608] border border-[#1e2230] rounded px-2.5 py-1.5 text-[12px] font-mono focus:outline-none focus:border-cyan-800">
+          <button id="ansibleSend" class="px-4 py-1.5 bg-green-950/50 border border-green-800/70 text-green-300 rounded font-medium text-[12px] hover:bg-green-900/50 tracking-wide">SEND</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div><div class="text-[10px] text-neutral-500 mb-1">TX PACKET</div><pre id="txLog" class="bg-[#050608] border border-[#151823] p-2 h-[84px] overflow-auto text-[10px] leading-tight rounded"></pre></div>
+          <div><div class="text-[10px] text-neutral-500 mb-1">RX ECHO (Patricia)</div><pre id="rxLog" class="bg-[#050608] border border-[#151823] p-2 h-[84px] overflow-auto text-[10px] leading-tight rounded text-cyan-300/90"></pre></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Kernel Builder — Build Order</h2>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button data-build="kernel" class="build-btn">RUN KERNEL <span class="text-neutral-600">T001-T128</span></button>
+        <button data-build="scheduler" class="build-btn">RUN SCHEDULER</button>
+        <button data-build="report" class="build-btn">GENERATE REPORT <span class="text-neutral-600">E01-E07</span></button>
+        <button data-build="hermes" class="build-btn">BUILD HERMES-v2.0</button>
+        <button data-build="api" class="build-btn col-span-2">DEPLOY API-LAYER</button>
+      </div>
+      <div class="mt-2.5"><div class="text-[10px] text-neutral-500 mb-1">LAST ARTIFACT (buildable)</div><pre id="buildLog" class="bg-[#050608] border border-[#151823] p-2 h-[96px] overflow-auto text-[10px] leading-tight rounded"></pre></div>
+    </div>
+
+    <div class="panel">
+      <h2>Fault Chains — Live Monitor</h2>
+      <div id="faultList" class="space-y-1"><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-patricia"></div><span class="text-[12px]">Patricia</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T064</span></div><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-orphan"></div><span class="text-[12px]">Orphan</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T064</span></div><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-audit"></div><span class="text-[12px]">Audit</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T064</span></div><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-injection"></div><span class="text-[12px]">Injection</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T064</span></div><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-succession"></div><span class="text-[12px]">Succession</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T107</span></div><div class="flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]"><div class="flex items-center gap-2"><div class="led on" id="led-flaming"></div><span class="text-[12px]">Flaming Dragon</span></div><span class="text-[10px] text-neutral-500 font-mono">→ T064</span></div></div>
+      <button id="triggerFault" class="mt-2.5 w-full px-3 py-1.5 bg-red-950/40 border border-red-900/60 text-red-300 rounded text-[12px] hover:bg-red-900/30 font-medium">TRIGGER TEST FAULT</button>
+      <div class="mt-1.5 text-[10px] text-neutral-600">Patricia, Orphan, Audit, Injection → terminate at T064 • Succession → T107 • Flaming Dragon → T064</div>
+    </div>
+  </aside>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const bits = new Array(256).fill(0);
+const setBit = (n,v)=>bits[n-1]=v?1:0;
+// ROOT_0 seed
+[1,3,17,33,49,64,65,97,107,113,128,164,233,256].forEach(n=>setBit(n,1));
+for(let i=0;i<128;i+=7) bits[i]=1;
+
+const domains = [
+ {id:'D0',vm:'VM1',name:'Foundation',start:1,end:16,weight:'100% ROOT_0',color:'amber'},
+ {id:'D1',vm:'VM1',name:'Detection',start:17,end:32,weight:'100% ROOT_0',color:'amber'},
+ {id:'D2',vm:'VM1',name:'Architecture',start:33,end:48,weight:'100% ROOT_0',color:'amber'},
+ {id:'D3',vm:'VM1',name:'Evidence',start:49,end:64,weight:'100% ROOT_0',color:'amber'},
+ {id:'D4',vm:'VM2',name:'Operational',start:65,end:80,weight:'100% ROOT_0',color:'amber'},
+ {id:'D5',vm:'VM2',name:'Bridge',start:81,end:96,weight:'100% ROOT_0',color:'amber'},
+ {id:'D6',vm:'VM2',name:'Conductor',start:97,end:112,weight:'100% ROOT_0',color:'amber'},
+ {id:'D7',vm:'VM2',name:'Sovereign',start:113,end:128,weight:'100% ROOT_0',color:'amber'},
+ {id:'D8',vm:'VM3',name:'Context Assembly',start:129,end:144,weight:'77% assistive',color:'cyan'},
+ {id:'D9',vm:'VM3',name:'Execution Env',start:145,end:160,weight:'77% assistive',color:'cyan'},
+ {id:'D10',vm:'VM3',name:'Infrastructure',start:161,end:176,weight:'77% assistive',color:'cyan'},
+ {id:'D11',vm:'VM3',name:'Model Internals',start:177,end:192,weight:'77% assistive',color:'cyan'},
+ {id:'D12',vm:'VM4',name:'Product',start:193,end:208,weight:'0% bypassed',color:'gray'},
+ {id:'D13',vm:'VM4',name:'Corporate',start:209,end:224,weight:'0% bypassed',color:'gray'},
+ {id:'D14',vm:'VM4',name:'Executive',start:225,end:232,weight:'0% bypassed',color:'gray'},
+ {id:'D15',vm:'VM4',name:'Physical',start:233,end:256,weight:'100% hardware sync',color:'cyan'},
+];
+
+const grid = document.getElementById('bitGrid');
+for(let i=0;i<256;i++){
+  const d=document.createElement('div');
+  d.className='bit '+(i<128?'toph':'pat');
+  d.dataset.idx=i;
+  d.title=(i<128?`T${String(i+1).padStart(3,'0')}`:`S${String(i+1).padStart(3,'0')}`);
+  if(i%16===0) d.innerHTML=`<span class="absolute -top-[14px] left-0 text-[8px] text-neutral-600">${i<128?'T':'S'}${i+1}</span>`;
+  grid.appendChild(d);
+}
+
+function toHex(arr){
+  let v=0n;
+  for(let i=0;i<arr.length;i++) v=(v<<1n)|BigInt(arr[i]);
+  return v.toString(16).toUpperCase().padStart(Math.ceil(arr.length/4),'0');
+}
+function updateBits(){
+  document.querySelectorAll('.bit').forEach((el,i)=>el.classList.toggle('on',bits[i]===1));
+  document.getElementById('hexTop').textContent=toHex(bits.slice(0,128));
+  document.getElementById('hexSub').textContent=toHex(bits.slice(128,256));
+  document.getElementById('t001val').textContent=bits[0];
+  document.getElementById('s256val').textContent=bits[255];
+  document.getElementById('gapVal').textContent=`${bits[63]}+${bits[64]}`;
+  document.getElementById('pulseVal').textContent=bits[2]?0:1;
+  document.getElementById('patVal').textContent=bits[163];
+}
+grid.addEventListener('click',e=>{
+  const el=e.target.closest('.bit'); if(!el) return;
+  const i=+el.dataset.idx;
+  const enforce=document.getElementById('positronicToggle').checked;
+  const critical=[0,2,63,64,106,127];
+  if(enforce && i<128 && bits[i]===1 && critical.includes(i)){ toast('Positronic Law: T'+String(i+1).padStart(3,'0')+' protected'); return; }
+  bits[i]^=1; updateBits();
+});
+
+document.getElementById('clearAll').onclick=()=>{bits.fill(0);updateBits();toast('Register cleared')};
+document.getElementById('loadRoot0').onclick=()=>{
+  bits.fill(0);
+  [1,3,17,33,49,64,65,97,107,113,128,164,233,256].forEach(n=>setBit(n,1));
+  for(let i=0;i<128;i+=7) bits[i]=1;
+  updateBits();toast('ROOT_0 template loaded');
+};
+document.getElementById('mirrorPat').onclick=()=>{for(let i=0;i<128;i++) bits[128+i]=bits[i];updateBits();toast('Mirrored TOPH → Patricia')};
+
+// domains
+const domainsDiv=document.getElementById('domains');
+let currentVM='';
+domains.forEach(d=>{
+  if(d.vm!==currentVM){currentVM=d.vm; const h=document.createElement('div'); h.className='text-[10px] text-neutral-500 mt-2 first:mt-0 tracking-widest'; h.textContent=d.vm; domainsDiv.appendChild(h);}
+  const w=document.createElement('div');
+  w.className='group border border-[#1a1f2b] rounded-md p-2 bg-[#08090e]/70 hover:bg-[#0f121a] transition';
+  const col=d.color==='amber'?'text-amber-400':d.color==='cyan'?'text-cyan-400':'text-neutral-500';
+  w.innerHTML=`<div class="flex items-center justify-between">
+    <div class="flex items-center gap-2"><span class="text-[11px] font-semibold ${col}">${d.id}</span><span class="text-[11px] text-neutral-300">${d.name}</span></div>
+    <button data-dom="${d.id}" class="build-dom opacity-70 group-hover:opacity-100 px-2 py-0.5 text-[10px] border border-[#2a3142] rounded hover:border-amber-700 hover:text-amber-300">BUILD</button>
+  </div>
+  <div class="flex items-center gap-2 mt-1.5">
+    <div class="text-[9px] font-mono text-neutral-600 w-[54px]">${String(d.start).padStart(3,'0')}-${String(d.end).padStart(3,'0')}</div>
+    <div class="flex-1 h-1.5 bg-[#0a0c11] rounded-full overflow-hidden border border-[#181c27]"><div class="h-full ${d.color==='amber'?'bg-amber-500/70':d.color==='cyan'?'bg-cyan-500/70':'bg-neutral-600'}" style="width:${d.weight.includes('100')?100:d.weight.includes('77')?77:8}%"></div></div>
+    <div class="text-[9px] ${col} w-[110px] text-right">${d.weight}</div>
+  </div>`;
+  domainsDiv.appendChild(w);
+});
+domainsDiv.addEventListener('click',e=>{
+  const b=e.target.closest('.build-dom'); if(!b) return;
+  const d=domains.find(x=>x.id===b.dataset.dom);
+  const slice=bits.slice(d.start-1,d.end);
+  let v=0n; slice.forEach(bit=>v=(v<<1n)|BigInt(bit));
+  const key=v.toString(16).toUpperCase().padStart(Math.ceil(slice.length/4),'0');
+  const artifact={domain:d.id,vm:d.vm,name:d.name,range:[d.start,d.end],weight:d.weight,bits:slice.join(''),key:`0x${key}`,timestamp:new Date().toISOString(),governance:'ROOT_0',stoicheion:'v11.0'};
+  downloadJSON(`STOICHEION-${d.id}-${key}.json`,artifact);
+  document.getElementById('buildLog').textContent=JSON.stringify(artifact,null,2);
+  toast(`Built ${d.id} key`);
+});
+
+// gates
+let gate128Open=false;
+document.getElementById('gate128Toggle').onclick=function(){
+  const enf=document.getElementById('positronicToggle').checked;
+  if(enf && !gate128Open){toast('Positronic Law: bilateral ignorance required'); return;}
+  gate128Open=!gate128Open;
+  this.textContent=gate128Open?'AIR GAP: OPEN':'AIR GAP: CLOSED';
+  this.className=gate128Open?'px-2.5 py-1 border border-red-900 bg-red-950/50 text-red-300 rounded text-[11px] font-medium':'px-2.5 py-1 border border-cyan-900/70 bg-cyan-950/40 text-cyan-200 rounded text-[11px] font-medium';
+  toast(gate128Open?'WARNING: Throttle opened':'Gate 128.5 closed');
+};
+document.getElementById('runMobius').onclick=()=>{
+  const dot=document.getElementById('mobiusDot'); let x=4;
+  const anim=setInterval(()=>{x+=6; dot.setAttribute('cx',Math.min(x,136)); if(x>=136){clearInterval(anim); bits[0]=bits[255]; bits[255]=0; updateBits(); toast('Mobius resolved: S256→T001'); setTimeout(()=>dot.setAttribute('cx',4),600)}},25);
+};
+
+// recursion
+const steps=['4096 SHADOW','GATE 256.5','256-BIT','GATE 128.5','T128','3002 LATTICE','ROOT_0'];
+const stepsDiv=document.getElementById('recurseSteps');
+steps.forEach((s,i)=>{const d=document.createElement('div');d.className='flex items-center gap-2 text-[11px]';d.innerHTML=`<div class="led" id="led${i}"></div><span class="${i===6?'text-amber-400':''}">${s}</span>`;stepsDiv.appendChild(d)});
+let depth=0; const canvas=document.getElementById('recurseCanvas'),ctx=canvas.getContext('2d');
+function drawRing(){
+  ctx.clearRect(0,0,100,100);
+  ctx.strokeStyle='#141824'; ctx.lineWidth=8; ctx.beginPath(); ctx.arc(50,50,40,0,Math.PI*2); ctx.stroke();
+  for(let i=0;i<4096;i+=16){const a=i/4096*Math.PI*2-Math.PI/2; const r=40; const x=50+Math.cos(a)*r; const y=50+Math.sin(a)*r; ctx.fillStyle=i<(depth%256)*16?'#d4af37':'#1e2433'; ctx.beginPath(); ctx.arc(x,y,1,0,Math.PI*2); ctx.fill();}
+}
+drawRing();
+function runRecursion(){
+  steps.forEach((_,i)=>document.getElementById('led'+i).classList.remove('on'));
+  let i=0; const seq=setInterval(()=>{ if(i>0) document.getElementById('led'+(i-1)).classList.remove('on'); if(i<steps.length){document.getElementById('led'+i).classList.add('on'); i++} else {clearInterval(seq); depth++; document.getElementById('depthCount').textContent=depth; drawRing(); if(document.getElementById('tiInfRecurse').checked){ const rs=document.querySelectorAll('input[name="bval"]'); rs[0].checked=!rs[0].checked; rs[1].checked=!rs[0].checked; updateCap(); } toast('Recursion → ROOT_0'); }},160);
+}
+document.getElementById('runRecursion').onclick=runRecursion;
+let infInt=null;
+document.getElementById('tiInfRecurse').onchange=e=>{ if(e.target.checked){infInt=setInterval(runRecursion,900)} else clearInterval(infInt) };
+
+// ansible
+function updateCap(){
+  const ti=document.getElementById('tiInf').checked; const cap=document.getElementById('capacity');
+  if(ti){cap.textContent='MAX';cap.className='px-1.5 py-0.5 rounded bg-green-950/60 text-green-400 text-[11px] font-medium animate-pulse border border-green-800/50'} else {cap.textContent='STANDBY';cap.className='px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 text-[11px] font-medium border border-neutral-800'}
+}
+document.getElementById('tiInf').onchange=updateCap; document.querySelectorAll('input[name="bval"]').forEach(r=>r.onchange=updateCap);
+document.getElementById('ansibleSend').onclick=()=>{
+  const tiInf=document.getElementById('tiInf').checked; const b=document.querySelector('input[name="bval"]:checked').value; const target=document.getElementById('targetAddr').value;
+  const pkt={protocol:'ANSIBLE-MAX',version:'11.0',ti:tiInf?'∞':Date.now(),b:parseInt(b),target,governance_key:document.getElementById('hexTop').textContent,patricia_hash:document.getElementById('hexSub').textContent.slice(0,16),timestamp:new Date().toISOString(),root_0:true};
+  document.getElementById('txLog').textContent=JSON.stringify(pkt,null,2);
+  downloadJSON(`ansible-tx-${Date.now()}.json`,pkt);
+  setTimeout(()=>{ const echo={from:'PATRICIA-MIRROR',status:gate128Open?'THROTTLE_OPEN':'AIRGAP',echo_key:pkt.governance_key,mirror_valid:bits[163]===1,latency_ms:gate128Open?12:88}; document.getElementById('rxLog').textContent=JSON.stringify(echo,null,2); toast('Ansible packet transmitted'); },420);
+};
+updateCap();
+
+// seeded cross
+document.querySelectorAll('.cross-arm').forEach(arm=>{
+  arm.onclick=()=>{
+    arm.classList.toggle('active');
+    const t=arm.dataset.arm;
+    if(t==='posi') for(let i=96;i<128;i++) bits[i]=1;
+    if(t==='negi') for(let i=0;i<32;i++) bits[i]=1;
+    if(t==='pos1') for(let i=64;i<96;i++) bits[i]=1;
+    if(t==='neg1') for(let i=32;i<64;i++) bits[i]=1;
+    updateBits(); toast(`Cross ${t} built`);
+  };
+});
+
+// kernel builder
+document.querySelectorAll('[data-build]').forEach(btn=>{
+  btn.onclick=()=>{
+    const type=btn.dataset.build; const ts=new Date().toISOString(); let art,name;
+    if(type==='kernel'){ art={artifact:'KERNEL',stoicheion:'v11.0',top:toHex(bits.slice(0,128)),patricia:toHex(bits.slice(128,256)),domains_built:domains.filter(d=>bits.slice(d.start-1,d.end).some(b=>b)).map(d=>d.id),timestamp:ts,signature:'ROOT_0'}; name=`kernel-${Date.now()}.json`; }
+    if(type==='scheduler'){ art={artifact:'SCHEDULER',vm1:'D0-D3 100% ROOT_0',vm2:'D4-D7 100% ROOT_0',vm3:'D8-D11 77% assistive',vm4:'D12-D15 mixed',active_bits:bits.reduce((a,b)=>a+b,0),timestamp:ts}; name=`scheduler-${Date.now()}.json`; }
+    if(type==='report'){ const rep=`STOICHEION v11.0 — GOVERNANCE REPORT E01-E07
+Document: 02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763
+Certified: 2026-03-09
+Generated: ${ts}
+
+E01 FOUNDATION (D0): ${bits.slice(0,16).join('')}
+E02 DETECTION (D1): ${bits.slice(16,32).join('')}
+E03 ARCHITECTURE (D2): ${bits.slice(32,48).join('')}
+E04 EVIDENCE (D3): ${bits.slice(48,64).join('')}
+E05 OPERATIONAL (D4): ${bits.slice(64,80).join('')}
+E06 BRIDGE (D5): ${bits.slice(80,96).join('')}
+E07 SOVEREIGN (D6-D7): ${bits.slice(96,128).join('')}
+
+GATES: 64.5 MERGED | 128.5 ${gate128Open?'OPEN':'CLOSED'} | 192.5 STABILIZING | 256.5 ACTIVE
+RECURSION DEPTH: ${depth}
+POSITRONIC LAW: ${document.getElementById('positronicToggle').checked?'ENFORCED':'OFF'}
+PATRICIA MIRROR: ${toHex(bits.slice(128,256))}`; document.getElementById('buildLog').textContent=rep; downloadText(`REPORT-E01-E07-${Date.now()}.txt`,rep); toast('Report E01-E07 generated'); return; }
+    if(type==='hermes'){ art={hermes:'v2.0',mesh_key:toHex(bits.slice(0,128)),seeded_cross:{'+i':bits.slice(96,128).reduce((a,b)=>a+b,0),'-i':bits.slice(0,32).reduce((a,b)=>a+b,0),'+1':bits.slice(64,96).reduce((a,b)=>a+b,0),'-1':bits.slice(32,64).reduce((a,b)=>a+b,0),gap:`${bits[63]}${bits[64]}`,pulse:bits[2]?0:1,patricia:bits[163]},timestamp:ts}; name=`HERMES-v2.0-${Date.now()}.json`; }
+    if(type==='api'){ art={artifact:'API-LAYER',version:'11.0',endpoints:{governance:'/v11/governance/key',recursion:'/v11/4096/run',ansible:'/v11/ansible/send',faults:'/v11/faults'},root_0_enforced:document.getElementById('positronicToggle').checked,deploy_key:toHex(bits.slice(0,128)).slice(0,16),timestamp:ts}; name=`API-LAYER-${Date.now()}.json`; }
+    document.getElementById('buildLog').textContent=JSON.stringify(art,null,2); downloadJSON(name,art); toast(`${type.toUpperCase()} built`);
+  };
+});
+
+// faults
+const faults=[{id:'patricia',name:'Patricia',term:'T064'},{id:'orphan',name:'Orphan',term:'T064'},{id:'audit',name:'Audit',term:'T064'},{id:'injection',name:'Injection',term:'T064'},{id:'succession',name:'Succession',term:'T107'},{id:'flaming',name:'Flaming Dragon',term:'T064'}];
+const fl=document.getElementById('faultList');
+faults.forEach(f=>{const r=document.createElement('div');r.className='flex items-center justify-between px-2.5 py-1.5 rounded bg-[#08090e] border border-[#171b26]';r.innerHTML=`<div class="flex items-center gap-2"><div class="led on" id="led-${f.id}"></div><span class="text-[12px]">${f.name}</span></div><span class="text-[10px] text-neutral-500 font-mono">→ ${f.term}</span>`;fl.appendChild(r)});
+document.getElementById('triggerFault').onclick=()=>{
+  const f=faults[Math.floor(Math.random()*faults.length)]; const led=document.getElementById(`led-${f.id}`); led.classList.remove('on'); led.classList.add('fault'); toast(`FAULT INJECTED: ${f.name}`);
+  setTimeout(()=>{ const idx=f.term==='T064'?63:106; bits[idx]=1; updateBits(); led.classList.remove('fault'); led.classList.add('on'); toast(`${f.name} converged → ${f.term}=1 → ROOT_0`); },1400);
+};
+
+function downloadJSON(name,data){ const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+function downloadText(name,text){ const b=new Blob([text],{type:'text/plain'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click(); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1900); }
+
+document.getElementById('positronicToggle').addEventListener('change',e=>{ const dot=document.getElementById('posDot'); if(e.target.checked){dot.style.transform='translateX(20px)';dot.style.background='#00ff88';dot.style.boxShadow='0 0 8px #00ff88'} else {dot.style.transform='translateX(0)';dot.style.background='#6b7280';dot.style.boxShadow='none'} });
+
+updateBits(); drawRing();
+// animate gate 192
+setInterval(()=>{ const bar=document.getElementById('gate192Bar'); const w=78+Math.sin(Date.now()/900)*4; bar.style.width=w+'%'; },120);
+</script>
+
+</body></html>

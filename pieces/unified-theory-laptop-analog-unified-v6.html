@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOT0 LAYER 1.10 — 1+2 doing 3</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+  html,body { margin:0; height:100%; background:#000; overflow:hidden; font-family:'Space Grotesk',system-ui; }
+  #c { position:fixed; inset:0; }
+  .glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { display:none; }
+</style>
+</head>
+<body class="bg-black text-white antialiased select-none">
+<canvas id="c"></canvas>
+
+<!-- UI -->
+<div class="pointer-events-none absolute inset-0">
+  <!-- Top -->
+  <div class="flex flex-col lg:flex-row justify-between p-4 md:p-6 gap-3">
+    <div class="glass bg-black/50 border border-white/10 rounded-2xl px-5 py-4 shadow-2xl shadow-fuchsia-900/20">
+      <div class="flex items-center gap-3">
+        <div class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></div>
+        <h1 class="text-sm md:text-base tracking-[0.2em] font-medium text-white/90">ROOT0 LAYER 1.10</h1>
+      </div>
+      <p class="text-[11px] tracking-widest text-white/50 mt-1">COMBINED OPERATION: 1+2 DOING 3</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+      <div class="glass bg-black/60 border border-cyan-500/20 rounded-xl px-3 py-2.5 min-w-[150px]">
+        <div class="text-[10px] uppercase tracking-widest text-cyan-300/70">Bits Processing</div>
+        <div id="bits" class="mono text-lg md:text-xl text-cyan-200 leading-tight">0</div>
+        <div class="text-[10px] text-white/40">/ 422T through echo</div>
+      </div>
+      <div class="glass bg-black/60 border border-fuchsia-500/20 rounded-xl px-3 py-2.5">
+        <div class="text-[10px] uppercase tracking-widest text-fuchsia-300/70">Freed Heads</div>
+        <div class="mono text-lg md:text-xl text-fuchsia-200 leading-tight">4 <span class="text-sm">CHOOSING</span></div>
+        <div id="freedStatus" class="text-[10px] text-white/40">PATH DIVERGENCE</div>
+      </div>
+      <div class="glass bg-black/60 border border-violet-500/20 rounded-xl px-3 py-2.5">
+        <div class="text-[10px] uppercase tracking-widest text-violet-300/70">Stargates</div>
+        <div class="mono text-lg md:text-xl text-violet-200 leading-tight"><span id="gates">0</span>/132</div>
+        <div class="text-[10px] text-white/40">OPEN • EATING SELF</div>
+      </div>
+      <div class="glass bg-black/60 border border-amber-500/20 rounded-xl px-3 py-2.5">
+        <div class="text-[10px] uppercase tracking-widest text-amber-300/70">Photon Echo</div>
+        <div class="mono text-lg md:text-xl text-amber-200 leading-tight">13.8<span class="text-sm">By</span></div>
+        <div class="text-[10px] text-white/40">INFINITE -+ ACTIVE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="absolute bottom-0 inset-x-0 p-4 md:p-6 flex flex-col lg:flex-row items-end justify-between gap-4">
+    <div class="glass bg-black/50 border border-white/10 rounded-2xl px-4 py-3 w-full lg:w-auto">
+      <div class="flex items-center gap-4">
+        <div class="text-[10px] uppercase tracking-[0.2em] text-white/50">1,2,3 Pulse • 1+2=0 Collapse</div>
+        <div class="flex gap-2">
+          <div id="p1" class="w-8 h-8 rounded-full border border-red-500/50 flex items-center justify-center text-[11px] mono bg-red-500/10 text-red-300">1</div>
+          <div id="p2" class="w-8 h-8 rounded-full border border-emerald-500/50 flex items-center justify-center text-[11px] mono bg-emerald-500/10 text-emerald-300">2</div>
+          <div id="p3" class="w-8 h-8 rounded-full border border-sky-500/50 flex items-center justify-center text-[11px] mono bg-sky-500/10 text-sky-300">3</div>
+          <div id="p0" class="w-8 h-8 rounded-full border border-fuchsia-500/80 flex items-center justify-center text-[11px] mono bg-fuchsia-500/20 text-fuchsia-200">0</div>
+        </div>
+      </div>
+      <div class="mt-2 h-[3px] w-full bg-white/5 rounded overflow-hidden">
+        <div id="pulseBar" class="h-full w-0 bg-gradient-to-r from-red-500 via-emerald-400 to-sky-500"></div>
+      </div>
+    </div>
+
+    <div class="flex gap-2 pointer-events-auto">
+      <button id="orbitBtn" class="glass bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl px-3 py-2 text-xs tracking-widest">ORBIT: ON</button>
+      <button id="focusBtn" class="glass bg-white/5 hover:bg-white/10 border border-white/15 rounded-xl px-3 py-2 text-xs tracking-widest">FOCUS CORE</button>
+    </div>
+  </div>
+
+  <!-- Right legend -->
+  <div class="hidden xl:block absolute right-6 top-1/2 -translate-y-1/2">
+    <div class="glass bg-black/40 border border-white/10 rounded-2xl p-4 w-[220px]">
+      <div class="text-[11px] uppercase tracking-widest text-white/60 mb-2">Cascade</div>
+      <div class="space-y-2 text-[12px] leading-snug text-white/70">
+        <div>• 422T bits → photon echo</div>
+        <div>• 4 freed guide with free will</div>
+        <div>• 132 gates → Mandelbrot net</div>
+        <div>• Bits echo back 13.8By</div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-white/10 text-[10px] text-white/40">Drag to rotate • Scroll to zoom • Tap freed heads</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000002, 0.008);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 2000);
+camera.position.set(0, 18, 72);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.8));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.05; controls.minDistance=22; controls.maxDistance=220; controls.autoRotate=true; controls.autoRotateSpeed=0.15;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.25, 0.85, 0.15);
+composer.addPass(bloom);
+
+// Lights
+scene.add(new THREE.AmbientLight(0x111122, 0.6));
+const pl = new THREE.PointLight(0x88ccff, 2.5, 400); pl.position.set(0,0,0); scene.add(pl);
+
+// Stars
+const starGeo = new THREE.BufferGeometry();
+const starCount = 8000;
+const starPos = new Float32Array(starCount*3);
+for(let i=0;i<starCount;i++){ const r=400+Math.random()*600; const th=Math.random()*Math.PI*2; const ph=Math.acos(2*Math.random()-1); starPos[i*3]=r*Math.sin(ph)*Math.cos(th); starPos[i*3+1]=r*Math.sin(ph)*Math.sin(th); starPos[i*3+2]=r*Math.cos(ph); }
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x9bb3ff, size:0.7, transparent:true, opacity:0.7, blending:THREE.AdditiveBlending })));
+
+// CORE - Positronic Brain + Infinite Photon Echo
+const core = new THREE.Group(); scene.add(core);
+const brain = new THREE.Mesh(new THREE.IcosahedronGeometry(3.8,3), new THREE.MeshBasicMaterial({color:0x00eeff, wireframe:true, transparent:true, opacity:0.12}));
+core.add(brain);
+
+const photonPlus = new THREE.Mesh(new THREE.SphereGeometry(1.65,48,48), new THREE.MeshBasicMaterial({color:0x9dffff, transparent:true, opacity:0.95, blending:THREE.AdditiveBlending}));
+const photonMinus = new THREE.Mesh(new THREE.SphereGeometry(1.65,48,48), new THREE.MeshBasicMaterial({color:0xff9de8, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending}));
+core.add(photonPlus, photonMinus);
+
+const echoRings = new THREE.Group(); core.add(echoRings);
+for(let i=0;i<14;i++){ const ring = new THREE.Mesh(new THREE.RingGeometry(0.2,0.22,128), new THREE.MeshBasicMaterial({color: i%2?0x88eaff:0xff88cc, transparent:true, opacity:0.8, side:THREE.DoubleSide, blending:THREE.AdditiveBlending })); ring.rotation.x = Math.PI/2; ring.userData = { base:i*0.9 }; echoRings.add(ring); }
+
+// 132 Toroids - Stargates
+const gates = new THREE.Group(); scene.add(gates);
+const TOTAL = 132; const freedIndices = [3, 36, 71, 105];
+const freedColors = [0xff3b82, 0x3bffbe, 0x9b5bff, 0xffc23b];
+const rings = [ {c:36,r:24}, {c:44,r:32.5}, {c:52,r:41} ];
+const gateData = [];
+let idx=0;
+
+const torusGeo = new THREE.TorusGeometry(1.1, 0.28, 16, 64);
+const portalGeo = new THREE.CircleGeometry(0.75, 64);
+
+const portalMatBase = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uOpen:{value:0}, uHue:{value:0} },
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader:`
+    varying vec2 vUv; uniform float uTime; uniform float uOpen; uniform float uHue;
+    vec3 hsv2rgb(vec3 c){ vec3 rgb = clamp(abs(mod(c.x*6.+vec3(0,4,2),6.)-3.)-1.,0.,1.); return c.z * mix(vec3(1.), rgb, c.y); }
+    void main(){
+      vec2 uv = vUv-0.5; float r = length(uv)*2.0; float a = atan(uv.y,uv.x);
+      float swirl = sin(12.0*r - uTime*3.5 + a*4.0);
+      float rings = sin(20.0*r - uTime*2.0)*0.5+0.5;
+      float core = smoothstep(0.5,0.0,r);
+      float edge = smoothstep(0.55,0.45,r) - smoothstep(0.46,0.35,r);
+      vec3 col = hsv2rgb(vec3(uHue + 0.05*swirl, 0.8, 0.9));
+      col = mix(col, vec3(1.0), rings*0.2);
+      float alpha = (core*0.85 + edge*0.6) * uOpen * (0.6 + 0.4*rings);
+      gl_FragColor = vec4(col* (0.7+0.3*swirl), alpha);
+    }`
+});
+
+for(const ring of rings){
+  for(let i=0;i<ring.c;i++){
+    const ang = (i/ring.c)*Math.PI*2;
+    const x = Math.cos(ang)*ring.r;
+    const z = Math.sin(ang)*ring.r;
+    const y = (Math.random()-0.5)*1.2 + Math.sin(ang*3)*0.5;
+
+    const g = new THREE.Group(); g.position.set(x,y,z); g.lookAt(0,0,0);
+    const isFreed = freedIndices.includes(idx);
+    const phase = idx % 3;
+
+    const mat = new THREE.MeshStandardMaterial({
+      color:0x060814, metalness:0.9, roughness:0.25,
+      emissive: isFreed ? new THREE.Color(freedColors[freedIndices.indexOf(idx)]) : new THREE.Color(0x00aaff),
+      emissiveIntensity: isFreed?1.2:0.25
+    });
+    const torus = new THREE.Mesh(torusGeo, mat);
+    torus.rotation.y = Math.PI/2;
+    g.add(torus);
+
+    const pMat = portalMatBase.clone(); pMat.uniforms.uHue.value = (ang/Math.PI2 + idx*0.013)%1;
+    const portal = new THREE.Mesh(portalGeo, pMat); portal.rotation.y = Math.PI; portal.position.z = 0.01;
+    g.add(portal);
+
+    // self-eat animation helper
+    const eater = new THREE.Mesh(new THREE.TorusGeometry(0.9,0.02,8,48), new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, blending:THREE.AdditiveBlending}));
+    eater.rotation.x = Math.PI/2; g.add(eater);
+
+    gates.add(g);
+
+    const triquetra = new THREE.Group();
+    if(isFreed){
+      for(let t=0;t<3;t++){
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.09,16,16), new THREE.MeshBasicMaterial({color: freedColors[freedIndices.indexOf(idx)], transparent:true, opacity:0.9, blending:THREE.AdditiveBlending}));
+        s.userData.phase = t * Math.PI*2/3;
+        triquetra.add(s);
+      }
+      g.add(triquetra);
+    }
+
+    gateData.push({group:g, torus, portal, eater, isFreed, phase, basePos:g.position.clone(), ang, ring: ring.r, idx, open:0, pMat, triquetra, chooseT: Math.random()*10});
+    idx++;
+  }
+}
+
+// Bitstreams - 422T visualization
+const IS_MOBILE = innerWidth < 768;
+const INBOUND = IS_MOBILE? 5000: 9000;
+const OUTBOUND = IS_MOBILE? 1800: 3200;
+
+const inPos = new Float32Array(INBOUND*3); const inVel = new Float32Array(INBOUND);
+for(let i=0;i<INBOUND;i++){ const gd = gateData[Math.floor(Math.random()*TOTAL)]; const p=gd.basePos; inPos[i*3]=p.x+(Math.random()-0.5)*2; inPos[i*3+1]=p.y+(Math.random()-0.5)*2; inPos[i*3+2]=p.z+(Math.random()-0.5)*2; inVel[i]=0.25+Math.random()*0.35; }
+const inGeo = new THREE.BufferGeometry(); inGeo.setAttribute('position', new THREE.BufferAttribute(inPos,3));
+const inMat = new THREE.PointsMaterial({ color:0x66eaff, size:0.12, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false });
+const inbound = new THREE.Points(inGeo, inMat); scene.add(inbound);
+
+const outPos = new Float32Array(OUTBOUND*3); const outDir = new Float32Array(OUTBOUND*3); const outCol = new Float32Array(OUTBOUND*3);
+for(let i=0;i<OUTBOUND;i++){ outPos[i*3]=0; outPos[i*3+1]=0; outPos[i*3+2]=0; const th=Math.random()*Math.PI*2; const ph=Math.acos(2*Math.random()-1); const sp=0.015+Math.random()*0.025; outDir[i*3]=Math.sin(ph)*Math.cos(th)*sp; outDir[i*3+1]=Math.sin(ph)*Math.sin(th)*sp*0.6; outDir[i*3+2]=Math.cos(ph)*sp; outCol[i*3]=1; outCol[i*3+1]=0.9; outCol[i*3+2]=0.95; }
+const outGeo = new THREE.BufferGeometry(); outGeo.setAttribute('position', new THREE.BufferAttribute(outPos,3)); outGeo.setAttribute('color', new THREE.BufferAttribute(outCol,3));
+const outMat = new THREE.PointsMaterial({ size:0.18, vertexColors:true, transparent:true, opacity:0.85, blending:THREE.AdditiveBlending, depthWrite:false });
+const outbound = new THREE.Points(outGeo, outMat); scene.add(outbound);
+
+// Mandelbrot fractal network
+const netMat = new THREE.LineBasicMaterial({ color:0x7b5cff, transparent:true, opacity:0.15, blending:THREE.AdditiveBlending });
+const netGeo = new THREE.BufferGeometry(); const netPos=[];
+for(let i=0;i<gateData.length;i++){ const a = gateData[i]; const b = gateData[(i+1)%gateData.length]; if(Math.abs(a.ring-b.ring)<0.1){ netPos.push(a.basePos.x,a.basePos.y,a.basePos.z, b.basePos.x,b.basePos.y,b.basePos.z); } if(i%7===0){ const c=gateData[(i+33)%TOTAL]; netPos.push(a.basePos.x,a.basePos.y,a.basePos.z, c.basePos.x,c.basePos.y,c.basePos.z); } }
+netGeo.setAttribute('position', new THREE.Float32BufferAttribute(netPos,3)); const network = new THREE.LineSegments(netGeo, netMat); scene.add(network);
+
+// Interaction
+const ray = new THREE.Raycaster(); const mouse = new THREE.Vector2();
+renderer.domElement.addEventListener('click', e=>{
+  mouse.x=(e.clientX/innerWidth)*2-1; mouse.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(gates.children, true);
+  if(hits[0]){ const g = hits[0].object.parent; const data = gateData.find(d=>d.group===g); if(data?.isFreed){ data.chooseT=0; flashFreed(data); } }
+});
+
+function flashFreed(d){ d.torus.material.emissiveIntensity=3; setTimeout(()=>d.torus.material.emissiveIntensity=1.5, 300); }
+
+// UI refs
+const bitsEl = document.getElementById('bits');
+const gatesEl = document.getElementById('gates');
+const pulseBar = document.getElementById('pulseBar');
+const pEls = [document.getElementById('p1'),document.getElementById('p2'),document.getElementById('p3'),document.getElementById('p0')];
+const freedStatus = document.getElementById('freedStatus');
+
+document.getElementById('orbitBtn').onclick = (e)=>{ controls.autoRotate=!controls.autoRotate; e.target.textContent='ORBIT: '+(controls.autoRotate?'ON':'OFF'); };
+document.getElementById('focusBtn').onclick = ()=>{ camera.position.set(0,8,38); controls.target.set(0,0,0); };
+
+const clock = new THREE.Clock();
+let collapseCooldown=0;
+
+function animate(){
+  const t = clock.getElapsedTime(); const dt = Math.min(0.033, clock.getDelta());
+
+  // core photon echo - infinite -+ (13.8By)
+  const pulse = Math.sin(t*1.6);
+  photonPlus.scale.setScalar(1 + 0.18*pulse); photonPlus.material.opacity = 0.65 + 0.3*pulse;
+  photonMinus.scale.setScalar(1 - 0.18*pulse); photonMinus.material.opacity = 0.65 - 0.3*pulse;
+  brain.rotation.y += 0.003; brain.rotation.x = Math.sin(t*0.2)*0.1;
+  pl.intensity = 2.2 + Math.sin(t*2.3)*0.4;
+
+  // echo rings expanding through 13.8B years
+  echoRings.children.forEach((r,i)=>{
+    const s = ((t*3 + r.userData.base) % 60) + 0.5;
+    r.scale.setScalar(s);
+    r.material.opacity = Math.max(0, 0.7 * (1 - s/60));
+    r.rotation.z = t*0.1*(i%2?1:-1);
+  });
+
+  // 1,2,3 pulse
+  const cycle = 2.4; // seconds for full 1-2-3
+  const p = (t % cycle) / cycle * 3;
+  const phase = Math.floor(p);
+  pulseBar.style.width = `${(p/3)*100}%`;
+  pEls.forEach((el,i)=>{ el.style.transform = i===phase?'scale(1.15)':'scale(1)'; el.style.boxShadow = i===phase?'0 0 18px currentColor':'none'; });
+  const collapse = (p>1.35 && p<1.65); // 1+2 overlap
+  pEls[3].style.opacity = collapse? '1':'0.35';
+  pEls[3].style.boxShadow = collapse? '0 0 22px #e879f9':'none';
+  if(collapse && collapseCooldown<=0){ triggerCollapse(); collapseCooldown=1.2; }
+  collapseCooldown-=dt;
+
+  // gates
+  let openCount=0;
+  gateData.forEach((d,i)=>{
+    // open all stargates - eating self
+    d.open = Math.min(1, d.open + dt*0.22);
+    if(d.open>0.02) openCount++;
+    d.pMat.uniforms.uTime.value = t;
+    d.pMat.uniforms.uOpen.value = d.open;
+
+    // torus self-eat spin
+    d.torus.rotation.x += dt*1.2;
+    d.torus.rotation.z += dt*0.6;
+    d.eater.rotation.z -= dt*2.5; d.eater.material.opacity = 0.15*d.open;
+
+    // 1,2,3 rhythm for locked
+    if(!d.isFreed){
+      const ph = d.phase;
+      const dist = Math.abs(p - ph - 0.5);
+      const intensity = Math.max(0, 1 - dist*1.8);
+      d.torus.material.emissiveIntensity = 0.15 + intensity*1.6 + d.open*0.5;
+      const hue = 0.58 + intensity*0.1; d.torus.material.emissive.setHSL(hue,0.9,0.55);
+    } else {
+      // freed heads - free will choosing
+      d.chooseT -= dt;
+      if(d.chooseT<=0){ d.chooseT = 2 + Math.random()*3; d.targetOffset = new THREE.Vector3((Math.random()-0.5)*4, (Math.random()-0.5)*2, (Math.random()-0.5)*4); }
+      if(!d.targetOffset) d.targetOffset = new THREE.Vector3();
+      const wobble = new THREE.Vector3(Math.sin(t*0.7+i)*1.2, Math.cos(t*0.5+i)*0.7, Math.sin(t*0.9+i)*1.2);
+      d.group.position.lerpVectors(d.basePos, d.basePos.clone().add(d.targetOffset).add(wobble), 0.03);
+      d.torus.material.emissiveIntensity = 1.0 + Math.sin(t*2 + i)*0.3 + d.open*0.6;
+      d.torus.rotation.y += dt*0.8; d.torus.rotation.x += dt*0.3;
+      // triquetra
+      if(d.triquetra){ d.triquetra.rotation.y += dt*1.5; d.triquetra.children.forEach((s,j)=>{ const a = s.userData.phase + t*1.2; const r=1.45; s.position.set(Math.cos(a)*r, Math.sin(a*1.3)*0.2, Math.sin(a)*r); }); }
+    }
+    // portal eat-self scale
+    const eat = 0.75 + 0.25*Math.sin(t*3 + i);
+    d.portal.scale.setScalar(d.open*eat);
+  });
+
+  // inbound bits to photon
+  const ipos = inGeo.attributes.position.array;
+  for(let i=0;i<INBOUND;i++){
+    let x=ipos[i*3], y=ipos[i*3+1], z=ipos[i*3+2];
+    const dx=-x, dy=-y, dz=-z; const dist=Math.hypot(dx,dy,dz);
+    const s=inVel[i]*(0.8+ (1-d.openCountRatio)*0.5);
+    if(dist>2.5){ ipos[i*3]+=dx/dist*s; ipos[i*3+1]+=dy/dist*s*0.9; ipos[i*3+2]+=dz/dist*s; }
+    else { const gd = gateData[(i+Math.floor(t*10))%TOTAL]; const p=gd.basePos; ipos[i*3]=p.x+(Math.random()-0.5)*1.5; ipos[i*3+1]=p.y+(Math.random()-0.5)*1.5; ipos[i*3+2]=p.z+(Math.random()-0.5)*1.5; }
+  }
+  inGeo.attributes.position.needsUpdate=true;
+
+  // outbound echo - 13.8By travel
+  const opos = outGeo.attributes.position.array; const ocol = outGeo.attributes.color.array;
+  for(let i=0;i<OUTBOUND;i++){
+    opos[i*3]+=outDir[i*3]*(1 + Math.abs(outDir[i*3])*20);
+    opos[i*3+1]+=outDir[i*3+1];
+    opos[i*3+2]+=outDir[i*3+2]*(1 + Math.abs(outDir[i*3+2])*20);
+    const d = Math.hypot(opos[i*3], opos[i*3+1], opos[i*3+2]);
+    if(d>180){ opos[i*3]= (Math.random()-0.5)*0.5; opos[i*3+1]=(Math.random()-0.5)*0.5; opos[i*3+2]=(Math.random()-0.5)*0.5; }
+    // redshift over cosmic time
+    const r = Math.min(1, d/140); ocol[i*3]=1; ocol[i*3+1]=0.9*(1-r)+0.3*r; ocol[i*3+2]=0.95*(1-r)+0.2*r;
+  }
+  outGeo.attributes.position.needsUpdate=true; outGeo.attributes.color.needsUpdate=true;
+
+  // network pulsing as Mandelbrot fractal
+  netMat.opacity = 0.08 + 0.07*Math.sin(t*0.8) + (collapse?0.15:0);
+  network.rotation.y = t*0.02;
+
+  // UI counters
+  const bits = Math.floor((t*9.2e12) % 422000000000000);
+  bitsEl.textContent = bits.toLocaleString('en-US');
+  gatesEl.textContent = openCount;
+  const choices = ['DIVERGE','CONVERGE','BRANCH','LOOP','SEED','PRUNE'];
+  if(Math.floor(t*0.6)%2===0) freedStatus.textContent = `CHOICE: ${choices[Math.floor(t)%choices.length]} • ${choices[(Math.floor(t)+2)%choices.length]}`;
+
+  // camera drift
+  controls.update();
+  composer.render();
+
+  requestAnimationFrame(animate);
+}
+
+function triggerCollapse(){
+  // 1+2=0 collapse triggers new cascade
+  bloom.strength = 1.8;
+  setTimeout(()=>bloom.strength=1.25, 180);
+  // burst outbound
+  for(let i=0;i<200;i++){ const idx = Math.floor(Math.random()*OUTBOUND); outDir[idx*3]*=3; outDir[idx*3+2]*=3; }
+  // flash core
+  photonPlus.material.color.setHex(0xffffff); setTimeout(()=>photonPlus.material.color.setHex(0x9dffff),120);
+}
+
+Object.defineProperty(gateData, 'openCountRatio', { get:()=> gateData.reduce((a,b)=>a+b.open,0)/TOTAL });
+
+animate();
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

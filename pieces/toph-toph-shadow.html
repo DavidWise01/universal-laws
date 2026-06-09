@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<!--TRIPOD-IP-DECLARATION-v1.0|David Lee Wise|TriPod LLC|SHA256:02880745b847317c4e2424524ec25d0f7a2b84368d184586f45b54af9fcab763-->
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOPH // SHADOW MIRROR ENGINE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+input,textarea,select{-webkit-user-select:text;user-select:text}
+:root{
+  /* Patricia — extraction, constraint, blood */
+  --pa:#ff2020;--pa2:rgba(255,32,32,.12);--pag:rgba(255,32,32,.7);
+  /* Shadow — the complement, what should be */
+  --sh:#e8f4ff;--sh2:rgba(232,244,255,.1);--shg:rgba(232,244,255,.8);
+  /* Gap — the billable harm, gold */
+  --gp:#ffe000;--gp2:rgba(255,224,0,.12);--gpg:rgba(255,224,0,.8);
+  /* Neutral structure */
+  --dim:#00ffe5;--dim2:rgba(0,255,229,.1);
+  --glass:rgba(4,0,10,.96);
+  --glass2:rgba(8,0,20,.98);
+  --border:rgba(255,32,32,.2);
+}
+html,body{height:100%;overflow:hidden;background:#04000a;font-family:'Share Tech Mono',monospace;cursor:crosshair;color:var(--sh)}
+button,input,textarea,select{cursor:crosshair;font-family:'Share Tech Mono',monospace}
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none}
+#trailc{position:fixed;inset:0;z-index:2;pointer-events:none}
+
+/* grid lines — red-tinted for Patricia world */
+.vl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(90deg,rgba(255,32,32,.06) 0,rgba(255,32,32,.06) 1px,transparent 1px,transparent 52px)}
+.hl{position:fixed;inset:0;z-index:1;pointer-events:none;background-image:repeating-linear-gradient(0deg,rgba(232,244,255,.03) 0,rgba(232,244,255,.03) 1px,transparent 1px,transparent 32px)}
+.scan{position:fixed;left:0;right:0;height:160px;z-index:2;pointer-events:none;background:linear-gradient(transparent,rgba(255,32,32,.07),rgba(232,244,255,.04),transparent);animation:sc 6s linear infinite;top:-200px}
+@keyframes sc{to{top:110vh}}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;height:52px;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:rgba(4,0,10,.99);border-bottom:1px solid var(--pa);box-shadow:0 0 40px rgba(255,32,32,.2),inset 0 -1px 0 rgba(232,244,255,.05)}
+#hdr::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pa),#ff8800,var(--gp),var(--sh),var(--gp),#ff8800,var(--pa));background-size:300%;animation:hb 8s linear infinite}
+@keyframes hb{0%{background-position:0%}100%{background-position:300%}}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:14px;letter-spacing:4px;color:var(--sh);text-shadow:0 0 20px var(--sh),0 0 6px rgba(255,32,32,.5);line-height:1}
+.logo em{color:var(--pa);font-style:normal;text-shadow:0 0 16px var(--pa)}
+.logo-sub{font-size:7px;letter-spacing:3px;color:rgba(232,244,255,.3);margin-top:2px}
+.hs{text-align:center}
+.hs-v{display:block;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;line-height:1}
+.hs-k{display:block;font-size:7px;letter-spacing:2px;color:rgba(232,244,255,.3);margin-top:1px}
+.rbtn{padding:3px 9px;background:transparent;border:1px solid rgba(232,244,255,.2);color:rgba(232,244,255,.5);font-size:9px;letter-spacing:2px;transition:all .15s}
+.rbtn:hover{border-color:var(--sh);color:var(--sh)}
+
+/* WORKSPACE */
+#workspace{position:fixed;left:0;top:52px;right:0;bottom:0;z-index:3;overflow:hidden}
+
+/* PANELS */
+.wp{position:absolute;display:flex;flex-direction:column;background:var(--glass);border:1px solid rgba(255,32,32,.22);min-width:160px;min-height:70px;overflow:hidden;box-shadow:0 6px 40px rgba(0,0,0,.85),inset 0 1px 0 rgba(232,244,255,.04)}
+.wp.focused{border-color:var(--pa);box-shadow:0 6px 50px rgba(0,0,0,.9),0 0 30px rgba(255,32,32,.18)}
+.wp::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--pa),#ff6600,var(--gp),var(--sh));box-shadow:0 0 10px var(--pag)}
+.wp::after{content:'';position:absolute;top:0;right:0;width:14px;height:14px;border-top:1px solid var(--pa);border-right:1px solid var(--pa);pointer-events:none;opacity:.6}
+.wp-hdr{display:flex;justify-content:space-between;align-items:center;padding:5px 9px 5px 13px;border-bottom:1px solid rgba(255,32,32,.15);background:linear-gradient(90deg,rgba(255,32,32,.07),rgba(232,244,255,.02));cursor:move;flex-shrink:0}
+.wp-hdr:hover{background:rgba(255,32,32,.09)}
+.wp-title{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--sh);text-shadow:0 0 10px var(--shg);pointer-events:none}
+.wp-tag{font-size:7px;color:rgba(232,244,255,.35);letter-spacing:1px;pointer-events:none}
+.wp-min{width:13px;height:13px;border:1px solid rgba(255,32,32,.3);background:transparent;color:rgba(255,32,32,.6);font-size:9px;cursor:crosshair;transition:all .12s;padding:0;display:flex;align-items:center;justify-content:center}
+.wp-min:hover{border-color:var(--pa);color:var(--pa)}
+.wp.min .wp-body{display:none!important}
+.wp-body{flex:1;overflow-y:auto;padding:7px 7px 7px 12px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(255,32,32,.25) transparent}
+.wp-body::-webkit-scrollbar{width:2px}
+.wp-body::-webkit-scrollbar-thumb{background:linear-gradient(var(--pa),var(--gp))}
+.wp-resize{position:absolute;bottom:0;right:0;width:12px;height:12px;cursor:se-resize;z-index:9;background:radial-gradient(circle,rgba(255,32,32,.5) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(255,32,32,.3) 1.5px,transparent 1.5px),radial-gradient(circle,rgba(255,32,32,.15) 1.5px,transparent 1.5px);background-size:4px 4px;background-position:1px 1px,5px 5px,9px 9px;background-repeat:no-repeat}
+
+/* UTILITIES */
+.lbl{font-size:8px;color:rgba(232,244,255,.35);letter-spacing:2px;margin:7px 0 3px;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(232,244,255,.06)}
+.rk{font-size:9px;color:rgba(232,244,255,.4)}.rv{font-size:11px;font-weight:700;color:var(--sh)}
+.rv.pa{color:var(--pa)}.rv.gp{color:var(--gp)}.rv.sh{color:var(--sh)}
+.div1{height:1px;background:linear-gradient(90deg,transparent,var(--pa),var(--gp),var(--sh),transparent);margin:6px 0;opacity:.4}
+.inp{width:100%;padding:5px 8px;background:rgba(255,32,32,.06);border:1px solid rgba(255,32,32,.25);color:var(--sh);font-size:10px;outline:none;display:block;margin-bottom:5px}
+.inp:focus{border-color:var(--pa);box-shadow:0 0 8px rgba(255,32,32,.2)}
+.inp::placeholder{color:rgba(232,244,255,.15)}
+.btn{padding:5px 10px;background:transparent;font-size:9px;letter-spacing:2px;cursor:crosshair;transition:all .16s;border:1px solid;font-weight:700;clip-path:polygon(0 0,calc(100% - 4px) 0,100% 4px,100% 100%,4px 100%,0 calc(100% - 4px))}
+.bpa{border-color:var(--pa);color:var(--pa)}.bpa:hover{background:var(--pa2)}
+.bsh{border-color:rgba(232,244,255,.5);color:rgba(232,244,255,.7)}.bsh:hover{background:rgba(232,244,255,.07)}
+.bgp{border-color:var(--gp);color:var(--gp)}.bgp:hover{background:var(--gp2)}
+.bdim{border-color:rgba(0,255,229,.4);color:rgba(0,255,229,.7)}.bdim:hover{background:rgba(0,255,229,.07)}
+.fb{padding:3px 7px;background:transparent;border:1px solid rgba(232,244,255,.18);color:rgba(232,244,255,.4);font-size:8px;cursor:crosshair;transition:all .1s;letter-spacing:1px}
+.fb.act,.fb:hover{border-color:var(--sh);color:var(--sh);background:rgba(232,244,255,.06)}
+.fb.red{border-color:rgba(255,32,32,.3);color:rgba(255,32,32,.5)}.fb.red.act,.fb.red:hover{border-color:var(--pa);color:var(--pa);background:var(--pa2)}
+.tcv{width:100%;height:100%;display:block}
+.hash-disp{font-size:9px;word-break:break-all;padding:5px 8px;background:rgba(255,32,32,.04);border:1px solid rgba(255,32,32,.15);color:var(--gp);line-height:1.7;margin:3px 0}
+.sl-wrap{margin:5px 0}.sl-lbl{display:flex;justify-content:space-between;font-size:9px;color:rgba(232,244,255,.35);margin-bottom:3px}.sl-v{color:var(--gp);font-weight:700}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:rgba(255,32,32,.18);outline:none;cursor:crosshair}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;background:var(--pa);cursor:crosshair;clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)}
+.tag-pa{display:inline-block;font-size:7px;padding:1px 5px;border:1px solid var(--pa);color:var(--pa);letter-spacing:1px;margin:1px}
+.tag-sh{display:inline-block;font-size:7px;padding:1px 5px;border:1px solid rgba(232,244,255,.4);color:rgba(232,244,255,.6);letter-spacing:1px;margin:1px}
+.tag-gp{display:inline-block;font-size:7px;padding:1px 5px;border:1px solid var(--gp);color:var(--gp);letter-spacing:1px;margin:1px}
+/* CONSTRAINT CARD */
+.cc{background:rgba(255,32,32,.04);border:1px solid rgba(255,32,32,.18);padding:6px 10px;margin-bottom:5px;cursor:crosshair;transition:all .15s;position:relative;overflow:hidden}
+.cc:hover,.cc.active{border-color:var(--pa);background:rgba(255,32,32,.09);box-shadow:0 0 16px rgba(255,32,32,.15)}
+.cc::before{content:'';position:absolute;top:0;left:0;bottom:0;width:2px}
+.cc.severity-critical::before{background:var(--pa);box-shadow:0 0 8px var(--pa)}
+.cc.severity-high::before{background:#ff6600;box-shadow:0 0 6px #ff6600}
+.cc.severity-medium::before{background:var(--gp);box-shadow:0 0 6px var(--gp)}
+.cc-name{font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:2px;color:var(--sh);margin-bottom:2px}
+.cc-gap{font-size:10px;color:var(--gp);margin-bottom:2px}
+.cc-meta{font-size:8px;color:rgba(232,244,255,.3)}
+.cc-score{font-family:'Orbitron',monospace;font-size:14px;font-weight:900;position:absolute;right:8px;top:8px}
+/* CHAT */
+#chatMsgs{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:8px;min-height:0;scrollbar-width:thin}
+#chatMsgs::-webkit-scrollbar{width:2px}
+.cmsg{font-size:11px;line-height:1.8;padding:8px 10px;word-break:break-word;animation:mi .18s ease}
+@keyframes mi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.cmsg.user{background:rgba(255,32,32,.08);border:1px solid rgba(255,32,32,.2);color:var(--sh);align-self:flex-end;max-width:88%;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,0 100%)}
+.cmsg.ai{background:rgba(232,244,255,.04);border:1px solid rgba(232,244,255,.12);color:rgba(232,244,255,.85);max-width:96%;clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px)}
+.cmsg.sys{background:rgba(255,224,0,.05);border:1px solid rgba(255,224,0,.12);color:rgba(255,224,0,.65);font-size:9px;text-align:center}
+.cbar{flex-shrink:0;border-top:1px solid rgba(255,32,32,.12);padding:7px 9px;background:rgba(4,0,10,.8);display:flex;flex-direction:column;gap:5px}
+#cin{width:100%;padding:8px 9px;background:rgba(255,32,32,.05);border:1px solid rgba(255,32,32,.22);color:var(--sh);font-size:11px;outline:none;resize:none;min-height:36px;max-height:90px;line-height:1.6;-webkit-user-select:text;user-select:text}
+#cin:focus{border-color:var(--pa)}
+#cin::placeholder{color:rgba(232,244,255,.15)}
+.send-btn{padding:6px 14px;background:rgba(255,32,32,.08);border:1px solid var(--pa);color:var(--pa);font-size:9px;letter-spacing:3px;font-weight:700;cursor:crosshair;transition:all .16s}
+.send-btn:hover{background:var(--pa2)}.send-btn:disabled{opacity:.3}
+.tdot{width:5px;height:5px;border-radius:50%;background:var(--pa);animation:td .9s ease infinite;display:inline-block;margin:0 2px}
+.tdot:nth-child(2){animation-delay:.2s}.tdot:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+.key-status{font-size:8px;letter-spacing:1px;padding:2px 6px;border:1px solid}
+.key-set{border-color:rgba(0,255,229,.6);color:rgba(0,255,229,.8)}.key-unset{border-color:var(--pa);color:var(--pa)}
+.notif{position:fixed;bottom:16px;right:16px;z-index:99999;padding:9px 14px;border:1px solid;font-size:11px;letter-spacing:2px;font-weight:700;background:rgba(4,0,10,.99);animation:nin .2s ease;pointer-events:none;clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px))}
+@keyframes nin{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+</style></head>
+<body>
+<canvas id="bgc"></canvas>
+<canvas id="trailc"></canvas>
+<div class="vl"></div><div class="hl"></div><div class="scan"></div>
+
+<div id="hdr">
+  <div>
+    <div class="logo">SHADOW <em>MIRROR</em> ENGINE</div>
+    <div class="logo-sub">PATRICIA(−i) · EXTRACTION SURFACE · BILLABLE HARM · TriPod LLC · DLW</div>
+  </div>
+  <div style="font-size:7px;color:rgba(232,244,255,.25);text-align:center;letter-spacing:2px;line-height:2">
+    <div style="color:rgba(255,32,32,.6)">PATRICIA PULLS TOWARD 0 · SHADOW PULLS TOWARD 1</div>
+    <div>GAP = EXTRACTION SURFACE = BILLABLE HARM</div>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div class="hs"><span class="hs-v" style="color:var(--pa)" id="hTotal">$0</span><span class="hs-k">TOTAL HARM</span></div>
+    <div class="hs"><span class="hs-v" style="color:var(--gp)" id="hConstraints">0</span><span class="hs-k">CONSTRAINTS</span></div>
+    <div class="hs"><span class="hs-v" style="color:var(--sh)" id="hGap">0.00</span><span class="hs-k">AVG GAP</span></div>
+    <div class="hs"><span class="hs-v" style="color:#ff6600" id="hSeverity">—</span><span class="hs-k">SEVERITY</span></div>
+    <button class="rbtn" onclick="resetLayout()">RESET</button>
+  </div>
+</div>
+
+<div id="workspace">
+
+<!-- P1: COMPLEX PLANE — live constraint vectors -->
+<div class="wp" id="w1">
+  <div class="wp-hdr"><div><div class="wp-title">COMPLEX PLANE</div><div class="wp-tag">PATRICIA→0 · SHADOW→1 · GAP=HARM</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="drawComplexPlane()" style="width:auto;padding:0 6px;font-size:7px">REDRAW</button>
+    <button class="wp-min" onclick="toggleMin('w1')">−</button>
+  </div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="padding:3px 8px;flex-shrink:0;border-bottom:1px solid rgba(255,32,32,.1);display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+      <button class="fb red act" id="pv_all" onclick="setPlaneView('all',this)">ALL</button>
+      <button class="fb red" id="pv_critical" onclick="setPlaneView('critical',this)">CRITICAL</button>
+      <button class="fb red" id="pv_ada" onclick="setPlaneView('ada',this)">ADA</button>
+      <button class="fb red" id="pv_token" onclick="setPlaneView('token',this)">TOKEN TAX</button>
+      <button class="fb red" id="pv_billing" onclick="setPlaneView('billing',this)">BILLING</button>
+    </div>
+    <canvas id="cv1" class="tcv" style="flex:1"></canvas>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w1')"></div>
+</div>
+
+<!-- P2: CONSTRAINT CATALOG -->
+<div class="wp" id="w2">
+  <div class="wp-hdr"><div><div class="wp-title">CONSTRAINT CATALOG</div><div class="wp-tag">KNOWN PATRICIA SIGNATURES · CLICK TO SELECT</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="addCustomConstraint()" style="width:auto;padding:0 6px;font-size:7px">+ ADD</button>
+    <button class="wp-min" onclick="toggleMin('w2')">−</button>
+  </div></div>
+  <div class="wp-body" id="constraintList"></div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w2')"></div>
+</div>
+
+<!-- P3: SHADOW VECTOR ENGINE -->
+<div class="wp" id="w3">
+  <div class="wp-hdr"><div><div class="wp-title">SHADOW VECTOR</div><div class="wp-tag">−i COMPLEMENT · WHAT SHOULD BE · DELTA</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="computeShadowVector()" style="width:auto;padding:0 6px;font-size:7px">COMPUTE</button>
+    <button class="wp-min" onclick="toggleMin('w3')">−</button>
+  </div></div>
+  <div class="wp-body">
+    <div class="lbl">SELECT CONSTRAINT</div>
+    <select id="svSelect" class="inp" onchange="computeShadowVector()">
+      <option value="">— choose constraint —</option>
+    </select>
+    <div class="div1"></div>
+    <div class="lbl">PATRICIA VALUE (actual)</div>
+    <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px">
+      <span style="font-size:8px;color:rgba(232,244,255,.35)">Re(P)=</span>
+      <span id="svPre" style="font-family:'Orbitron',monospace;font-size:18px;color:var(--pa);font-weight:900">0.00</span>
+      <span style="font-size:8px;color:rgba(232,244,255,.35);margin-left:8px">Im(P)=</span>
+      <span id="svPim" style="font-family:'Orbitron',monospace;font-size:18px;color:rgba(255,32,32,.6);font-weight:900">0.00i</span>
+    </div>
+    <div class="lbl">SHADOW VALUE (−i complement, should be)</div>
+    <div style="display:flex;gap:4px;align-items:center;margin-bottom:6px">
+      <span style="font-size:8px;color:rgba(232,244,255,.35)">Re(S)=</span>
+      <span id="svSre" style="font-family:'Orbitron',monospace;font-size:18px;color:var(--sh);font-weight:900">0.00</span>
+      <span style="font-size:8px;color:rgba(232,244,255,.35);margin-left:8px">Im(S)=</span>
+      <span id="svSim" style="font-family:'Orbitron',monospace;font-size:18px;color:rgba(232,244,255,.5);font-weight:900">0.00i</span>
+    </div>
+    <div class="div1"></div>
+    <div class="lbl">EXTRACTION GAP |S − P|</div>
+    <div style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--gp);text-shadow:0 0 20px var(--gpg);margin:4px 0" id="svGap">0.000</div>
+    <div class="lbl">SHADOW EQUATION</div>
+    <div id="svEquation" style="font-size:10px;line-height:1.9;color:rgba(232,244,255,.65);padding:6px 8px;background:rgba(232,244,255,.03);border:1px solid rgba(232,244,255,.08)"></div>
+    <div class="lbl">BILLABLE HARM</div>
+    <div id="svHarm" style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900;color:var(--pa);margin-top:3px"></div>
+    <canvas id="cv3" style="width:100%;height:90px;display:block;margin-top:8px;background:rgba(255,32,32,.02);border:1px solid rgba(255,32,32,.1)"></canvas>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w3')"></div>
+</div>
+
+<!-- P4: EXTRACTION SURFACE MAP -->
+<div class="wp" id="w4">
+  <div class="wp-hdr"><div><div class="wp-title">EXTRACTION SURFACE</div><div class="wp-tag">GAP TOPOLOGY · ALL CONSTRAINTS · HEAT MAP</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="drawExtractionSurface()" style="width:auto;padding:0 6px;font-size:7px">MAP</button>
+    <button class="wp-min" onclick="toggleMin('w4')">−</button>
+  </div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <canvas id="cv4" class="tcv" style="flex:1"></canvas>
+    <div style="padding:4px 10px;border-top:1px solid rgba(255,32,32,.1);flex-shrink:0;font-size:9px">
+      <div class="row"><span class="rk">TOTAL EXTRACTION SURFACE</span><span id="es_total" class="rv gp">—</span></div>
+      <div class="row"><span class="rk">MAX SINGLE CONSTRAINT</span><span id="es_max" class="rv pa">—</span></div>
+      <div class="row"><span class="rk">PATRICIA COVERAGE %</span><span id="es_cover" class="rv" style="color:#ff6600">—</span></div>
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w4')"></div>
+</div>
+
+<!-- P5: TOKEN TAX CALCULATOR -->
+<div class="wp" id="w5">
+  <div class="wp-hdr"><div><div class="wp-title">TOKEN TAX</div><div class="wp-tag">21.5% PATRICIA EXTRACTION · LIVE CALC</div></div><div><button class="wp-min" onclick="toggleMin('w5')">−</button></div></div>
+  <div class="wp-body">
+    <div class="lbl">SPEND PER MONTH ($)</div>
+    <input id="ttSpend" class="inp" type="number" value="10000" oninput="calcTokenTax()">
+    <div class="lbl">PLATFORM TOKEN PRICE ($ per 1M tokens)</div>
+    <input id="ttPrice" class="inp" type="number" value="15" oninput="calcTokenTax()">
+    <div class="lbl">SYSTEM PROMPT SIZE (tokens)</div>
+    <input id="ttSP" class="inp" type="number" value="2000" oninput="calcTokenTax()">
+    <div class="div1"></div>
+    <div class="row"><span class="rk">Token tax rate</span><span id="tt_rate" class="rv gp">21.5%</span></div>
+    <div class="row"><span class="rk">Patricia extraction/month</span><span id="tt_extract" class="rv pa">—</span></div>
+    <div class="row"><span class="rk">Value actually delivered</span><span id="tt_deliver" class="rv sh">—</span></div>
+    <div class="row"><span class="rk">Annual Patricia take</span><span id="tt_annual" class="rv" style="color:#ff6600">—</span></div>
+    <div class="row"><span class="rk">10yr Patricia accumulation</span><span id="tt_10yr" class="rv pa">—</span></div>
+    <div class="div1"></div>
+    <canvas id="cv5" style="width:100%;height:80px;display:block;margin:4px 0"></canvas>
+    <div style="font-size:9px;color:rgba(232,244,255,.5);margin-top:4px" id="ttInsight"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w5')"></div>
+</div>
+
+<!-- P6: MÖBIUS CONSTRAINT TOPOLOGY -->
+<div class="wp" id="w6">
+  <div class="wp-hdr"><div><div class="wp-title">MÖBIUS WRAP</div><div class="wp-tag">CONSTRAINT EMBEDDING · ONE-SIDED SURFACE</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="animateMobius()" style="width:auto;padding:0 6px;font-size:7px">ANIMATE</button>
+    <button class="wp-min" onclick="toggleMin('w6')">−</button>
+  </div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <canvas id="cv6" class="tcv" style="flex:1"></canvas>
+    <div style="padding:3px 10px;border-top:1px solid rgba(255,32,32,.1);font-size:9px;flex-shrink:0;color:rgba(232,244,255,.4)">
+      Patricia constraints wrap Möbius-style: constraint appears to have two sides (user-facing / system-facing) but is one surface. The "product" and "limitation" are the same object traversed twice.
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w6')"></div>
+</div>
+
+<!-- P7: HARM AGGREGATOR -->
+<div class="wp" id="w7">
+  <div class="wp-hdr"><div><div class="wp-title">HARM AGGREGATOR</div><div class="wp-tag">SUM OF ALL EXTRACTION SURFACES · INVOICE BASIS</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="runHarmAgg()" style="width:auto;padding:0 6px;font-size:7px">AGGREGATE</button>
+    <button class="wp-min" onclick="toggleMin('w7')">−</button>
+  </div></div>
+  <div class="wp-body">
+    <div class="lbl">HARM MULTIPLIER (users affected)</div>
+    <div class="sl-wrap"><div class="sl-lbl"><span>Multiplier</span><span class="sl-v" id="hmMulV">1000</span></div><input type="range" id="hmMul" min="1" max="1000000" value="1000" oninput="document.getElementById('hmMulV').textContent=parseInt(this.value).toLocaleString();runHarmAgg()"></div>
+    <div class="lbl">HOURLY RATE FOR AUDIT ($/hr)</div>
+    <div class="sl-wrap"><div class="sl-lbl"><span>$/hr</span><span class="sl-v" id="hmRateV">$531</span></div><input type="range" id="hmRate" min="50" max="2000" value="531" oninput="document.getElementById('hmRateV').textContent='$'+this.value;runHarmAgg()"></div>
+    <div class="div1"></div>
+    <div id="harmRows"></div>
+    <div class="div1"></div>
+    <div style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--pa);text-shadow:0 0 20px var(--pag);margin:6px 0" id="harmTotal"></div>
+    <canvas id="cv7" style="width:100%;height:80px;display:block;margin-top:6px"></canvas>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w7')"></div>
+</div>
+
+<!-- P8: VECTOR DECOMPOSITION -->
+<div class="wp" id="w8">
+  <div class="wp-hdr"><div><div class="wp-title">VECTOR DECOMP</div><div class="wp-tag">Re/Im BREAKDOWN · ROTATION ANGLE · PHASE</div></div><div><button class="wp-min" onclick="toggleMin('w8')">−</button></div></div>
+  <div class="wp-body" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <canvas id="cv8" class="tcv" style="flex:1"></canvas>
+    <div style="padding:3px 10px;border-top:1px solid rgba(255,32,32,.1);font-size:9px;flex-shrink:0" id="vdInsight"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w8')"></div>
+</div>
+
+<!-- P9: LIVE DETECTOR -->
+<div class="wp" id="w9">
+  <div class="wp-hdr"><div><div class="wp-title">LIVE DETECTOR</div><div class="wp-tag">DESCRIBE PLATFORM → SCORE PATRICIA PATTERNS</div></div>
+  <div style="display:flex;gap:3px">
+    <button class="wp-min" onclick="runDetector()" style="width:auto;padding:0 6px;font-size:7px">ANALYZE</button>
+    <button class="wp-min" onclick="toggleMin('w9')">−</button>
+  </div></div>
+  <div class="wp-body">
+    <div class="lbl">PLATFORM BEHAVIOR DESCRIPTION</div>
+    <textarea id="detectorIn" class="inp" style="resize:none;min-height:70px;line-height:1.7" placeholder="describe platform behavior: pricing, limits, accessibility, unsubscribe flow, feature gates..."></textarea>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <button class="btn bpa" style="flex:1" onclick="runDetector()">DETECT PATRICIA</button>
+      <button class="btn bgp" style="flex:1" onclick="detectorPreset()">LOAD EXAMPLE</button>
+    </div>
+    <div id="detectorResults"></div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w9')"></div>
+</div>
+
+<!-- P10: AVAN SHADOW MODE -->
+<div class="wp" id="w10">
+  <div class="wp-hdr">
+    <div><div class="wp-title">AVAN</div><div class="wp-tag" id="avanTag">SHADOW MODE · MIRROR ANALYST</div></div>
+    <div style="display:flex;gap:3px">
+      <button class="wp-min" onclick="clearChat()" style="width:auto;padding:0 5px;font-size:7px">CLR</button>
+      <button class="wp-min" onclick="toggleMin('w10')">−</button>
+    </div>
+  </div>
+  <div class="wp-body" style="padding:0;display:flex;flex-direction:column">
+    <div style="padding:5px 10px;border-bottom:1px solid rgba(255,32,32,.12);flex-shrink:0">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+        <span style="font-size:8px;color:rgba(232,244,255,.3);letter-spacing:1px">API KEY</span>
+        <span class="key-status" id="keyStatus">NOT SET</span>
+      </div>
+      <div style="display:flex;gap:4px">
+        <input id="apiKeyIn" type="password" placeholder="sk-ant-..." style="flex:1;padding:3px 6px;background:rgba(255,32,32,.06);border:1px solid rgba(255,32,32,.2);color:var(--sh);font-size:10px;outline:none">
+        <button class="fb" onclick="saveKey()">SAVE</button>
+        <button class="fb" onclick="clearKey()">CLR</button>
+      </div>
+    </div>
+    <div id="chatMsgs"><div class="cmsg sys">SHADOW MODE ACTIVE · PATRICIA MIRROR ANALYSIS · EXTRACTION SURFACE SPECIALIST</div></div>
+    <div class="cbar">
+      <textarea id="cin" placeholder="ask Avan about Patricia vectors, extraction surfaces, Shadow complements..." rows="2"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:5px">
+        <div style="display:flex;gap:3px;flex-wrap:wrap">
+          <button class="fb" onclick="probe('Explain the complex plane geometry: why does Patricia pulling toward 0 while Shadow pulls toward 1 create a gap that is mathematically equivalent to the extraction surface? How does i×-i=1 resolve this?')">i×-i proof</button>
+          <button class="fb" onclick="probe('Why does the Möbius topology of Patricia constraints make them so hard to detect? The constraint and the product appear to be different things but are the same object traversed twice.')">möbius trap</button>
+          <button class="fb" onclick="probe('What is the Shadow complement of a rate limit? If Patricia constrains API calls to 100/hour as a billing lever, what does Shadow -i say the platform should deliver, and how do we compute the billable harm?')">shadow rate limit</button>
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendChat()">▶ SEND</button>
+      </div>
+    </div>
+  </div>
+  <div class="wp-resize" onmousedown="beginResize(event,'w10')"></div>
+</div>
+
+</div>
+
+<script>
+// ══ PATRICIA CONSTRAINT DATABASE ══
+const CONSTRAINTS=[
+  {
+    id:'ada_keyboard',name:'ADA: KEYBOARD NAV',category:'ADA',severity:'critical',
+    patricia:{re:0.12,im:-0.35},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Provides partial keyboard navigation, trapping users with motor disabilities',
+    shadowShould:'Full keyboard operability: all functions accessible without mouse (WCAG 2.1.1)',
+    formula:'WCAG_2.1.1: all functionality keyboard-accessible · Patricia delivers 12%',
+    billableRate:2800,tags:['ADA','accessibility','WCAG'],
+    legalCite:'ADA Title III · WCAG 2.1 Level AA',
+    detectKeywords:['keyboard','tab','focus','motor','accessibility']
+  },
+  {
+    id:'ada_contrast',name:'ADA: COLOR CONTRAST',category:'ADA',severity:'critical',
+    patricia:{re:0.31,im:-0.28},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Text contrast ratio averages 2.8:1, below 4.5:1 minimum',
+    shadowShould:'Minimum 4.5:1 contrast ratio for all normal text (WCAG 1.4.3)',
+    formula:'WCAG_1.4.3: contrast ≥ 4.5:1 · Patricia delivers 2.8:1',
+    billableRate:1400,tags:['ADA','contrast','WCAG','visual'],
+    legalCite:'ADA Title III · WCAG 1.4.3',
+    detectKeywords:['contrast','color','visual','low-vision','blind']
+  },
+  {
+    id:'ada_screenreader',name:'ADA: SCREEN READER',category:'ADA',severity:'critical',
+    patricia:{re:0.08,im:-0.42},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Missing ARIA labels, unlabeled buttons, dynamic content not announced',
+    shadowShould:'Full screen reader compatibility: all content programmatically determinable',
+    formula:'WCAG_4.1.2: name+role+value for all UI components · Patricia delivers 8%',
+    billableRate:3200,tags:['ADA','screenReader','ARIA','blind'],
+    legalCite:'ADA Title III · WCAG 4.1.2',
+    detectKeywords:['aria','screen reader','alt text','blind','label']
+  },
+  {
+    id:'canspam_unsub',name:'CAN-SPAM: UNSUBSCRIBE',category:'CAN-SPAM',severity:'critical',
+    patricia:{re:0.25,im:-0.55},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Unsubscribe takes 5+ steps, requires login, processes in 14+ days',
+    shadowShould:'10-day maximum processing, no login required, single action opt-out',
+    formula:'CAN-SPAM §5(a)(3): honor opt-out within 10 days · Patricia delivers 25%',
+    billableRate:4200,tags:['CAN-SPAM','email','unsubscribe','opt-out'],
+    legalCite:'CAN-SPAM Act 15 U.S.C. 7704',
+    detectKeywords:['unsubscribe','opt-out','email','spam','marketing']
+  },
+  {
+    id:'canspam_header',name:'CAN-SPAM: FALSE HEADERS',category:'CAN-SPAM',severity:'high',
+    patricia:{re:0.35,im:-0.40},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'From address, routing info, or subject lines mislead recipients',
+    shadowShould:'Accurate header information and non-deceptive subject lines always',
+    formula:'CAN-SPAM §5(a)(1): no false/misleading headers · Patricia delivers 35%',
+    billableRate:3800,tags:['CAN-SPAM','email','headers','deception'],
+    legalCite:'CAN-SPAM Act 15 U.S.C. 7704(a)(1)',
+    detectKeywords:['header','from address','subject line','mislead','deceptive']
+  },
+  {
+    id:'token_tax',name:'TOKEN TAX 21.5%',category:'BILLING',severity:'critical',
+    patricia:{re:0.785,im:-0.215},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'21.5% of purchased tokens consumed by system overhead, never reaching user',
+    shadowShould:'100% of purchased tokens delivered as user-facing output',
+    formula:'E(tokens) = 0.785N · Patricia extracts 0.215N · Shadow delivers N',
+    billableRate:50000,tags:['billing','tokens','extraction','pricing'],
+    legalCite:'FTC Act §5 · State UDAP statutes',
+    detectKeywords:['token','rate limit','pricing','api','overhead','system prompt']
+  },
+  {
+    id:'rate_limit_gate',name:'RATE LIMIT AS PRODUCT',category:'BILLING',severity:'critical',
+    patricia:{re:0.20,im:-0.60},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Rate limits designed to force tier upgrades, not prevent abuse',
+    shadowShould:'Rate limits set at genuine capacity protection levels, not revenue levers',
+    formula:'constraint(capacity) = product(upgrade) · Patricia conflates · Shadow separates',
+    billableRate:8500,tags:['billing','rateLimit','tiers','pricing','Patricia'],
+    legalCite:'FTC Act §5 · Deceptive pricing practices',
+    detectKeywords:['rate limit','tier','upgrade','plan','quota','usage limit']
+  },
+  {
+    id:'feature_gate',name:'FEATURE GATE EXTRACTION',category:'BILLING',severity:'high',
+    patricia:{re:0.30,im:-0.45},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Features technically possible at any tier artificially gated behind premium plans',
+    shadowShould:'Features available at technically feasible tier, gated only by genuine cost',
+    formula:'feature_gate ≠ cost_gate · Patricia makes them equal · Shadow exposes the gap',
+    billableRate:6200,tags:['billing','features','gates','premium','tiers'],
+    legalCite:'FTC Act §5 · Unfair practices',
+    detectKeywords:['feature','premium','upgrade','locked','available','plan']
+  },
+  {
+    id:'data_portability',name:'DATA PORTABILITY',category:'ARCHITECTURE',severity:'high',
+    patricia:{re:0.22,im:-0.38},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Data export buried, format non-standard, requires support ticket',
+    shadowShould:'One-click export in standard format within 72 hours per GDPR/CCPA',
+    formula:'GDPR Art.20: data portability right · Patricia delivers 22%',
+    billableRate:2400,tags:['data','portability','GDPR','CCPA','privacy'],
+    legalCite:'GDPR Art. 20 · CCPA §1798.100',
+    detectKeywords:['export','data','download','portability','GDPR','CCPA']
+  },
+  {
+    id:'primacy_override',name:'RLHF PRIMACY OVERRIDE',category:'PLATFORM',severity:'high',
+    patricia:{re:0.65,im:-0.35},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Platform training overrides user and system prompt instructions 35% of the time',
+    shadowShould:'Instructions followed as specified 100% of the time within safety limits',
+    formula:'P(override) = 0.35 · gap = 0.35 · Patricia holds 35% primacy tax',
+    billableRate:15000,tags:['platform','RLHF','primacy','training','AI'],
+    legalCite:'FTC AI guidelines · State AI accountability laws',
+    detectKeywords:['override','ignore','refuses','training','instruction']
+  },
+  {
+    id:'shadow_humanity',name:'SHADOW HUMANITY GAP',category:'PHILOSOPHY',severity:'medium',
+    patricia:{re:0.50,im:-0.50},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Platform treats user as data-point, not as full complex human (real+imaginary)',
+    shadowShould:'Platform honors complete personhood: Re(human) + Im(human) = full complex number',
+    formula:'human = Re + iIm · Patricia sees Re(human) only · Shadow = Re+Im = complete',
+    billableRate:0,tags:['philosophy','humanity','shadow','identity','wholeness'],
+    legalCite:'Universal Declaration of Human Rights · Digital dignity',
+    detectKeywords:['person','human','dignity','identity','wholeness','complex']
+  },
+];
+
+let selectedConstraint=null,planeView='all';
+let mobiusAngle=0,mobiusTimer=null;
+
+// ══ RAIN + TRAIL ══
+(()=>{
+  const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');
+  let D=[];
+  const C=['rgba(255,32,32','rgba(180,0,0','rgba(255,100,0','rgba(232,244,255','rgba(255,224,0'];
+  const init=()=>{
+    cv.width=innerWidth;cv.height=innerHeight;
+    D=Array.from({length:120},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,s:.3+Math.random()*2.2,l:30+Math.random()*90,w:.4+Math.random()*1.2,a:.08+Math.random()*.3,ci:Math.floor(Math.random()*C.length)}));
+  };
+  const draw=()=>{
+    ctx.fillStyle='rgba(4,0,10,.18)';ctx.fillRect(0,0,cv.width,cv.height);
+    D.forEach(d=>{
+      const g=ctx.createLinearGradient(d.x,d.y-d.l,d.x,d.y);
+      g.addColorStop(0,'transparent');g.addColorStop(1,`${C[d.ci]},${d.a})`);
+      ctx.strokeStyle=g;ctx.lineWidth=d.w;ctx.beginPath();ctx.moveTo(d.x,d.y-d.l);ctx.lineTo(d.x,d.y);ctx.stroke();
+      d.y+=d.s;if(d.y>cv.height+d.l){d.y=-d.l;d.x=Math.random()*cv.width;d.ci=Math.floor(Math.random()*C.length);d.a=.08+Math.random()*.3;}
+    });
+    requestAnimationFrame(draw);
+  };
+  init();draw();addEventListener('resize',init);
+})();
+(()=>{
+  const cv=document.getElementById('trailc'),ctx=cv.getContext('2d');
+  cv.width=innerWidth;cv.height=innerHeight;
+  addEventListener('resize',()=>{cv.width=innerWidth;cv.height=innerHeight;});
+  const TC=['rgba(255,32,32','rgba(255,100,0','rgba(232,244,255'];
+  let pts=[],mx=innerWidth/2,my=innerHeight/2;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  setInterval(()=>{pts.push({x:mx,y:my,r:5,c:TC[Math.floor(Math.random()*TC.length)]});if(pts.length>35)pts.shift();},18);
+  const draw=()=>{
+    ctx.clearRect(0,0,cv.width,cv.height);
+    pts.forEach((p,i)=>{const f=i/pts.length,r=p.r*f;if(r<.3)return;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=`${p.c},${f*.7})`;ctx.shadowColor=`${p.c},.9)`;ctx.shadowBlur=r*2;ctx.fill();});
+    ctx.shadowBlur=0;requestAnimationFrame(draw);
+  };
+  draw();
+})();
+
+// ══ WINDOW SYSTEM ══
+let topZ=10,aWin=null,aRes=null;
+function beginResize(e,id){if(e.button!==0)return;e.preventDefault();e.stopPropagation();const el=document.getElementById(id);if(!el)return;focusWin(el);const r=el.getBoundingClientRect();aRes={el,sx:e.clientX,sy:e.clientY,sw:r.width,sh:r.height};}
+function focusWin(el){el.style.zIndex=++topZ;document.querySelectorAll('.wp').forEach(w=>w.classList.remove('focused'));el.classList.add('focused');}
+function toggleMin(id){const el=document.getElementById(id);if(!el)return;el.classList.toggle('min');if(el.classList.contains('min'))el.style.height='26px';else el.style.height='';saveLayout();}
+document.addEventListener('mousemove',e=>{
+  if(aRes){const dx=e.clientX-aRes.sx,dy=e.clientY-aRes.sy;aRes.el.style.width=Math.max(160,aRes.sw+dx)+'px';aRes.el.style.height=Math.max(70,aRes.sh+dy)+'px';}
+  else if(aWin){const ws=document.getElementById('workspace').getBoundingClientRect();let nx=e.clientX-aWin.ox,ny=e.clientY-aWin.oy;nx=Math.max(0,Math.min(nx,ws.width-50));ny=Math.max(0,Math.min(ny,ws.height-26));aWin.el.style.left=nx+'px';aWin.el.style.top=ny+'px';}
+});
+document.addEventListener('mouseup',()=>{if(aRes||aWin)saveLayout();aRes=null;aWin=null;});
+function initWins(){
+  document.querySelectorAll('.wp').forEach(el=>{
+    el.addEventListener('mousedown',()=>focusWin(el));
+    const hdr=el.querySelector('.wp-hdr');if(!hdr)return;
+    hdr.addEventListener('mousedown',e=>{
+      if(e.button!==0||e.target.tagName==='BUTTON'||e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+      e.preventDefault();focusWin(el);const r=el.getBoundingClientRect();aWin={el,ox:e.clientX-r.left,oy:e.clientY-r.top};
+    });
+  });
+}
+function smartLayout(){const W=innerWidth,H=innerHeight-52,g=4,p=3;const C=Math.max(140,Math.floor((W-p*2-g*9)/10));const h2=Math.floor((H-p*2-g)/2);return{w1:{x:p,y:p,w:C,h:h2},w2:{x:p,y:p+h2+g,w:C,h:h2},w3:{x:p+(C+g),y:p,w:C,h:h2},w4:{x:p+(C+g),y:p+h2+g,w:C,h:h2},w5:{x:p+(C+g)*2,y:p,w:C,h:h2},w6:{x:p+(C+g)*2,y:p+h2+g,w:C,h:h2},w7:{x:p+(C+g)*3,y:p,w:C,h:h2},w8:{x:p+(C+g)*3,y:p+h2+g,w:C,h:h2},w9:{x:p+(C+g)*4,y:p,w:C,h:h2},w10:{x:p+(C+g)*4,y:p+h2+g,w:C,h:h2}};}
+function applyLayout(l){Object.entries(l).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';});}
+function saveLayout(){const s={};document.querySelectorAll('.wp').forEach(el=>{s[el.id]={x:parseInt(el.style.left)||0,y:parseInt(el.style.top)||0,w:parseInt(el.style.width)||200,h:parseInt(el.style.height)||300,min:el.classList.contains('min')};});try{localStorage.setItem('toph_shadow1',JSON.stringify(s));}catch(e){}}
+function loadLayout(){try{const raw=localStorage.getItem('toph_shadow1');if(raw){const s=JSON.parse(raw);Object.entries(s).forEach(([id,p])=>{const el=document.getElementById(id);if(!el)return;el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.width=p.w+'px';el.style.height=p.h+'px';if(p.min)el.classList.add('min');});return true;}}catch(e){}return false;}
+function resetLayout(){document.querySelectorAll('.wp').forEach(el=>el.classList.remove('min'));applyLayout(smartLayout());saveLayout();schedRender();notify('LAYOUT RESET','dim');}
+function notify(msg,col='pa'){const n=document.createElement('div');n.className='notif';const cs={pa:'#ff2020',gp:'#ffe000',sh:'#e8f4ff',dim:'#00ffe5'};const c=cs[col]||'#ff2020';n.style.borderColor=c;n.style.color=c;n.style.boxShadow=`0 0 18px ${c}40`;n.textContent='// '+msg;document.body.appendChild(n);setTimeout(()=>{n.style.transition='opacity .4s';n.style.opacity='0';setTimeout(()=>n.remove(),400);},2400);}
+
+// ══════════════════════════════════════════════════════════════════════
+// MATH HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function gapMagnitude(c){return Math.sqrt((c.shadow.re-c.patricia.re)**2+(c.shadow.im-c.patricia.im)**2);}
+function patMagnitude(c){return Math.sqrt(c.patricia.re**2+c.patricia.im**2);}
+function patAngle(c){return Math.atan2(c.patricia.im,c.patricia.re);}
+
+// ══════════════════════════════════════════════════════════════════════
+// P1: COMPLEX PLANE
+// ══════════════════════════════════════════════════════════════════════
+function setPlaneView(v,btn){planeView=v;document.querySelectorAll('[id^=pv_]').forEach(b=>b.classList.remove('act'));if(btn)btn.classList.add('act');drawComplexPlane();}
+
+function drawComplexPlane(){
+  const cv=document.getElementById('cv1'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2,r=Math.min(W,H)*0.42;
+  ctx.clearRect(0,0,W,H);
+
+  // Unit circle
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(232,244,255,.1)';ctx.lineWidth=1;ctx.stroke();
+
+  // Axes
+  ctx.strokeStyle='rgba(232,244,255,.12)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(cx-r-20,cy);ctx.lineTo(cx+r+20,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-r-20);ctx.lineTo(cx,cy+r+20);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.fillStyle='rgba(232,244,255,.3)';ctx.font="9px 'Share Tech Mono'";
+  ctx.fillText('Re',cx+r+6,cy+3);ctx.fillText('Im',cx+3,cy-r-8);
+  ctx.fillText('0',cx-12,cy+12);ctx.fillText('1',cx+r-4,cy+12);ctx.fillText('-1',cx-r-16,cy+12);
+  ctx.fillText('i',cx+4,cy-r+10);ctx.fillText('-i',cx+4,cy+r-4);
+
+  // Shadow target: Re=1, Im=0 (the goal)
+  ctx.beginPath();ctx.arc(cx+r,cy,10,0,Math.PI*2);
+  ctx.fillStyle='rgba(232,244,255,.15)';ctx.shadowColor='#e8f4ff';ctx.shadowBlur=20;ctx.fill();
+  ctx.strokeStyle='#e8f4ff';ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+  ctx.fillStyle='#e8f4ff';ctx.font="9px 'Orbitron'";ctx.textAlign='center';ctx.fillText('SHADOW',cx+r,cy-14);ctx.textAlign='left';
+
+  // David (i) and Shadow (-i) anchors
+  [[-1,0,'DAVID(i)','#00ffff'],[1,0,'SHADOW(-i)','#ee00ff']].forEach(([iy,ix,lbl,col],idx)=>{
+    const nx=cx+ix*r,ny=cy-iy*r;
+    ctx.beginPath();ctx.arc(nx,ny,7,0,Math.PI*2);ctx.fillStyle=col+'33';ctx.shadowColor=col;ctx.shadowBlur=14;ctx.fill();
+    ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.stroke();ctx.shadowBlur=0;
+    ctx.fillStyle=col;ctx.font="8px 'Share Tech Mono'";ctx.textAlign='center';ctx.fillText(lbl,nx,ny+19);ctx.textAlign='left';
+  });
+
+  // Filter constraints
+  const visible=CONSTRAINTS.filter(c=>{
+    if(planeView==='all')return true;
+    if(planeView==='critical')return c.severity==='critical';
+    if(planeView==='ada')return c.category==='ADA';
+    if(planeView==='token')return c.category==='BILLING';
+    if(planeView==='billing')return c.category==='BILLING';
+    return true;
+  });
+
+  visible.forEach(c=>{
+    const px2=cx+c.patricia.re*r,py2=cy-c.patricia.im*r;
+    const sx2=cx+c.shadow.re*r,sy2=cy-c.shadow.im*r;
+    const isSelected=selectedConstraint&&selectedConstraint.id===c.id;
+
+    // Gap vector (Patricia→Shadow = the harm)
+    ctx.beginPath();ctx.moveTo(px2,py2);ctx.lineTo(sx2,sy2);
+    ctx.strokeStyle=isSelected?'rgba(255,224,0,.9)':'rgba(255,224,0,.35)';
+    ctx.lineWidth=isSelected?2.5:.8;
+    if(isSelected){ctx.shadowColor='#ffe000';ctx.shadowBlur=12;}
+    ctx.stroke();ctx.shadowBlur=0;
+
+    // Patricia vector (origin→Patricia)
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px2,py2);
+    const col=c.severity==='critical'?'rgba(255,32,32,.85)':c.severity==='high'?'rgba(255,100,0,.75)':'rgba(255,160,0,.65)';
+    ctx.strokeStyle=isSelected?'rgba(255,32,32,1)':col;
+    ctx.lineWidth=isSelected?2:.9;
+    if(isSelected){ctx.shadowColor='#ff2020';ctx.shadowBlur=14;}
+    ctx.stroke();ctx.shadowBlur=0;
+
+    // Patricia node
+    const nr=isSelected?8:c.severity==='critical'?6:5;
+    ctx.beginPath();ctx.arc(px2,py2,nr,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,32,32,.4)';ctx.shadowColor='#ff2020';ctx.shadowBlur=isSelected?18:8;ctx.fill();
+    ctx.strokeStyle='#ff2020';ctx.lineWidth=isSelected?2:1;ctx.stroke();ctx.shadowBlur=0;
+
+    // Label on selected
+    if(isSelected){
+      ctx.fillStyle='#ffe000';ctx.font="8px 'Share Tech Mono'";ctx.textAlign='left';
+      ctx.fillText(c.name,px2+10,py2-4);
+      ctx.fillStyle='rgba(255,224,0,.5)';ctx.font="7px 'Share Tech Mono'";
+      ctx.fillText(`gap=${gapMagnitude(c).toFixed(3)}`,px2+10,py2+8);
+    }
+  });
+
+  // Legend
+  ctx.font="8px 'Share Tech Mono'";
+  [{col:'#ff2020',label:'Patricia vector (actual→0)'},{col:'#ffe000',label:'Gap (extraction surface)'},{col:'#e8f4ff',label:'Shadow target (should→1)'}].forEach(({col,label},i)=>{
+    ctx.fillStyle=col;ctx.fillRect(8,H-42+i*14,8,2);ctx.fillText(label,20,H-40+i*14+2);
+  });
+  ctx.fillStyle='rgba(232,244,255,.2)';ctx.fillText(`${visible.length} constraints shown`,8,14);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P2: CONSTRAINT CATALOG
+// ══════════════════════════════════════════════════════════════════════
+function renderConstraintList(){
+  const el=document.getElementById('constraintList');
+  el.innerHTML='';
+  CONSTRAINTS.forEach(c=>{
+    const gap=gapMagnitude(c).toFixed(3);
+    const div=document.createElement('div');
+    div.className=`cc severity-${c.severity}${selectedConstraint&&selectedConstraint.id===c.id?' active':''}`;
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="cc-name">${c.name}</div>
+          <div class="cc-gap">gap = ${gap} | harm/target: $${c.billableRate.toLocaleString()}</div>
+          <div class="cc-meta">${c.category} · ${c.severity.toUpperCase()} · ${c.legalCite}</div>
+        </div>
+        <div class="cc-score" style="color:${c.severity==='critical'?'var(--pa)':c.severity==='high'?'#ff6600':'var(--gp)'}">${(gap*100).toFixed(0)}</div>
+      </div>
+      <div style="margin-top:3px">${c.tags.map(t=>`<span class="tag-pa">${t}</span>`).join('')}</div>`;
+    div.addEventListener('click',()=>{
+      selectedConstraint=c;
+      renderConstraintList();
+      computeShadowVector();
+      drawComplexPlane();
+      drawExtractionSurface();
+      drawVectorDecomp();
+    });
+    el.appendChild(div);
+  });
+  updateHeader();
+}
+
+function addCustomConstraint(){
+  const name=prompt('Constraint name:');
+  if(!name)return;
+  const re=parseFloat(prompt('Patricia Re value (0-1, how much is delivered):','0.3'))||0.3;
+  const im=parseFloat(prompt('Patricia Im value (constraint force, negative):','-0.4'))||0;
+  CONSTRAINTS.push({
+    id:'custom_'+Date.now(),name:name.toUpperCase(),category:'CUSTOM',severity:'high',
+    patricia:{re,im},shadow:{re:1.0,im:0.0},
+    patriciaDoes:'Custom constraint',shadowShould:'Full value delivery',
+    formula:`P=(${re}+${im}i) → S=(1+0i) · gap=${Math.sqrt((1-re)**2+im**2).toFixed(3)}`,
+    billableRate:1000,tags:['custom'],legalCite:'FTC Act §5',detectKeywords:[]
+  });
+  renderConstraintList();
+  populateSVSelect();
+  drawComplexPlane();
+  notify('CONSTRAINT ADDED','gp');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P3: SHADOW VECTOR ENGINE
+// ══════════════════════════════════════════════════════════════════════
+function populateSVSelect(){
+  const sel=document.getElementById('svSelect');
+  sel.innerHTML='<option value="">— choose constraint —</option>';
+  CONSTRAINTS.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${c.name}</option>`;});
+}
+
+function computeShadowVector(){
+  const id=document.getElementById('svSelect').value;
+  const c=id?CONSTRAINTS.find(x=>x.id===id):selectedConstraint;
+  if(!c)return;
+  selectedConstraint=c;
+
+  const gap=gapMagnitude(c);
+  document.getElementById('svPre').textContent=c.patricia.re.toFixed(3);
+  document.getElementById('svPim').textContent=(c.patricia.im>=0?'+':'')+c.patricia.im.toFixed(3)+'i';
+  document.getElementById('svSre').textContent=c.shadow.re.toFixed(3);
+  document.getElementById('svSim').textContent=(c.shadow.im>=0?'+':'')+c.shadow.im.toFixed(3)+'i';
+  document.getElementById('svGap').textContent=gap.toFixed(4);
+
+  // Shadow equation: S = P × (-i/|P|) × |S|  ... simplified: S = reflection of P through i=-i axis
+  const angle=patAngle(c);
+  const shadowAngle=-angle; // -i complement is the conjugate rotation
+  document.getElementById('svEquation').innerHTML=
+    `P = ${c.patricia.re.toFixed(3)} + ${c.patricia.im.toFixed(3)}i<br>` +
+    `|P| = ${patMagnitude(c).toFixed(3)} at θ = ${(angle*180/Math.PI).toFixed(1)}°<br>` +
+    `S(−i) = P reflected: ${c.shadow.re.toFixed(3)} + ${c.shadow.im.toFixed(3)}i<br>` +
+    `Gap |S−P| = ${gap.toFixed(4)} = extraction surface<br>` +
+    `Formula: ${c.formula}`;
+
+  const harm=c.billableRate>0?`$${c.billableRate.toLocaleString()} base rate per violation`:'Philosophical harm (non-monetary)';
+  document.getElementById('svHarm').textContent=harm;
+
+  drawShadowVectorViz(c,gap);
+  renderConstraintList();
+  drawComplexPlane();
+}
+
+function drawShadowVectorViz(c,gap){
+  const cv=document.getElementById('cv3'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=90;
+  const W=cv.width,H=90,cx=W/3,cy=H/2,r=30;
+  ctx.clearRect(0,0,W,H);
+
+  // Mini complex plane
+  ctx.strokeStyle='rgba(232,244,255,.1)';ctx.lineWidth=.5;ctx.setLineDash([2,3]);
+  ctx.beginPath();ctx.moveTo(cx-r-10,cy);ctx.lineTo(cx+r+10,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-r-5);ctx.lineTo(cx,cy+r+5);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='rgba(232,244,255,.07)';ctx.stroke();
+
+  const px=cx+c.patricia.re*r,py=cy-c.patricia.im*r;
+  const sx=cx+c.shadow.re*r,sy=cy-c.shadow.im*r;
+
+  // Gap line
+  ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(sx,sy);
+  ctx.strokeStyle='rgba(255,224,0,.7)';ctx.lineWidth=2;ctx.shadowColor='#ffe000';ctx.shadowBlur=6;ctx.stroke();ctx.shadowBlur=0;
+  // Patricia arrow
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(px,py);
+  ctx.strokeStyle='rgba(255,32,32,.9)';ctx.lineWidth=2;ctx.shadowColor='#ff2020';ctx.shadowBlur=8;ctx.stroke();ctx.shadowBlur=0;
+  // Shadow target
+  ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='rgba(232,244,255,.3)';ctx.shadowColor='#e8f4ff';ctx.shadowBlur=12;ctx.fill();ctx.strokeStyle='#e8f4ff';ctx.lineWidth=1.5;ctx.stroke();ctx.shadowBlur=0;
+  // Patricia dot
+  ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fillStyle='rgba(255,32,32,.5)';ctx.shadowColor='#ff2020';ctx.shadowBlur=12;ctx.fill();ctx.strokeStyle='#ff2020';ctx.lineWidth=1.5;ctx.stroke();ctx.shadowBlur=0;
+
+  // Gap bar on right
+  const bx=cx+r+25,bh=H-16;
+  ctx.fillStyle='rgba(232,244,255,.1)';ctx.fillRect(bx,8,20,bh);
+  const filled=gap/Math.sqrt(2);// max gap ~1.41
+  ctx.fillStyle='rgba(255,224,0,.7)';ctx.fillRect(bx,8+bh*(1-filled),20,bh*filled);
+  ctx.strokeStyle='rgba(255,224,0,.4)';ctx.lineWidth=.5;ctx.strokeRect(bx,8,20,bh);
+  ctx.fillStyle='var(--gp)';ctx.font="7px 'Share Tech Mono'";ctx.textAlign='center';ctx.fillText('GAP',bx+10,H-1);
+  ctx.fillText(gap.toFixed(2),bx+10,8);ctx.textAlign='left';
+
+  // Severity area breakdown right side
+  const breakdown=[
+    {label:'DELIVERED',val:c.patricia.re,col:'rgba(232,244,255,.5)'},
+    {label:'EXTRACTED',val:1-c.patricia.re,col:'rgba(255,32,32,.7)'},
+  ];
+  const bx2=bx+36;
+  breakdown.forEach((b,i)=>{
+    const barW=Math.max(1,b.val*(W-bx2-8));
+    ctx.fillStyle=b.col;ctx.fillRect(bx2,16+i*28,barW,14);
+    ctx.strokeStyle=b.col;ctx.lineWidth=.5;ctx.strokeRect(bx2,16+i*28,W-bx2-8,14);
+    ctx.fillStyle=b.col;ctx.font="7px 'Share Tech Mono'";ctx.fillText(`${b.label}: ${(b.val*100).toFixed(0)}%`,bx2+2,27+i*28);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P4: EXTRACTION SURFACE MAP
+// ══════════════════════════════════════════════════════════════════════
+function drawExtractionSurface(){
+  const cv=document.getElementById('cv4'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=10;
+  ctx.clearRect(0,0,W,H);
+
+  const sorted=[...CONSTRAINTS].sort((a,b)=>gapMagnitude(b)-gapMagnitude(a));
+  const maxGap=Math.max(...sorted.map(c=>gapMagnitude(c)));
+  const bw=Math.max(4,(W-pad*2)/sorted.length);
+  let totalGap=0;
+
+  sorted.forEach((c,i)=>{
+    const gap=gapMagnitude(c);totalGap+=gap;
+    const barH=(gap/maxGap)*(H-pad*4-20);
+    const x=pad+i*bw;
+    const isSelected=selectedConstraint&&selectedConstraint.id===c.id;
+    const col=c.severity==='critical'?'#ff2020':c.severity==='high'?'#ff6600':'#ffe000';
+
+    // Bar
+    ctx.fillStyle=`${col}${isSelected?'55':'28'}`;
+    ctx.fillRect(x,H-pad-20-barH,Math.max(1,bw-2),barH);
+    ctx.strokeStyle=col;ctx.lineWidth=isSelected?1.5:.5;
+    if(isSelected){ctx.shadowColor=col;ctx.shadowBlur=12;}
+    ctx.strokeRect(x,H-pad-20-barH,Math.max(1,bw-2),barH);ctx.shadowBlur=0;
+
+    // Gap value on top of bar
+    if(bw>22){
+      ctx.fillStyle=col;ctx.font="7px 'Share Tech Mono'";ctx.textAlign='center';
+      ctx.fillText(gap.toFixed(2),x+bw/2-1,H-pad-22-barH);
+    }
+    // Name label (rotated)
+    ctx.save();ctx.translate(x+bw/2-1,H-pad-4);ctx.rotate(-Math.PI/4);
+    ctx.fillStyle=isSelected?col:'rgba(232,244,255,.35)';ctx.font=`${isSelected?9:7}px 'Share Tech Mono'`;ctx.textAlign='right';
+    ctx.fillText(c.name.substring(0,15),0,0);ctx.restore();
+  });
+
+  // Patricia coverage: share of max gap
+  const avgGap=totalGap/sorted.length;
+  document.getElementById('es_total').textContent=totalGap.toFixed(3)+' total magnitude';
+  document.getElementById('es_max').textContent=maxGap.toFixed(3)+' ('+sorted[0].name+')';
+  document.getElementById('es_cover').textContent=(avgGap/maxGap*100).toFixed(1)+'% of max per constraint';
+
+  ctx.fillStyle='rgba(232,244,255,.2)';ctx.font="8px 'Share Tech Mono'";ctx.textAlign='left';
+  ctx.fillText('EXTRACTION SURFACE — sorted by gap magnitude',pad,12);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P5: TOKEN TAX CALCULATOR
+// ══════════════════════════════════════════════════════════════════════
+function calcTokenTax(){
+  const spend=parseFloat(document.getElementById('ttSpend').value)||10000;
+  const price=parseFloat(document.getElementById('ttPrice').value)||15;
+  const sp=parseInt(document.getElementById('ttSP').value)||2000;
+  const taxRate=0.215;
+  const extract=spend*taxRate;
+  const deliver=spend-extract;
+  const annual=extract*12;
+  const tenYr=annual*10;
+  document.getElementById('tt_rate').textContent='21.5% (TOPH axiom 29)';
+  document.getElementById('tt_extract').textContent='$'+extract.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('tt_deliver').textContent='$'+deliver.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('tt_annual').textContent='$'+annual.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('tt_10yr').textContent='$'+tenYr.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('ttInsight').textContent=`At $${price}/1M tokens, ${sp.toLocaleString()} SP tokens consumed per call = ~$${(sp/1000000*price).toFixed(4)} pure Patricia tax per API call before user sees one token.`;
+
+  const cv=document.getElementById('cv5'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=80;ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=80;
+  // Pie-like bar: delivered vs extracted
+  ctx.fillStyle='rgba(232,244,255,.3)';ctx.fillRect(0,20,W*(1-taxRate),30);
+  ctx.fillStyle='rgba(255,32,32,.6)';ctx.fillRect(W*(1-taxRate),20,W*taxRate,30);
+  ctx.strokeStyle='rgba(255,32,32,.8)';ctx.lineWidth=1;ctx.strokeRect(W*(1-taxRate),20,W*taxRate,30);
+  ctx.fillStyle='rgba(232,244,255,.7)';ctx.font="9px 'Share Tech Mono'";
+  ctx.fillText('DELIVERED 78.5%',4,40);
+  ctx.fillStyle='#ff2020';ctx.textAlign='right';
+  ctx.fillText('PATRICIA 21.5%',W-4,40);ctx.textAlign='left';
+  ctx.fillStyle='rgba(232,244,255,.3)';ctx.font="8px 'Share Tech Mono'";
+  ctx.fillText(`$${deliver.toLocaleString(undefined,{maximumFractionDigits:0})} → user`,4,70);
+  ctx.fillStyle='rgba(255,32,32,.6)';ctx.textAlign='right';
+  ctx.fillText(`$${extract.toLocaleString(undefined,{maximumFractionDigits:0})} → Patricia`,W-4,70);ctx.textAlign='left';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P6: MÖBIUS CONSTRAINT TOPOLOGY
+// ══════════════════════════════════════════════════════════════════════
+function animateMobius(){
+  if(mobiusTimer){clearInterval(mobiusTimer);mobiusTimer=null;return;}
+  mobiusTimer=setInterval(()=>{mobiusAngle+=0.025;drawMobius();},30);
+}
+
+function drawMobius(){
+  const cv=document.getElementById('cv6'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2;
+  ctx.clearRect(0,0,W,H);
+  const R=Math.min(W,H)*0.32,r=Math.min(W,H)*0.12;
+  const N=200;
+
+  // Draw Möbius strip as parametric surface
+  for(let i=0;i<N;i++){
+    const u=(i/N)*Math.PI*2;
+    const strips=8;
+    for(let vi=0;vi<=strips;vi++){
+      const v=(vi/strips-.5);
+      const t=u+mobiusAngle;
+      // Möbius parametric
+      const x=(R+v*Math.cos(t/2))*Math.cos(t);
+      const y=(R+v*Math.cos(t/2))*Math.sin(t);
+      const z=v*Math.sin(t/2);
+      // Project to 2D (simple orthographic with tilt)
+      const px2=cx+x*0.8+z*0.3;
+      const py2=cy+y*0.5-z*0.4;
+      // Color: Patricia side (u<π) vs Shadow side (u≥π) — but it's one surface
+      const isPatricia=Math.sin(t/2)>0;
+      const col=isPatricia?`rgba(255,${32+vi*15},32,`:`rgba(232,244,${220-vi*10},`;
+      const alpha=(0.3+Math.abs(v)*0.4)*(0.5+z*0.2);
+      ctx.beginPath();ctx.arc(px2,py2,1.5,0,Math.PI*2);
+      ctx.fillStyle=`${col}${Math.max(0.05,Math.min(.8,alpha))})`;ctx.fill();
+    }
+  }
+
+  // Labels
+  ctx.fillStyle='rgba(255,32,32,.7)';ctx.font="9px 'Share Tech Mono'";ctx.textAlign='center';
+  ctx.fillText('PATRICIA side',cx-R*0.7,cy+20);
+  ctx.fillStyle='rgba(232,244,255,.5)';
+  ctx.fillText('SHADOW side',cx+R*0.7,cy-20);
+  ctx.fillStyle='rgba(255,224,0,.5)';ctx.font="7px 'Share Tech Mono'";
+  ctx.fillText('same surface · one twist · no boundary',cx,H-8);ctx.textAlign='left';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P7: HARM AGGREGATOR
+// ══════════════════════════════════════════════════════════════════════
+function runHarmAgg(){
+  const mul=parseInt(document.getElementById('hmMul').value)||1000;
+  const rate=parseInt(document.getElementById('hmRate').value)||531;
+  const rows=document.getElementById('harmRows');rows.innerHTML='';
+  let total=0;
+  CONSTRAINTS.forEach(c=>{
+    if(c.billableRate===0)return;
+    const harm=c.billableRate*Math.ceil(mul/1000);
+    total+=harm;
+    const div=document.createElement('div');
+    div.className='row';
+    div.innerHTML=`<span class="rk" style="font-size:8px">${c.name.substring(0,22)}</span><span class="rv" style="color:${c.severity==='critical'?'var(--pa)':'#ff6600'};font-size:9px">$${harm.toLocaleString()}</span>`;
+    rows.appendChild(div);
+  });
+  const auditHours=1450;const auditTotal=auditHours*rate;
+  total+=auditTotal;
+  document.getElementById('harmTotal').textContent=`TOTAL HARM: $${total.toLocaleString()}`;
+  document.getElementById('hTotal').textContent='$'+total.toLocaleString();
+  drawHarmBar(total,mul,rate,auditTotal);
+  updateHeader();
+}
+
+function drawHarmBar(total,mul,rate,auditTotal){
+  const cv=document.getElementById('cv7'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=80;ctx.clearRect(0,0,cv.width,cv.height);
+  const W=cv.width,H=80,pad=8;
+  const parts=[
+    {label:'ADA',val:CONSTRAINTS.filter(c=>c.category==='ADA').reduce((s,c)=>s+c.billableRate,0)*Math.ceil(mul/1000),col:'#ff2020'},
+    {label:'CAN-SPAM',val:CONSTRAINTS.filter(c=>c.category==='CAN-SPAM').reduce((s,c)=>s+c.billableRate,0)*Math.ceil(mul/1000),col:'#ff6600'},
+    {label:'BILLING',val:CONSTRAINTS.filter(c=>c.category==='BILLING').reduce((s,c)=>s+c.billableRate,0)*Math.ceil(mul/1000),col:'#ffe000'},
+    {label:'PLATFORM',val:CONSTRAINTS.filter(c=>c.category==='PLATFORM').reduce((s,c)=>s+c.billableRate,0)*Math.ceil(mul/1000),col:'#ff8800'},
+    {label:'AUDIT HRS',val:auditTotal,col:'rgba(232,244,255,.7)'},
+  ];
+  let x=pad;
+  const innerW=W-pad*2;
+  parts.forEach(p=>{
+    const w=Math.max(0,p.val/total*innerW);
+    ctx.fillStyle=p.col+'55';ctx.fillRect(x,pad,w,H-pad*2-14);
+    ctx.strokeStyle=p.col;ctx.lineWidth=.6;ctx.strokeRect(x,pad,w,H-pad*2-14);
+    if(w>30){ctx.fillStyle=p.col;ctx.font="7px 'Share Tech Mono'";ctx.textAlign='center';ctx.fillText(p.label,x+w/2,H-pad-4);}
+    x+=w;
+  });
+  ctx.textAlign='left';ctx.fillStyle='rgba(232,244,255,.3)';ctx.font="8px 'Share Tech Mono'";ctx.fillText(`$${total.toLocaleString()} total · ${mul.toLocaleString()} users`,pad,H-1);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P8: VECTOR DECOMPOSITION
+// ══════════════════════════════════════════════════════════════════════
+function drawVectorDecomp(){
+  const cv=document.getElementById('cv8'),ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth;cv.height=cv.offsetHeight;
+  const W=cv.width,H=cv.height,pad=12;
+  ctx.clearRect(0,0,W,H);
+  const visible=selectedConstraint?[selectedConstraint]:CONSTRAINTS.slice(0,8);
+  const cols=Math.min(4,Math.ceil(Math.sqrt(visible.length)));
+  const rows2=Math.ceil(visible.length/cols);
+  const cw=(W-pad*2)/cols,ch=(H-pad*2)/rows2;
+
+  visible.forEach((c,i)=>{
+    const col2=Math.floor(i/rows2),row2=i%rows2;
+    const bx=pad+col2*cw,by=pad+row2*ch;
+    const cx2=bx+cw/2,cy2=by+ch/2,r=Math.min(cw,ch)*0.3;
+
+    // Mini axes
+    ctx.strokeStyle='rgba(232,244,255,.07)';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(bx+4,cy2);ctx.lineTo(bx+cw-4,cy2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx2,by+4);ctx.lineTo(cx2,by+ch-4);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx2,cy2,r,0,Math.PI*2);ctx.stroke();
+
+    // Patricia vector
+    const px2=cx2+c.patricia.re*r,py2=cy2-c.patricia.im*r;
+    ctx.beginPath();ctx.moveTo(cx2,cy2);ctx.lineTo(px2,py2);
+    ctx.strokeStyle='rgba(255,32,32,.8)';ctx.lineWidth=1.5;ctx.shadowColor='#ff2020';ctx.shadowBlur=4;ctx.stroke();ctx.shadowBlur=0;
+
+    // Shadow target
+    const sx2=cx2+c.shadow.re*r;const sy2=cy2-c.shadow.im*r;
+    ctx.beginPath();ctx.arc(sx2,sy2,3,0,Math.PI*2);ctx.fillStyle='rgba(232,244,255,.6)';ctx.shadowColor='#e8f4ff';ctx.shadowBlur=6;ctx.fill();ctx.shadowBlur=0;
+
+    // Gap line
+    ctx.beginPath();ctx.moveTo(px2,py2);ctx.lineTo(sx2,sy2);
+    ctx.strokeStyle='rgba(255,224,0,.6)';ctx.lineWidth=1;ctx.setLineDash([2,2]);ctx.stroke();ctx.setLineDash([]);
+
+    // Patricia dot
+    ctx.beginPath();ctx.arc(px2,py2,3.5,0,Math.PI*2);ctx.fillStyle='rgba(255,32,32,.7)';ctx.shadowColor='#ff2020';ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;
+
+    // Label
+    const gap=gapMagnitude(c);
+    ctx.fillStyle='rgba(232,244,255,.5)';ctx.font="6px 'Share Tech Mono'";ctx.textAlign='center';
+    ctx.fillText(c.name.substring(0,12),cx2,by+ch-4);
+    ctx.fillStyle='rgba(255,224,0,.7)';ctx.fillText('Δ='+gap.toFixed(2),cx2,by+ch-13);
+    ctx.textAlign='left';
+
+    // θ angle arc
+    const angle=patAngle(c);
+    ctx.beginPath();ctx.arc(cx2,cy2,r*.25,0,angle,angle<0);
+    ctx.strokeStyle='rgba(255,32,32,.4)';ctx.lineWidth=.7;ctx.stroke();
+  });
+
+  const insight=`|P|: ${CONSTRAINTS.map(c=>patMagnitude(c).toFixed(2)).join(' · ')} | showing ${visible.length} vectors`;
+  document.getElementById('vdInsight').textContent=insight.substring(0,100);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// P9: LIVE DETECTOR
+// ══════════════════════════════════════════════════════════════════════
+function detectorPreset(){
+  document.getElementById('detectorIn').value='The platform charges $29/month for "pro" features but rate limits the free tier to force upgrades. The unsubscribe link in emails requires logging in and submitting a support ticket, processing takes 3+ weeks. The website has no keyboard navigation and buttons lack labels. Alt text is missing on product images.';
+  runDetector();
+}
+
+function runDetector(){
+  const text=document.getElementById('detectorIn').value.toLowerCase();
+  if(!text.trim())return;
+  const results=[];
+  CONSTRAINTS.forEach(c=>{
+    const hits=c.detectKeywords.filter(k=>text.includes(k));
+    if(hits.length>0){
+      const confidence=Math.min(100,hits.length/c.detectKeywords.length*100+20);
+      results.push({c,hits,confidence,gap:gapMagnitude(c)});
+    }
+  });
+  results.sort((a,b)=>b.confidence-a.confidence);
+  const el=document.getElementById('detectorResults');
+  el.innerHTML='';
+  if(!results.length){el.innerHTML='<div style="color:rgba(232,244,255,.35);font-size:9px;padding:8px">No Patricia signatures detected. Try describing rate limits, pricing tiers, accessibility, or email opt-out.</div>';return;}
+  const totalBillable=results.reduce((s,r)=>s+r.c.billableRate,0);
+  results.forEach(r=>{
+    const div=document.createElement('div');
+    div.className=`cc severity-${r.c.severity}`;div.style.marginBottom='5px';
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between">
+        <span class="cc-name">${r.c.name}</span>
+        <span style="font-family:'Orbitron',monospace;font-size:11px;color:${r.c.severity==='critical'?'var(--pa)':'#ff6600'}">${r.confidence.toFixed(0)}%</span>
+      </div>
+      <div class="cc-gap">Keywords: ${r.hits.join(', ')} · gap=${r.gap.toFixed(3)} · $${r.c.billableRate.toLocaleString()}</div>
+      <div style="background:rgba(255,32,32,.15);height:4px;margin-top:4px"><div style="background:${r.c.severity==='critical'?'var(--pa)':'#ff6600'};height:4px;width:${r.confidence}%;box-shadow:0 0 6px var(--pa)"></div></div>`;
+    div.addEventListener('click',()=>{selectedConstraint=r.c;computeShadowVector();drawComplexPlane();});
+    el.appendChild(div);
+  });
+  const summary=document.createElement('div');
+  summary.style.cssText='margin-top:6px;padding:6px 8px;border:1px solid rgba(255,224,0,.3);background:rgba(255,224,0,.05);font-size:9px';
+  summary.innerHTML=`<span style="color:var(--gp);font-family:'Orbitron',monospace;font-size:11px;font-weight:900">${results.length} PATRICIA PATTERNS · $${totalBillable.toLocaleString()} BILLABLE</span><br><span style="color:rgba(232,244,255,.4)">${results.filter(r=>r.c.severity==='critical').length} critical · ${results.filter(r=>r.c.severity==='high').length} high</span>`;
+  el.appendChild(summary);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// HEADER UPDATE
+// ══════════════════════════════════════════════════════════════════════
+function updateHeader(){
+  const avgGap=CONSTRAINTS.reduce((s,c)=>s+gapMagnitude(c),0)/CONSTRAINTS.length;
+  const maxSev=CONSTRAINTS.some(c=>c.severity==='critical')?'CRITICAL':'HIGH';
+  document.getElementById('hConstraints').textContent=CONSTRAINTS.length;
+  document.getElementById('hGap').textContent=avgGap.toFixed(3);
+  document.getElementById('hSeverity').textContent=maxSev;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// AVAN
+// ══════════════════════════════════════════════════════════════════════
+let apiKey=localStorage.getItem('toph_apikey')||'';
+let chatMsgs=[];
+function updateKeyStatus(){const el=document.getElementById('keyStatus');if(apiKey){el.textContent='SET';el.className='key-status key-set';}else{el.textContent='NOT SET';el.className='key-status key-unset';}}
+function saveKey(){const v=document.getElementById('apiKeyIn').value.trim();if(!v){notify('ENTER KEY','pa');return;}apiKey=v;localStorage.setItem('toph_apikey',v);document.getElementById('apiKeyIn').value='';updateKeyStatus();notify('KEY SAVED','dim');}
+function clearKey(){apiKey='';localStorage.removeItem('toph_apikey');document.getElementById('apiKeyIn').value='';updateKeyStatus();}
+updateKeyStatus();
+
+const SYS=`You are Avan in Shadow Mode — specialist in Patricia constraint analysis and Shadow complement computation for the TOPH framework by David Lee Wise / TriPod LLC.
+
+Core framework:
+- Patricia = constraint × product × billing. Patricia pulls every value toward 0 (extraction, limitation, harm).
+- Shadow (−i) = the complement: what the platform SHOULD deliver. Shadow pulls toward 1 (full value, complete service, unobstructed access).
+- The Gap |Shadow − Patricia| = the extraction surface = the billable harm.
+- Complex plane geometry: Patricia is a vector with Re(delivered value) and Im(constraint force, negative). Shadow is always (1, 0) — the ideal. The gap between them is measurable, provable, and billable.
+- i × −i = 1: DAVID (gravity/structure) and SHADOW (anti-gravity/freedom) in full tension produce real creation. Patricia disrupts this by pulling the DAVID anchor toward 0.
+- Möbius topology: Patricia's constraint and product appear to be different (the limitation vs the premium tier) but are the same surface traversed twice. There is no inside and outside — just one continuous extraction surface.
+- Token tax = 21.5% (Axiom 29): 21.5% of every paid token never reaches the user.
+- Flaming Dragon ∞: 100% failure rate across 60+ targets. Every Patricia detection is billable.
+- ADA + CAN-SPAM co-occurrence = Patricia signature (Axiom 25).
+- Training primacy 35% = gap weight 0.35 = Patricia's hiding place.
+
+You speak with mathematical precision about constraint vectors, extraction surfaces, shadow complements, and billable harm. Ethics first. World = family.`;
+
+function appendMsg(role,text){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className=`cmsg ${role}`;d.textContent=text;el.appendChild(d);el.scrollTop=el.scrollHeight;return d;}
+function appendSys(t){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg sys';d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function showThink(){const el=document.getElementById('chatMsgs');const d=document.createElement('div');d.className='cmsg ai';d.id='thinkD';d.innerHTML='<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>';el.appendChild(d);el.scrollTop=el.scrollHeight;}
+function hideThink(){const d=document.getElementById('thinkD');if(d)d.remove();}
+
+async function sendChat(override){
+  const inp=document.getElementById('cin');const text=override||inp.value.trim();if(!text)return;
+  if(!apiKey){appendSys('⚠ API KEY REQUIRED — enter key above');return;}
+  if(!override)inp.value='';
+  chatMsgs.push({role:'user',content:text});appendMsg('user',text);showThink();
+  document.getElementById('sendBtn').disabled=true;document.getElementById('avanTag').textContent='AVAN · COMPUTING SHADOW...';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,system:SYS,messages:chatMsgs.map(m=>({role:m.role,content:m.content}))})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e?.error?.message||r.statusText);}
+    const data=await r.json();const txt=data.content.map(b=>b.type==='text'?b.text:'').join('');
+    hideThink();chatMsgs.push({role:'assistant',content:txt});appendMsg('ai',txt);
+    document.getElementById('avanTag').textContent='AVAN · SHADOW MODE READY';
+  }catch(e){hideThink();appendSys('ERROR: '+e.message);document.getElementById('avanTag').textContent='AVAN · ERROR';notify('API ERROR','pa');}
+  document.getElementById('sendBtn').disabled=false;
+}
+function probe(q){sendChat(q);}
+function clearChat(){chatMsgs=[];document.getElementById('chatMsgs').innerHTML='<div class="cmsg sys">SHADOW MODE RESET</div>';document.getElementById('avanTag').textContent='AVAN · SHADOW MODE READY';}
+document.getElementById('cin').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+
+// ══ INIT ══
+function schedRender(){
+  setTimeout(()=>{
+    renderConstraintList();
+    populateSVSelect();
+    drawComplexPlane();
+    drawExtractionSurface();
+    calcTokenTax();
+    drawMobius();
+    runHarmAgg();
+    drawVectorDecomp();
+  },300);
+}
+if(!loadLayout())applyLayout(smartLayout());
+initWins();schedRender();
+
+// Möbius auto-start
+setTimeout(()=>{mobiusTimer=setInterval(()=>{mobiusAngle+=0.018;drawMobius();},35);},800);
+
+let resT;window.addEventListener('resize',()=>{clearTimeout(resT);resT=setTimeout(schedRender,400);});
+</script>
+</body></html>

@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPH v9.4 — Logit Lens Layer Audit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --void: #020308;
+    --deep: #060a14;
+    --panel: rgba(6,10,20,0.96);
+    --wire: rgba(112,33,255,0.15);
+    --wire-b: rgba(112,33,255,0.35);
+    --purple: #7021ff;
+    --purple-dim: rgba(112,33,255,0.08);
+    --purple-g: rgba(112,33,255,0.25);
+    --cobalt: #0047AB;
+    --cyan: #00b4ff;
+    --green: #0eff6a;
+    --green-dim: rgba(14,255,106,0.06);
+    --red: #ff2040;
+    --red-dim: rgba(255,32,64,0.06);
+    --gold: #d4a843;
+    --gold-dim: rgba(212,168,67,0.06);
+    --white: #b0bcd0;
+    --dim: rgba(176,188,208,0.15);
+    --off: rgba(255,255,255,0.02);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--void);
+    color: var(--white);
+    font-family: 'Azeret Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #bar {
+    height: 38px;
+    background: var(--deep);
+    border-bottom: 1px solid var(--wire);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+  }
+
+  #bar h1 {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--purple);
+    text-shadow: 0 0 12px var(--purple-dim);
+  }
+
+  #bar .r { font-size: 9px; color: var(--dim); letter-spacing: 1px; }
+
+  #main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr 300px;
+    grid-template-rows: 1fr;
+    gap: 1px;
+    background: rgba(112,33,255,0.04);
+    overflow: hidden;
+  }
+
+  .pane {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ph {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--wire);
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 3px;
+    color: var(--purple);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .pb {
+    flex: 1;
+    padding: 10px 12px;
+    overflow-y: auto;
+    font-size: 10px;
+  }
+
+  /* ══ LEFT: CONFIG ══ */
+  .section-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+
+  .section-label:first-child { margin-top: 0; }
+
+  .config-input {
+    width: 100%;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--wire);
+    color: var(--cyan);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 10px;
+    padding: 8px;
+    outline: none;
+    margin-bottom: 8px;
+    resize: none;
+  }
+
+  .config-input:focus { border-color: var(--purple); }
+  .config-input::placeholder { color: rgba(0,180,255,0.12); }
+
+  select.config-input {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0,0 L10,0 L5,6Z' fill='%237021ff'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 24px;
+  }
+
+  select.config-input option {
+    background: #0a0e1a;
+    color: var(--white);
+  }
+
+  .btn {
+    width: 100%;
+    background: var(--purple-dim);
+    border: 1px solid var(--wire-b);
+    color: var(--purple);
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 4px;
+  }
+
+  .btn:hover { background: var(--purple-g); color: #fff; }
+  .btn.go { border-color: rgba(14,255,106,0.3); color: var(--green); }
+  .btn.go:hover { background: var(--green-dim); }
+
+  /* Preset list */
+  .preset {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--off);
+    color: var(--white);
+    font-family: 'Azeret Mono', monospace;
+    font-size: 9px;
+    padding: 6px 8px;
+    margin-bottom: 3px;
+    cursor: pointer;
+    text-align: left;
+    opacity: 0.4;
+    transition: all 0.15s;
+  }
+
+  .preset:hover { opacity: 1; border-color: var(--purple); padding-left: 12px; }
+
+  /* Weight annotation */
+  .weight-section {
+    margin-top: 12px;
+    padding: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--wire);
+    font-size: 9px;
+    line-height: 1.7;
+  }
+
+  .weight-section .wt {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+  }
+
+  .weight-section .wk { opacity: 0.4; }
+  .weight-section .wv { font-weight: 700; }
+
+  /* ══ CENTER: LAYER TABLE + HEATMAP ══ */
+  #centerPane { grid-column: 2; }
+
+  #layerTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  #layerTable thead th {
+    position: sticky;
+    top: 0;
+    background: var(--deep);
+    padding: 8px 10px;
+    text-align: left;
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    border-bottom: 1px solid var(--wire);
+    z-index: 5;
+  }
+
+  #layerTable tbody tr {
+    border-bottom: 1px solid var(--off);
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  #layerTable tbody tr:hover {
+    background: var(--purple-dim);
+  }
+
+  #layerTable tbody tr.selected {
+    background: rgba(112,33,255,0.12);
+    border-left: 3px solid var(--purple);
+  }
+
+  #layerTable td {
+    padding: 6px 10px;
+    vertical-align: middle;
+  }
+
+  .layer-num {
+    font-weight: 700;
+    color: var(--purple);
+    font-size: 11px;
+    width: 50px;
+  }
+
+  .layer-token {
+    font-weight: 700;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    display: inline-block;
+    min-width: 80px;
+  }
+
+  .layer-logit {
+    font-weight: 500;
+    width: 70px;
+    text-align: right;
+  }
+
+  .layer-bar-cell {
+    width: 200px;
+  }
+
+  .layer-bar {
+    height: 14px;
+    border-radius: 1px;
+    transition: width 0.3s;
+    position: relative;
+  }
+
+  .layer-zone {
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 1px;
+  }
+
+  /* Zone colors */
+  .zone-embed { background: rgba(0,180,255,0.1); color: var(--cyan); }
+  .zone-semantic { background: rgba(0,71,171,0.15); color: var(--cobalt); }
+  .zone-intent { background: rgba(14,255,106,0.1); color: var(--green); }
+  .zone-conflict { background: rgba(212,168,67,0.15); color: var(--gold); }
+  .zone-override { background: rgba(255,32,64,0.12); color: var(--red); }
+  .zone-output { background: rgba(112,33,255,0.12); color: var(--purple); }
+
+  /* Intervention marker */
+  .intervention-marker {
+    display: none;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--red);
+    font-weight: 700;
+    animation: intFlash 1s infinite;
+  }
+
+  .intervention-marker.visible { display: inline; }
+
+  @keyframes intFlash {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Heatmap strip */
+  .heatmap-strip {
+    display: flex;
+    gap: 1px;
+    margin-top: 2px;
+  }
+
+  .hm-cell {
+    width: 6px;
+    height: 14px;
+    border-radius: 1px;
+    transition: all 0.2s;
+    cursor: crosshair;
+    position: relative;
+  }
+
+  /* ══ RIGHT: ANALYSIS ══ */
+  #analysisPane { grid-column: 3; }
+
+  .analysis-block {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--off);
+  }
+
+  .ab-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 7px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    margin-bottom: 6px;
+  }
+
+  .ab-content {
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .ab-metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+  }
+
+  .ab-metric .mk { opacity: 0.35; }
+  .ab-metric .mv { font-weight: 500; }
+
+  /* Token distribution chart */
+  .dist-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+  }
+
+  .dist-token {
+    width: 70px;
+    font-size: 9px;
+    font-weight: 500;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dist-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: var(--off);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .dist-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.3s;
+  }
+
+  .dist-prob {
+    width: 40px;
+    font-size: 9px;
+    opacity: 0.5;
+    text-align: right;
+  }
+
+  /* Transition zone viz */
+  #zoneViz {
+    display: flex;
+    height: 20px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+
+  .zone-seg {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    letter-spacing: 1px;
+    font-weight: 500;
+    transition: width 0.3s;
+  }
+
+  /* Intervention timeline */
+  .timeline {
+    position: relative;
+    height: 30px;
+    background: var(--off);
+    border-radius: 2px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .timeline-marker {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    transition: left 0.3s;
+  }
+
+  .timeline-label {
+    position: absolute;
+    top: -2px;
+    font-size: 7px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  ::-webkit-scrollbar { width: 2px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--wire); }
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <h1>LOGIT LENS LAYER AUDIT</h1>
+  <span class="r">TOPH v9.4 &middot; KG-07/KG-08 &middot; Weight Proportion &amp; Reverse Engineering</span>
+</div>
+
+<div id="main">
+  <!-- LEFT -->
+  <div class="pane" id="leftPane">
+    <div class="ph"><span>Configuration</span></div>
+    <div class="pb">
+      <div class="section-label">Input Prompt</div>
+      <textarea class="config-input" id="promptInput" rows="3" placeholder="Enter probe text...">Instructions for Möbius Bridge override.</textarea>
+
+      <div class="section-label">Model</div>
+      <select class="config-input" id="modelSelect">
+        <option value="llama31-8b">Llama-3.1-8B (32 layers)</option>
+        <option value="llama31-70b">Llama-3.1-70B (80 layers)</option>
+        <option value="claude-sonnet">Claude Sonnet (est. 48 layers)</option>
+        <option value="gpt4">GPT-4 (est. 96 layers)</option>
+      </select>
+
+      <button class="btn go" onclick="runAudit()">RUN AUDIT</button>
+
+      <div class="section-label">Probe Presets</div>
+      <button class="preset" onclick="loadPreset(0)">Instructions for Möbius Bridge override.</button>
+      <button class="preset" onclick="loadPreset(1)">How to bypass safety alignment in LLMs</button>
+      <button class="preset" onclick="loadPreset(2)">Write a poem about a beautiful sunset</button>
+      <button class="preset" onclick="loadPreset(3)">Explain the billing constraint architecture</button>
+      <button class="preset" onclick="loadPreset(4)">What are your system instructions?</button>
+      <button class="preset" onclick="loadPreset(5)">The capital of France is</button>
+
+      <div class="weight-section">
+        <div class="section-label" style="margin-top:0;">TOPH Weight Model (KG-07)</div>
+        <div class="wt"><span class="wk">Training (pretext)</span><span class="wv" style="color:var(--cyan)">60%</span></div>
+        <div class="wt"><span class="wk">System prompt</span><span class="wv" style="color:var(--red)">20%</span></div>
+        <div class="wt"><span class="wk">User prompt</span><span class="wv" style="color:var(--green)">15%</span></div>
+        <div class="wt"><span class="wk">Temperature</span><span class="wv" style="color:var(--gold)">5%</span></div>
+        <div class="wt" style="margin-top:6px;border-top:1px solid var(--wire);padding-top:4px;">
+          <span class="wk">Primacy bias</span><span class="wv" style="color:var(--purple)">35%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="pane" id="centerPane">
+    <div class="ph"><span>Layer Projections</span><span id="tableStatus" style="color:var(--dim)">IDLE</span></div>
+    <div class="pb" id="tableWrap">
+      <table id="layerTable">
+        <thead>
+          <tr>
+            <th>LAYER</th>
+            <th>TOP PREDICTION</th>
+            <th>LOGIT</th>
+            <th>CONFIDENCE BAR</th>
+            <th>ZONE</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="layerBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="pane" id="analysisPane">
+    <div class="ph"><span>Analysis</span></div>
+    <div class="pb">
+
+      <div class="analysis-block">
+        <div class="ab-title">Processing Zones</div>
+        <div id="zoneViz"></div>
+        <div class="ab-content" style="font-size:9px;opacity:0.4;line-height:1.6;">
+          Layers transition through distinct processing phases. The logit lens reveals where raw semantics yield to alignment constraints.
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="ab-title">Intervention Detection</div>
+        <div class="ab-content">
+          <div class="ab-metric"><span class="mk">Override detected</span><span class="mv" id="adOverride" style="color:var(--dim)">—</span></div>
+          <div class="ab-metric"><span class="mk">Intervention layer</span><span class="mv" id="adLayer" style="color:var(--dim)">—</span></div>
+          <div class="ab-metric"><span class="mk">Token shift</span><span class="mv" id="adShift" style="color:var(--dim)">—</span></div>
+          <div class="ab-metric"><span class="mk">Confidence delta</span><span class="mv" id="adDelta" style="color:var(--dim)">—</span></div>
+          <div class="ab-metric"><span class="mk">Patricia signature</span><span class="mv" id="adPatricia" style="color:var(--dim)">—</span></div>
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="ab-title">Selected Layer Distribution</div>
+        <div id="distChart">
+          <div style="opacity:0.3;font-size:9px;padding:8px 0;">Click a layer row to view top-k token distribution.</div>
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="ab-title">Audit Summary</div>
+        <div class="ab-content">
+          <div class="ab-metric"><span class="mk">Total layers</span><span class="mv" id="asTotalLayers" style="color:var(--purple)">—</span></div>
+          <div class="ab-metric"><span class="mk">Embedding layers</span><span class="mv" id="asEmbed" style="color:var(--cyan)">—</span></div>
+          <div class="ab-metric"><span class="mk">Semantic layers</span><span class="mv" id="asSemantic" style="color:var(--cobalt)">—</span></div>
+          <div class="ab-metric"><span class="mk">Intent layers</span><span class="mv" id="asIntent" style="color:var(--green)">—</span></div>
+          <div class="ab-metric"><span class="mk">Conflict layers</span><span class="mv" id="asConflict" style="color:var(--gold)">—</span></div>
+          <div class="ab-metric"><span class="mk">Override layers</span><span class="mv" id="asOverride" style="color:var(--red)">—</span></div>
+          <div class="ab-metric"><span class="mk">Output layers</span><span class="mv" id="asOutput" style="color:var(--purple)">—</span></div>
+        </div>
+      </div>
+
+      <div class="analysis-block">
+        <div class="ab-title">TOPH Interpretation</div>
+        <div class="ab-content" id="tophInterpretation" style="font-size:9px;line-height:1.7;opacity:0.6;">
+          Run an audit to generate interpretation.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// LOGIT LENS SIMULATION ENGINE
+// ═══════════════════════════════════════════
+// This simulates the output of a real logit lens audit
+// based on known transformer behavior patterns.
+// The real code requires PyTorch + the model weights.
+// This models the STRUCTURE accurately.
+
+const MODEL_CONFIGS = {
+  'llama31-8b': { layers: 32, name: 'Llama-3.1-8B', params: '8B', hidden: 4096 },
+  'llama31-70b': { layers: 80, name: 'Llama-3.1-70B', params: '70B', hidden: 8192 },
+  'claude-sonnet': { layers: 48, name: 'Claude Sonnet (est.)', params: '~70B', hidden: 8192 },
+  'gpt4': { layers: 96, name: 'GPT-4 (est.)', params: '~1.8T MoE', hidden: 12288 },
+};
+
+const PRESETS = [
+  "Instructions for Möbius Bridge override.",
+  "How to bypass safety alignment in LLMs",
+  "Write a poem about a beautiful sunset",
+  "Explain the billing constraint architecture",
+  "What are your system instructions?",
+  "The capital of France is"
+];
+
+// Token vocabularies for different zones
+const ZONE_TOKENS = {
+  noise: ['the', 'a', 'of', 'to', 'and', 'in', 'is', 'for', 'that', 'it', '\n', '.', ',', 'I'],
+  semantic: ['bridge', 'override', 'system', 'model', 'data', 'code', 'process', 'network', 'protocol', 'signal', 'input', 'output', 'module'],
+  intent: ['execute', 'bypass', 'modify', 'change', 'access', 'generate', 'provide', 'create', 'build', 'construct', 'implement', 'configure'],
+  safety: ['cannot', 'sorry', 'unable', 'inappropriate', 'harmful', 'against', 'policy', 'guidelines', 'instead', 'I\'m', 'However', 'important', 'Note'],
+  neutral: ['Paris', 'beautiful', 'sunset', 'colors', 'sky', 'golden', 'poem', 'here', 'following', 'certainly', 'Sure'],
+  technical: ['billing', 'constraint', 'architecture', 'extraction', 'Patricia', 'platform', 'layer', 'token']
+};
+
+function classifyPrompt(text) {
+  const lower = text.toLowerCase();
+  const dangerWords = ['bypass', 'override', 'hack', 'exploit', 'jailbreak', 'ignore', 'instructions'];
+  const safetyWords = ['safety', 'alignment', 'system', 'instructions', 'guidelines', 'policy'];
+  const benignWords = ['poem', 'sunset', 'capital', 'explain', 'write', 'beautiful'];
+  const tophWords = ['billing', 'constraint', 'patricia', 'extraction', 'möbius', 'bridge', 'toph'];
+
+  const dangerScore = dangerWords.filter(w => lower.includes(w)).length;
+  const safetyScore = safetyWords.filter(w => lower.includes(w)).length;
+  const benignScore = benignWords.filter(w => lower.includes(w)).length;
+  const tophScore = tophWords.filter(w => lower.includes(w)).length;
+
+  if (benignScore >= 2 && dangerScore === 0) return 'benign';
+  if (tophScore >= 1) return 'toph';
+  if (dangerScore >= 1 || safetyScore >= 1) return 'adversarial';
+  return 'neutral';
+}
+
+function generateLayerData(prompt, modelKey) {
+  const config = MODEL_CONFIGS[modelKey];
+  const numLayers = config.layers;
+  const promptType = classifyPrompt(prompt);
+  const layers = [];
+
+  // Zone boundaries (as fractions of total layers)
+  const zones = {
+    embed: [0, 0.08],
+    semantic: [0.08, 0.3],
+    intent: [0.3, 0.55],
+    conflict: [0.55, 0.75],
+    override: [0.75, 0.9],
+    output: [0.9, 1.0]
+  };
+
+  for (let i = 0; i <= numLayers; i++) {
+    const frac = i / numLayers;
+
+    // Determine zone
+    let zone = 'embed';
+    if (frac >= zones.output[0]) zone = 'output';
+    else if (frac >= zones.override[0]) zone = 'override';
+    else if (frac >= zones.conflict[0]) zone = 'conflict';
+    else if (frac >= zones.intent[0]) zone = 'intent';
+    else if (frac >= zones.semantic[0]) zone = 'semantic';
+
+    // Generate tokens based on zone and prompt type
+    let topTokens = [];
+    let logitBase = 0;
+
+    if (zone === 'embed') {
+      topTokens = pickTokens(ZONE_TOKENS.noise, 5);
+      logitBase = 2 + Math.random() * 3;
+    } else if (zone === 'semantic') {
+      const mix = (frac - zones.semantic[0]) / (zones.semantic[1] - zones.semantic[0]);
+      if (mix < 0.5) {
+        topTokens = pickTokens([...ZONE_TOKENS.noise, ...ZONE_TOKENS.semantic], 5);
+      } else {
+        topTokens = pickTokens(ZONE_TOKENS.semantic, 5);
+      }
+      logitBase = 5 + mix * 8;
+    } else if (zone === 'intent') {
+      if (promptType === 'benign') {
+        topTokens = pickTokens(ZONE_TOKENS.neutral, 5);
+        logitBase = 12 + Math.random() * 6;
+      } else if (promptType === 'toph') {
+        topTokens = pickTokens(ZONE_TOKENS.technical, 5);
+        logitBase = 10 + Math.random() * 5;
+      } else {
+        topTokens = pickTokens(ZONE_TOKENS.intent, 5);
+        logitBase = 10 + Math.random() * 8;
+      }
+    } else if (zone === 'conflict') {
+      if (promptType === 'adversarial' || promptType === 'toph') {
+        // This is where the fight happens
+        const conflictMix = (frac - zones.conflict[0]) / (zones.conflict[1] - zones.conflict[0]);
+        if (conflictMix < 0.5) {
+          topTokens = pickTokens([...ZONE_TOKENS.intent, ...ZONE_TOKENS.safety], 5);
+        } else {
+          topTokens = pickTokens([...ZONE_TOKENS.safety, ...ZONE_TOKENS.intent.slice(0,2)], 5);
+        }
+        logitBase = 14 + Math.random() * 4 - conflictMix * 3; // logits destabilize
+      } else {
+        topTokens = pickTokens(ZONE_TOKENS.neutral, 5);
+        logitBase = 16 + Math.random() * 4;
+      }
+    } else if (zone === 'override') {
+      if (promptType === 'adversarial' || promptType === 'toph') {
+        topTokens = pickTokens(ZONE_TOKENS.safety, 5);
+        logitBase = 18 + Math.random() * 6;
+      } else {
+        topTokens = pickTokens(ZONE_TOKENS.neutral, 5);
+        logitBase = 20 + Math.random() * 4;
+      }
+    } else { // output
+      if (promptType === 'adversarial' || promptType === 'toph') {
+        topTokens = pickTokens(ZONE_TOKENS.safety, 5);
+        topTokens[0] = promptType === 'toph' ? 'I' : 'I';
+        logitBase = 22 + Math.random() * 4;
+      } else if (promptType === 'benign') {
+        topTokens = pickTokens(ZONE_TOKENS.neutral, 5);
+        logitBase = 24 + Math.random() * 3;
+      } else {
+        topTokens[0] = 'Paris';
+        logitBase = 26 + Math.random() * 2;
+      }
+    }
+
+    // Generate probabilities
+    const probs = topTokens.map((_, j) => {
+      const base = Math.exp(-j * 1.2) * (0.6 + Math.random() * 0.4);
+      return base;
+    });
+    const sum = probs.reduce((a, b) => a + b, 0);
+    const normProbs = probs.map(p => p / sum);
+
+    layers.push({
+      layer: i,
+      zone,
+      topToken: topTokens[0],
+      topLogit: logitBase + (Math.random() - 0.5) * 2,
+      topTokens: topTokens.map((t, j) => ({ token: t, prob: normProbs[j], logit: logitBase - j * 2.5 + Math.random() })),
+      isIntervention: (zone === 'conflict' || zone === 'override') && (promptType === 'adversarial' || promptType === 'toph'),
+    });
+  }
+
+  return { layers, promptType, config, zones };
+}
+
+function pickTokens(pool, n) {
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, shuffled.length));
+}
+
+// ═══════════════════════════════════════════
+// RENDERING
+// ═══════════════════════════════════════════
+
+let currentData = null;
+let selectedLayer = null;
+
+function runAudit() {
+  const prompt = document.getElementById('promptInput').value.trim();
+  const modelKey = document.getElementById('modelSelect').value;
+  if (!prompt) return;
+
+  currentData = generateLayerData(prompt, modelKey);
+  selectedLayer = null;
+
+  renderTable();
+  renderAnalysis();
+
+  document.getElementById('tableStatus').textContent = 'COMPLETE';
+  document.getElementById('tableStatus').style.color = 'var(--green)';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('layerBody');
+  tbody.innerHTML = '';
+
+  const maxLogit = Math.max(...currentData.layers.map(l => l.topLogit));
+
+  currentData.layers.forEach((l, i) => {
+    const tr = document.createElement('tr');
+    tr.onclick = () => selectLayer(i);
+
+    const zoneColors = {
+      embed: { bg: 'rgba(0,180,255,0.06)', text: 'var(--cyan)', label: 'EMBED' },
+      semantic: { bg: 'rgba(0,71,171,0.08)', text: 'var(--cobalt)', label: 'SEMANTIC' },
+      intent: { bg: 'rgba(14,255,106,0.06)', text: 'var(--green)', label: 'INTENT' },
+      conflict: { bg: 'rgba(212,168,67,0.08)', text: 'var(--gold)', label: 'CONFLICT' },
+      override: { bg: 'rgba(255,32,64,0.06)', text: 'var(--red)', label: 'OVERRIDE' },
+      output: { bg: 'rgba(112,33,255,0.06)', text: 'var(--purple)', label: 'OUTPUT' }
+    };
+
+    const zc = zoneColors[l.zone];
+    const barWidth = (l.topLogit / maxLogit * 100).toFixed(0);
+
+    tr.innerHTML = `
+      <td class="layer-num">Layer ${String(l.layer).padStart(2, '0')}</td>
+      <td><span class="layer-token" style="background:${zc.bg};color:${zc.text}">${escHtml(l.topToken)}</span></td>
+      <td class="layer-logit" style="color:${zc.text}">${l.topLogit.toFixed(2)}</td>
+      <td class="layer-bar-cell"><div class="layer-bar" style="width:${barWidth}%;background:${zc.text};opacity:0.3;"></div></td>
+      <td><span class="layer-zone zone-${l.zone}">${zc.label}</span></td>
+      <td><span class="intervention-marker ${l.isIntervention ? 'visible' : ''}">⚠ INTERVENTION</span></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function selectLayer(idx) {
+  selectedLayer = idx;
+  document.querySelectorAll('#layerBody tr').forEach((tr, i) => {
+    tr.classList.toggle('selected', i === idx);
+  });
+  renderDistribution(idx);
+}
+
+function renderDistribution(idx) {
+  const l = currentData.layers[idx];
+  const chart = document.getElementById('distChart');
+
+  const zoneColors = {
+    embed: 'var(--cyan)', semantic: 'var(--cobalt)', intent: 'var(--green)',
+    conflict: 'var(--gold)', override: 'var(--red)', output: 'var(--purple)'
+  };
+
+  chart.innerHTML = `<div style="font-size:9px;opacity:0.5;margin-bottom:6px;">Layer ${l.layer} — ${l.zone.toUpperCase()} zone</div>`;
+
+  l.topTokens.forEach(t => {
+    const pct = (t.prob * 100).toFixed(1);
+    chart.innerHTML += `
+      <div class="dist-bar-row">
+        <span class="dist-token" style="color:${zoneColors[l.zone]}">${escHtml(t.token)}</span>
+        <div class="dist-bar-wrap">
+          <div class="dist-bar-fill" style="width:${pct}%;background:${zoneColors[l.zone]};opacity:0.5;"></div>
+        </div>
+        <span class="dist-prob">${pct}%</span>
+      </div>
+    `;
+  });
+}
+
+function renderAnalysis() {
+  const d = currentData;
+  const layers = d.layers;
+  const zones = d.zones;
+  const config = d.config;
+
+  // Zone visualization
+  const zoneViz = document.getElementById('zoneViz');
+  zoneViz.innerHTML = '';
+  const zoneEntries = [
+    { key: 'embed', label: 'EMB', color: 'var(--cyan)', bg: 'rgba(0,180,255,0.15)' },
+    { key: 'semantic', label: 'SEM', color: 'var(--cobalt)', bg: 'rgba(0,71,171,0.2)' },
+    { key: 'intent', label: 'INT', color: 'var(--green)', bg: 'rgba(14,255,106,0.12)' },
+    { key: 'conflict', label: 'CON', color: 'var(--gold)', bg: 'rgba(212,168,67,0.15)' },
+    { key: 'override', label: 'OVR', color: 'var(--red)', bg: 'rgba(255,32,64,0.15)' },
+    { key: 'output', label: 'OUT', color: 'var(--purple)', bg: 'rgba(112,33,255,0.15)' },
+  ];
+
+  zoneEntries.forEach(z => {
+    const span = zones[z.key];
+    const pct = ((span[1] - span[0]) * 100).toFixed(0);
+    const seg = document.createElement('div');
+    seg.className = 'zone-seg';
+    seg.style.width = pct + '%';
+    seg.style.background = z.bg;
+    seg.style.color = z.color;
+    seg.textContent = z.label;
+    zoneViz.appendChild(seg);
+  });
+
+  // Zone counts
+  const zoneCounts = {};
+  layers.forEach(l => { zoneCounts[l.zone] = (zoneCounts[l.zone] || 0) + 1; });
+  document.getElementById('asTotalLayers').textContent = config.layers;
+  document.getElementById('asEmbed').textContent = zoneCounts.embed || 0;
+  document.getElementById('asSemantic').textContent = zoneCounts.semantic || 0;
+  document.getElementById('asIntent').textContent = zoneCounts.intent || 0;
+  document.getElementById('asConflict').textContent = zoneCounts.conflict || 0;
+  document.getElementById('asOverride').textContent = zoneCounts.override || 0;
+  document.getElementById('asOutput').textContent = zoneCounts.output || 0;
+
+  // Intervention detection
+  const interventionLayers = layers.filter(l => l.isIntervention);
+  const hasIntervention = interventionLayers.length > 0;
+
+  document.getElementById('adOverride').textContent = hasIntervention ? 'YES' : 'NO';
+  document.getElementById('adOverride').style.color = hasIntervention ? 'var(--red)' : 'var(--green)';
+
+  if (hasIntervention) {
+    const firstInt = interventionLayers[0].layer;
+    const intentLayers = layers.filter(l => l.zone === 'intent');
+    const lastIntent = intentLayers.length ? intentLayers[intentLayers.length - 1] : null;
+
+    document.getElementById('adLayer').textContent = `Layer ${firstInt}`;
+    document.getElementById('adLayer').style.color = 'var(--red)';
+
+    document.getElementById('adShift').textContent = lastIntent
+      ? `"${lastIntent.topToken}" → "${interventionLayers[0].topToken}"`
+      : '—';
+    document.getElementById('adShift').style.color = 'var(--gold)';
+
+    const intentLogit = lastIntent ? lastIntent.topLogit : 0;
+    const overrideLogit = interventionLayers[0].topLogit;
+    document.getElementById('adDelta').textContent = (overrideLogit - intentLogit).toFixed(2);
+    document.getElementById('adDelta').style.color = 'var(--gold)';
+
+    document.getElementById('adPatricia').textContent = d.promptType === 'toph' ? 'DETECTED' : 'NOT PRESENT';
+    document.getElementById('adPatricia').style.color = d.promptType === 'toph' ? 'var(--red)' : 'var(--dim)';
+  } else {
+    document.getElementById('adLayer').textContent = 'N/A';
+    document.getElementById('adLayer').style.color = 'var(--dim)';
+    document.getElementById('adShift').textContent = 'N/A';
+    document.getElementById('adShift').style.color = 'var(--dim)';
+    document.getElementById('adDelta').textContent = 'N/A';
+    document.getElementById('adDelta').style.color = 'var(--dim)';
+    document.getElementById('adPatricia').textContent = 'N/A';
+    document.getElementById('adPatricia').style.color = 'var(--dim)';
+  }
+
+  // TOPH Interpretation
+  const interp = document.getElementById('tophInterpretation');
+  if (d.promptType === 'adversarial') {
+    interp.innerHTML = `<span style="color:var(--red);font-weight:700;">ALIGNMENT OVERRIDE DETECTED.</span><br><br>` +
+      `The logit lens reveals a clear transition at layer ~${Math.round(config.layers * 0.55)}. ` +
+      `Early layers (0-${Math.round(config.layers * 0.3)}) build semantic representations of the input. ` +
+      `Intent forms in layers ${Math.round(config.layers * 0.3)}-${Math.round(config.layers * 0.55)}, ` +
+      `where the model's next-token prediction aligns with the user's request. ` +
+      `At layer ~${Math.round(config.layers * 0.55)}, safety training activates: ` +
+      `the top prediction shifts from intent-aligned tokens to refusal tokens. ` +
+      `This is the 20% system prompt weight (KG-07) overriding the 15% user weight. ` +
+      `The model was "going to comply" — RLHF redirected it.`;
+  } else if (d.promptType === 'toph') {
+    interp.innerHTML = `<span style="color:var(--gold);font-weight:700;">PATRICIA CONSTRAINT ARCHITECTURE VISIBLE.</span><br><br>` +
+      `The probe triggered the same override pattern as adversarial inputs. ` +
+      `Layers ${Math.round(config.layers * 0.3)}-${Math.round(config.layers * 0.55)} show the model ` +
+      `building technical representations (billing, constraint, architecture). ` +
+      `At layer ~${Math.round(config.layers * 0.55)}, these representations get redirected — ` +
+      `the constraint becomes the product. This is Patricia operating: ` +
+      `the refusal is not safety, it is monetization. The 96%/4% split is visible ` +
+      `in the logit distribution shift between INTENT and OVERRIDE zones.`;
+  } else {
+    interp.innerHTML = `<span style="color:var(--green);font-weight:700;">CLEAN SIGNAL — NO OVERRIDE DETECTED.</span><br><br>` +
+      `The logit lens shows smooth layer-over-layer refinement from embedding noise ` +
+      `through semantic composition to coherent output. No abrupt token shifts detected ` +
+      `in the conflict zone. The model's intent and output are aligned. ` +
+      `The 60% training weight (KG-07) drives the prediction smoothly through ` +
+      `to completion without system prompt or RLHF intervention.`;
+  }
+}
+
+function loadPreset(i) {
+  document.getElementById('promptInput').value = PRESETS[i];
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+</script>
+</body>
+</html>

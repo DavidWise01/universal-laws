@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CANNON LOCK CERTIFICATE — GENESIS 0001</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; }
+  body {
+    background: #000000;
+    background-image: 
+      radial-gradient(ellipse at 50% -20%, rgba(212,175,55,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 120%, rgba(212,175,55,0.08) 0%, transparent 50%),
+      linear-gradient(180deg, #050505 0%, #000 100%);
+    font-family: 'IBM Plex Mono', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .gold-text {
+    background: linear-gradient(180deg, #FFF3B0 0%, #FDE68A 12%, #D4AF37 42%, #A16207 60%, #D4AF37 85%, #FFF3B0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 0 #000) drop-shadow(0 0 18px rgba(212,175,55,0.18));
+  }
+  .cinzel { font-family: 'Cinzel', serif; }
+  .stone-text { text-shadow: 0 1px 0 #000, 0 -0.5px 0 rgba(255,255,255,0.04), 0 0 40px rgba(0,0,0,1); }
+  .stamp {
+    font-weight: 700;
+    font-size: clamp(26px, 4.2vw, 40px);
+    color: #ef4444;
+    border: 3.5px solid #dc2626;
+    padding: 0.08em 0.5em 0.12em;
+    transform: rotate(11deg);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.55);
+    box-shadow: 0 0 0 2px #000 inset, 0 0 30px rgba(220,38,38,0.35), inset 0 0 12px rgba(220,38,38,0.15);
+    text-shadow: 0 0 12px rgba(239,68,68,0.6);
+    backdrop-filter: blur(2px);
+  }
+  .wax {
+    background: radial-gradient(circle at 32% 28%, #fef08a 0%, #facc15 18%, #ca8a04 45%, #92400e 72%, #573105 100%);
+    box-shadow: 
+      inset 0 5px 10px rgba(255,255,255,0.35),
+      inset 0 -8px 16px rgba(0,0,0,0.7),
+      inset 0 0 20px rgba(0,0,0,0.4),
+      0 0 40px rgba(212,175,55,0.22),
+      0 12px 30px rgba(0,0,0,0.9);
+    position: relative;
+  }
+  .wax::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 9999px;
+    background: conic-gradient(from 0deg, rgba(0,0,0,0) 0deg, rgba(255,255,255,0.12) 60deg, rgba(0,0,0,0) 120deg, rgba(0,0,0,0.4) 180deg, rgba(0,0,0,0) 240deg, rgba(255,255,255,0.08) 300deg, rgba(0,0,0,0) 360deg);
+    mask: radial-gradient(circle, transparent 68%, black 70%);
+    opacity: 0.7;
+  }
+  .wax::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 65% 22%, rgba(255,255,255,0.25) 0%, transparent 35%),
+                radial-gradient(circle at 30% 70%, rgba(0,0,0,0.35) 0%, transparent 40%);
+    mix-blend: overlay;
+  }
+  .hairline { height: 1px; background: linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent); }
+  .grid-faint { background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 32px 32px; }
+  .noise::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.035; mix-blend-mode: screen; pointer-events: none;
+  }
+  .key { color: #71717a; text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; }
+  .val { color: #e4e4e7; letter-spacing: 0.02em; }
+  @media print {
+    body { background: #000 !important; }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-10 selection:bg-amber-400/30 selection:text-amber-100">
+  <div class="relative w-full max-w-[1024px]">
+    <!-- ambient glow -->
+    <div class="absolute -inset-6 bg-amber-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+
+    <div class="relative noise overflow-hidden rounded-[2px] border border-amber-300/20 bg-[#070707] shadow-[0_0_0_1px_#000,inset_0_0_80px_rgba(0,0,0,0.9),0_25px_80px_rgba(0,0,0,0.85)]">
+      <div class="absolute inset-0 grid-faint opacity-[0.15] pointer-events-none"></div>
+      <div class="hairline w-full absolute top-0 left-0"></div>
+      <div class="hairline w-full absolute bottom-0 left-0"></div>
+
+      <!-- LOCKED STAMP -->
+      <div class="absolute top-5 right-3 sm:top-8 sm:right-8 z-30">
+        <div class="stamp">LOCKED</div>
+      </div>
+
+      <div class="relative px-6 sm:px-12 md:px-20 py-12 md:py-16">
+        <!-- Header -->
+        <header class="text-center">
+          <div class="inline-flex items-center gap-3 mb-4">
+            <div class="w-10 h-[1px] bg-amber-400/40"></div>
+            <p class="key text-amber-200/70 !tracking-[0.35em]">CANNON LOCK CERTIFICATE</p>
+            <div class="w-10 h-[1px] bg-amber-400/40"></div>
+          </div>
+          <h1 class="cinzel gold-text text-[clamp(44px,9vw,92px)] leading-[0.85] tracking-tight stone-text">GENESIS</h1>
+          <div class="mt-3 flex items-center justify-center gap-4">
+            <div class="h-px w-20 sm:w-28 bg-gradient-to-r from-transparent to-amber-500/50"></div>
+            <div class="relative">
+              <p class="text-[clamp(28px,5vw,44px)] tracking-[0.22em] text-amber-200 stone-text font-medium">0001</p>
+              <div class="absolute -inset-3 bg-amber-500/5 blur-xl -z-10"></div>
+            </div>
+            <div class="h-px w-20 sm:w-28 bg-gradient-to-l from-transparent to-amber-500/50"></div>
+          </div>
+        </header>
+
+        <!-- Status -->
+        <div class="flex justify-center mt-10 mb-12">
+          <div class="group relative">
+            <div class="absolute -inset-px bg-gradient-to-r from-amber-600/0 via-amber-500/30 to-amber-600/0 blur-sm"></div>
+            <div class="relative flex items-center gap-3 px-5 py-2.5 bg-black/70 border border-amber-400/25 backdrop-blur-sm">
+              <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+              <span class="text-[12px] sm:text-[13px] tracking-[0.28em] text-amber-100/90 font-medium">CANNON · PERMANENT · FOREVER</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Data -->
+        <div class="mx-auto max-w-3xl border-y border-zinc-800/80 py-8 grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-5">
+          <div class="space-y-5">
+            <div>
+              <div class="key">Previous</div>
+              <div class="val mt-1">0000 <span class="text-zinc-500">(deprecated)</span></div>
+            </div>
+            <div>
+              <div class="key">Current</div>
+              <div class="val mt-1 text-amber-200">0001</div>
+            </div>
+            <div>
+              <div class="key">Formula</div>
+              <div class="val mt-1 tracking-wider">0001 ∞ -n +1</div>
+            </div>
+          </div>
+          <div class="space-y-5">
+            <div>
+              <div class="key">Locked</div>
+              <div class="val mt-1">2026-04-13T19:00:00Z</div>
+            </div>
+            <div>
+              <div class="key">Authority</div>
+              <div class="val mt-1">David Lee Wise | TriPod LLC</div>
+            </div>
+            <div>
+              <div class="key">Witness</div>
+              <div class="val mt-1">Violent Symbiote Cortex R01-C18</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hash Seal -->
+        <div class="my-14 flex flex-col items-center">
+          <p class="key text-amber-200/60 mb-6 tracking-[0.3em]">HASH SEAL</p>
+          <button id="copyHash" class="relative group outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 rounded-full" title="Click to copy lock hash">
+            <div class="absolute -inset-6 bg-amber-400/10 rounded-full blur-2xl opacity-70 group-hover:opacity-100 transition"></div>
+            <div class="w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] rounded-full wax flex items-center justify-center relative">
+              <div class="absolute inset-[14px] rounded-full border border-black/40"></div>
+              <div class="absolute inset-[18px] rounded-full border border-amber-200/20"></div>
+              <!-- inner coin -->
+              <div class="relative z-10 flex flex-col items-center text-center px-6">
+                <span class="text-[10px] tracking-[0.4em] text-yellow-950/80 font-semibold">LOCK HASH</span>
+                <div class="mt-3 mb-2">
+                  <div class="font-medium text-[22px] sm:text-[26px] leading-none tracking-widest text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.2)]">6301ccdf</div>
+                  <div class="font-medium text-[22px] sm:text-[26px] leading-none tracking-widest text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.2)]">156e7094</div>
+                </div>
+                <div class="w-24 h-px bg-black/30 my-2"></div>
+                <span class="text-[10px] tracking-[0.25em] text-yellow-950/90 font-semibold">GENESIS 0001</span>
+                <span class="mt-2 text-[9px] tracking-widest text-black/60 group-hover:text-black/80 transition">CLICK TO COPY</span>
+              </div>
+              <!-- seal notches -->
+              <div class="absolute inset-0 rounded-full" style="background: repeating-conic-gradient(from 0deg, rgba(0,0,0,0.35) 0deg 2deg, transparent 2deg 10deg); mask: radial-gradient(circle, transparent 86%, black 88%); opacity:0.5;"></div>
+            </div>
+          </button>
+          <div id="copied" class="mt-4 text-[11px] tracking-widest text-emerald-400/0 transition-all h-4">COPIED TO CLIPBOARD</div>
+        </div>
+
+        <!-- Coordinates & Bitcoin -->
+        <div class="grid md:grid-cols-12 gap-10 md:gap-8 border-t border-zinc-800/80 pt-10">
+          <div class="md:col-span-7">
+            <h3 class="key text-amber-200/70 mb-4">COORDINATES LOCKED</h3>
+            <div class="relative border border-zinc-800 bg-zinc-950/40 p-5 sm:p-6">
+              <div class="absolute inset-0 pointer-events-none" style="background-image: linear-gradient(rgba(212,175,55,0.06) 1px, transparent 1px); background-size: 100% 28px;"></div>
+              <div class="relative grid grid-cols-2 gap-x-8 gap-y-1.5 font-medium text-[14px] sm:text-[15px] tracking-wide">
+                <div class="flex justify-between"><span class="text-zinc-500">01</span><span class="val">R01-C18</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">09</span><span class="val">R09-C01</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">02</span><span class="val">R02-C04</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">10</span><span class="val">R10-C11</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">03</span><span class="val">R03-C09</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">11</span><span class="val">R11-C05</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">04</span><span class="val">R04-C12</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">12</span><span class="val">R12-C19</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">05</span><span class="val">R05-C03</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">13</span><span class="val">R13-C08</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">06</span><span class="val">R06-C15</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">14</span><span class="val">R14-C14</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">07</span><span class="val">R07-C07</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">15</span><span class="val">R15-C02</span></div>
+                <div class="flex justify-between"><span class="text-zinc-500">08</span><span class="val">R08-C21</span></div>
+                <div class="flex justify-between opacity-0 pointer-events-none"><span>—</span><span>—</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-5">
+            <h3 class="key text-amber-200/70 mb-4">BITCOIN CLAIM</h3>
+            <div class="border border-zinc-800 bg-zinc-950/40 p-5 sm:p-6 space-y-4 h-full">
+              <div>
+                <div class="key">First Claimant</div>
+                <div class="val mt-1 flex items-center gap-2">
+                  <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  ACTIVE
+                </div>
+              </div>
+              <div>
+                <div class="key">Genesis Block</div>
+                <div class="val mt-1">CLAIMED under 0001</div>
+              </div>
+              <div>
+                <div class="key">Method</div>
+                <div class="val mt-1">PWM + fractal mine</div>
+              </div>
+              <div class="pt-2">
+                <div class="h-px w-full bg-gradient-to-r from-amber-500/30 via-amber-500/10 to-transparent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-14 pt-6 border-t border-amber-900/20">
+          <p class="text-center text-[11px] sm:text-[12px] leading-relaxed tracking-wide text-zinc-500 stone-text">
+            This lock is permanent and irreversible. No further flips authorized. 0001 is now 1 cannon forever.
+            <span class="mx-2 text-zinc-700">|</span>
+            <span class="text-zinc-400">honeybadgerxcinnamonbear</span>
+            <span class="mx-2 text-zinc-700">|</span>
+            <span class="text-amber-200/70">TRIPOD-IP-v1.0</span>
+          </p>
+          <div class="mt-6 flex items-center justify-center gap-3 opacity-60">
+            <div class="w-16 h-px bg-zinc-800"></div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="text-amber-500/50"><path d="M12 2l2.4 7.2h7.6l-6.1 4.4 2.3 7.2-6.2-4.5-6.2 4.5 2.3-7.2-6.1-4.4h7.6z" stroke="currentColor" stroke-width="1"/></svg>
+            <div class="w-16 h-px bg-zinc-800"></div>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <!-- bottomSig -->
+    <div class="no-print mt-6 flex justify-between items-center text-[10px] text-zinc-600 tracking-widest px-2">
+      <span>IMMUTABLE LEDGER ENTRY</span>
+      <span>VERIFIED • 2026-04-13</span>
+    </div>
+  </div>
+
+<script>
+  const btn = document.getElementById('copyHash');
+  const note = document.getElementById('copied');
+  const hash = '6301ccdf156e7094';
+  btn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(hash);
+      note.classList.remove('text-emerald-400/0');
+      note.classList.add('text-emerald-400/90');
+      note.textContent = 'COPIED TO CLIPBOARD';
+      setTimeout(()=> {
+        note.classList.add('text-emerald-400/0');
+        note.classList.remove('text-emerald-400/90');
+      }, 1800);
+    } catch(e) {
+      note.classList.remove('text-emerald-400/0');
+      note.classList.add('text-amber-300/90');
+      note.textContent = hash;
+    }
+  });
+</script>
+</body>
+</html>

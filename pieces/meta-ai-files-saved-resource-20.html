@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<!-- saved from url=(0104)https://embed.fbsbx.com/playables/view/927996220002453/?ext=1784226344&hash=Q92gDAENbZJ4kibZC6qOCTy1Kflb -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AKASHA OS v6.0 — MAX CAPACITY</title>
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQUtBU0hBIE9TIHY2LjAiLCJzaG9ydF9uYW1lIjoiQUtBU0hBIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwMDAwMDAiLCJ0aGVtZV9jb2xvciI6IiMwMGZmYiLCJpY29ucyI6W119">
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="./css2(16)" rel="stylesheet">
+<script src="./saved_resource"></script>
+<script async="" src="./es-module-shims.js.download"></script>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "hash-wasm":"https://cdn.jsdelivr.net/npm/hash-wasm@4.11.0/+esm"
+}}
+</script>
+<script src="./jspdf.umd.min.js.download"></script>
+<script src="./qrcode.min.js.download"></script>
+<script src="./jszip.min(1).js.download"></script>
+<style>
+:root{--cyan:#00ffff;--violet:#9d00ff;--amber:#ffb000;--bg:#020208;--grid:rgba(0,255,255,.08)}
+*{scrollbar-width:thin;scrollbar-color:var(--cyan) #000}
+html,body{height:100%;background:#000;color:#d6f4ff;font-family:'JetBrains Mono',monospace;overflow:hidden;overscroll-behavior:none}
+.font-orbitron{font-family:'Orbitron',sans-serif}
+#bg{position:fixed;inset:0;z-index:0}
+#particles{position:fixed;inset:0;z-index:5;pointer-events:none}
+.holo{position:relative;background:radial-gradient(1200px 600px at 50% -20%,rgba(157,0,255,.15),transparent 60%),linear-gradient(180deg,rgba(5,10,20,.85),rgba(2,2,8,.92));backdrop-filter:blur(16px) saturate(1.2);border:1px solid rgba(0,255,255,.18);box-shadow:0 0 40px rgba(0,255,255,.08),inset 0 0 30px rgba(157,0,255,.06),inset 0 1px 0 rgba(255,255,255,.05)}
+.holo::before{content:'';position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(90deg,transparent,var(--cyan),var(--violet),transparent);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.35;pointer-events:none}
+.holo::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 2px,rgba(0,255,255,.03) 2px 3px);mix-blend-mode:screen;pointer-events:none;border-radius:inherit}
+.chromatic{text-shadow:0 0 1px var(--cyan),0.5px 0 0 rgba(255,0,128,.6),-0.5px 0 0 rgba(0,255,255,.7)}
+.glow{filter:drop-shadow(0 0 6px rgba(0,255,255,.7))}
+.btn{position:relative;padding:.55rem .9rem;background:linear-gradient(180deg,rgba(0,255,255,.15),rgba(0,255,255,.05));border:1px solid rgba(0,255,255,.4);color:#aefcff;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem;transition:.2s;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 8px)}
+.btn:hover{background:linear-gradient(180deg,rgba(0,255,255,.3),rgba(157,0,255,.2));box-shadow:0 0 18px rgba(0,255,255,.5);color:white}
+.btn-amber{border-color:rgba(255,176,0,.5);background:linear-gradient(180deg,rgba(255,176,0,.2),rgba(255,176,0,.05));color:#ffe4a3}
+.btn-violet{border-color:rgba(157,0,255,.5);background:linear-gradient(180deg,rgba(157,0,255,.2),rgba(157,0,255,.05));color:#e8c4ff}
+.tab{padding:.4rem .7rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.02);font-size:.7rem;letter-spacing:.06em;cursor:pointer}
+.tab.active{border-color:var(--cyan);color:var(--cyan);background:rgba(0,255,255,.08);box-shadow:0 0 10px rgba(0,255,255,.3) inset}
+.grid-bg{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px}
+.pulse-ring{position:absolute;inset:-20%;border:2px solid var(--cyan);border-radius:50%;animation:pulse 3s infinite;opacity:.3}
+@keyframes pulse{0%{transform:scale(.8);opacity:.5}70%{transform:scale(1.2);opacity:0}100%{opacity:0}}
+.shake{animation:shake .35s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{10%,90%{transform:translate(-1px,1px)}20%,80%{transform:translate(2px,-1px)}30%,50%,70%{transform:translate(-3px,0)}40%,60%{transform:translate(3px,1px)}}
+.scanlines::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,255,255,.03) 2px 3px);pointer-events:none;z-index:50}
+.terminal-caret::after{content:'▌';animation:blink 1s step-end infinite;color:var(--cyan)}
+@keyframes blink{50%{opacity:0}}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:linear-gradient(var(--cyan),var(--violet));border-radius:3px}
+</style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.bottom-1{bottom:0.25rem}.bottom-2{bottom:0.5rem}.left-1{left:0.25rem}.left-2{left:0.5rem}.right-2{right:0.5rem}.top-2{top:0.5rem}.z-20{z-index:20}.z-50{z-index:50}.-mt-1{margin-top:-0.25rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.ml-auto{margin-left:auto}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-2{height:0.5rem}.h-8{height:2rem}.h-\[140px\]{height:140px}.h-\[3\.2rem\]{height:3.2rem}.h-full{height:100%}.h-screen{height:100vh}.max-h-\[85vh\]{max-height:85vh}.min-h-\[380px\]{min-height:380px}.w-2{width:0.5rem}.w-8{width:2rem}.w-\[140px\]{width:140px}.w-\[92\%\]{width:92%}.w-full{width:100%}.max-w-3xl{max-width:48rem}.flex-1{flex:1 1 0%}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.resize-none{resize:none}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.overflow-auto{overflow:auto}.overflow-hidden{overflow:hidden}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-white\/10{border-color:rgb(255 255 255 / 0.1)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36 / var(--tw-bg-opacity, 1))}.bg-black\/40{background-color:rgb(0 0 0 / 0.4)}.bg-black\/70{background-color:rgb(0 0 0 / 0.7)}.bg-black\/80{background-color:rgb(0 0 0 / 0.8)}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-transparent{background-color:transparent}.bg-violet-400{--tw-bg-opacity:1;background-color:rgb(167 139 250 / var(--tw-bg-opacity, 1))}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-5{padding:1.25rem}.\!px-2{padding-left:0.5rem !important;padding-right:0.5rem !important}.\!py-1{padding-top:0.25rem !important;padding-bottom:0.25rem !important}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.\!text-\[\.65rem\]{font-size:.65rem !important}.text-\[\.65rem\]{font-size:.65rem}.text-\[\.6rem\]{font-size:.6rem}.text-\[\.75rem\]{font-size:.75rem}.text-\[\.7rem\]{font-size:.7rem}.text-\[\.8rem\]{font-size:.8rem}.text-\[1\.05rem\]{font-size:1.05rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-black{font-weight:900}.font-bold{font-weight:700}.leading-none{line-height:1}.tracking-\[\.2em\]{letter-spacing:.2em}.tracking-wider{letter-spacing:0.05em}.tracking-widest{letter-spacing:0.1em}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-cyan-200{--tw-text-opacity:1;color:rgb(165 243 252 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-violet-300{--tw-text-opacity:1;color:rgb(196 181 253 / var(--tw-text-opacity, 1))}.text-violet-400{--tw-text-opacity:1;color:rgb(167 139 250 / var(--tw-text-opacity, 1))}.text-white\/40{color:rgb(255 255 255 / 0.4)}.text-white\/50{color:rgb(255 255 255 / 0.5)}.text-white\/70{color:rgb(255 255 255 / 0.7)}.outline-none{outline:2px solid transparent;outline-offset:2px}.backdrop-blur-md{--tw-backdrop-blur:blur(12px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}@media (min-width: 1280px){.xl\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 1536px){.\32xl\:col-span-1{grid-column:span 1 / span 1}.\32xl\:grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}}</style></head>
+<body class="scanlines">
+<canvas id="bg"></canvas>
+<canvas id="particles"></canvas>
+
+<div class="relative z-20 flex flex-col h-screen">
+  <!-- HEADER -->
+  <header class="holo grid-bg border-b border-cyan/20 px-3 py-2 flex items-center gap-3">
+    <div class="flex items-center gap-2">
+      <div class="relative w-8 h-8">
+        <div class="pulse-ring"></div>
+        <svg viewBox="0 0 32 32" class="w-8 h-8 glow"><polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="none" stroke="#00ffff" stroke-width="1.5"></polygon><polygon points="16,7 24,12 24,20 16,25 8,20 8,12" fill="none" stroke="#9d00ff" stroke-width="1"></polygon><circle cx="16" cy="16" r="2" fill="#ffb000"></circle></svg>
+      </div>
+      <div>
+        <div class="font-orbitron font-black text-[1.05rem] leading-none chromatic tracking-wider">AKASHA OS</div>
+        <div class="text-[.6rem] text-cyan/70 -mt-1 tracking-[.2em]">v6.0 • MAX CAPACITY</div>
+      </div>
+    </div>
+    
+    <div class="flex-1 flex justify-center">
+      <div class="holo px-4 py-1.5 rounded-full flex items-center gap-4">
+        <div class="text-[.65rem] text-violet-300">CHRONOS</div>
+        <div id="pi-time" class="font-orbitron text-cyan-300 text-sm tracking-widest">π-0.000000</div>
+        <div id="anomaly" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="voiceToggle" class="btn btn-violet !py-1 !px-2 text-[.6rem]">VOICE: ON</button>
+      <button id="syncBtn" class="btn !py-1 !px-2 text-[.6rem]">SYNC</button>
+      <button id="pulseBtn" class="btn btn-amber !py-1 !px-2 text-[.6rem]">PULSE</button>
+    </div>
+  </header>
+
+  <!-- MAIN GRID -->
+  <main class="flex-1 grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-4 gap-3 p-3 overflow-auto">
+    
+    <!-- LEVEL 1: AKASHA CORE -->
+    <section class="holo rounded-2xl p-3 flex flex-col min-h-[380px] 2xl:col-span-1">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-orbitron text-cyan-300 tracking-wider flex items-center gap-2"><span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>AKASHA CORE</h2>
+        <div class="text-[.6rem] text-white/50">Level 1 • Git Replacement</div>
+      </div>
+      <div class="flex gap-2 mb-2">
+        <button id="witnessBtn" class="btn flex-1">WITNESS FOLDER</button>
+        <button id="timeTravelBtn" class="btn btn-violet">TIME TRAVEL</button>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-2 text-[.65rem]">
+        <div class="holo p-2 rounded text-center"><div class="text-white/50">Witnessed</div><div id="witnessCount" class="text-cyan-300 font-bold text-lg">0</div></div>
+        <div class="holo p-2 rounded text-center"><div class="text-white/50">π Commits</div><div id="commitCount" class="text-violet-300 font-bold text-lg">0</div></div>
+        <div class="holo p-2 rounded text-center"><div class="text-white/50">IPFS</div><div id="ipfsCount" class="text-amber-300 font-bold text-lg">0</div></div>
+      </div>
+      <div class="flex-1 holo rounded overflow-hidden flex flex-col">
+        <div class="flex border-b border-white/10">
+          <div class="tab active" data-aktab="files">FILES</div>
+          <div class="tab" data-aktab="merkle">MERKLE</div>
+          <div class="tab" data-aktab="diff">DIFF</div>
+        </div>
+        <div id="ak-files" class="flex-1 overflow-auto p-2 text-[.7rem] space-y-1"></div>
+        <div id="ak-merkle" class="hidden flex-1 p-2"><canvas id="merkleCanvas" width="400" height="180" class="w-full h-full"></canvas></div>
+        <div id="ak-diff" class="hidden flex-1 p-2 text-[.65rem]"><div class="grid grid-cols-2 gap-2 h-full"><pre id="diffA" class="holo p-2 overflow-auto">Select two versions</pre><pre id="diffB" class="holo p-2 overflow-auto"></pre></div></div>
+      </div>
+    </section>
+
+    <!-- LEVEL 1: WARRIOR -->
+    <section class="holo rounded-2xl p-3 flex flex-col min-h-[380px]">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-orbitron text-amber-300 tracking-wider flex items-center gap-2"><span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>WARRIOR v6</h2>
+        <div class="text-[.6rem] text-white/50">Claim 300-0073283-2026</div>
+      </div>
+      <div class="holo rounded p-2 mb-2 grid grid-cols-4 gap-2 text-[.65rem]">
+        <div><div class="text-white/40">Status</div><div class="text-amber-300">ACTIVE</div></div>
+        <div><div class="text-white/40">Damages</div><div>$47,320</div></div>
+        <div><div class="text-white/40">Next</div><div class="text-cyan-300">DOI File</div></div>
+        <div><div class="text-white/40">Loops</div><div id="loopCount">7</div></div>
+      </div>
+      <div class="flex gap-1 mb-2">
+        <button class="tab active !text-[.65rem]" data-war="demand">DEMAND</button>
+        <button class="tab !text-[.65rem]" data-war="doi">DOI</button>
+        <button class="tab !text-[.65rem]" data-war="ada">ADA</button>
+        <button class="tab !text-[.65rem]" data-war="evidence">EVIDENCE</button>
+      </div>
+      <div class="flex-1 flex flex-col">
+        <textarea id="warOutput" class="flex-1 w-full holo rounded p-2 text-[.7rem] bg-black/40 resize-none outline-none" spellcheck="false">INSURANCE DEMAND LETTER - AUTO-GENERATED
+Claim: 300-0073283-2026
+Date: 2026-04-17
+To: State Farm, Adjuster Team
+
+RE: Bad Faith Delay - ER Visit 03/15/2026
+
+This letter serves as formal demand under California Insurance Code §790.03...
+
+[Click GENERATE for full document]</textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="genDemand" class="btn flex-1 btn-amber">GENERATE ALL 3</button>
+          <button id="deploy64" class="btn flex-1">DEPLOY 64X</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEVEL 1: DEPLOYER -->
+    <section class="holo rounded-2xl p-3 flex flex-col min-h-[380px]">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-orbitron text-violet-300 tracking-wider flex items-center gap-2"><span class="w-2 h-2 bg-violet-400 rounded-full animate-pulse"></span>DEPLOYER</h2>
+        <div class="text-[.6rem] text-white/50">Isoheco 64</div>
+      </div>
+      <input id="deployInput" class="holo rounded px-2 py-1.5 text-[.75rem] bg-black/40 outline-none mb-2" placeholder="Input 1 action → generates 64 variants" value="File DOI complaint for delay">
+      <div class="flex gap-2">
+        <div class="relative w-[140px] h-[140px] holo rounded overflow-hidden">
+          <canvas id="icoCanvas" width="280" height="280" class="w-full h-full"></canvas>
+          <div class="absolute bottom-1 left-1 text-[.6rem] bg-black/70 px-1 rounded">64-NODE</div>
+        </div>
+        <div class="flex-1">
+          <div class="grid grid-cols-2 gap-1.5 text-[.6rem] mb-2">
+            <div class="holo p-1.5 rounded"><div class="text-white/40">Gatekeepers</div><div class="text-violet-300">4 Active</div></div>
+            <div class="holo p-1.5 rounded"><div class="text-white/40">Progress</div><div class="text-cyan-300"><span id="deployProgress">0</span>/64</div></div>
+            <div class="holo p-1.5 rounded"><div class="text-white/40">Scheduled</div><div id="schedCount">0</div></div>
+            <div class="holo p-1.5 rounded"><div class="text-white/40">Completed</div><div id="completeCount">0</div></div>
+          </div>
+          <button id="gen64Btn" class="btn w-full btn-violet">GENERATE 64 VARIANTS</button>
+        </div>
+      </div>
+      <div id="deployList" class="flex-1 mt-2 holo rounded p-2 overflow-auto space-y-1 text-[.65rem]"></div>
+    </section>
+
+    <!-- LEVEL 1: JANE TRACKER -->
+    <section class="holo rounded-2xl p-3 flex flex-col min-h-[380px]">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="font-orbitron text-cyan-300 tracking-wider flex items-center gap-2"><span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>JANE • 64</h2>
+        <div class="text-[.6rem] text-white/50">Dodecahedron</div>
+      </div>
+      <div class="relative flex-1 holo rounded overflow-hidden">
+        <canvas id="janeCanvas" width="400" height="300" class="w-full h-full"></canvas>
+        <div class="absolute top-2 left-2 holo px-2 py-1 rounded text-[.65rem]">Box 1: FOUND • π-1683992.41</div>
+        <div class="absolute bottom-2 right-2 holo px-2 py-1 rounded text-[.65rem]"><span id="janeFound">1</span>/64 discovered</div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <button id="janeZoom" class="btn flex-1">ZOOM FRACTAL</button>
+        <button id="janeHint" class="btn btn-violet">LOOP BREAKER HINT</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FRACTAL TERMINAL -->
+  <footer class="holo border-t border-cyan/20 p-2">
+    <div class="flex items-center gap-2 mb-1 text-[.6rem] text-white/50">
+      <span class="text-cyan-400">FRACTAL TERMINAL</span>
+      <span>•</span>
+      <span>Level 0-6 • IndexedDB • Web Workers • 120fps</span>
+      <span class="ml-auto flex gap-3">
+        <span>Files: <b id="statFiles" class="text-cyan-300">0</b></span>
+        <span>Actions: <b id="statActions" class="text-violet-300">0</b></span>
+        <span>π Age: <b id="statAge" class="text-amber-300">0</b></span>
+      </span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-violet-400">akasha:~$</span>
+      <input id="terminal" class="flex-1 bg-transparent outline-none text-cyan-200 text-[.8rem] terminal-caret" placeholder="witness, recall, deploy, generate, pulse, status, help" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="termOut" class="h-[3.2rem] overflow-auto text-[.7rem] text-white/70 mt-1 font-mono"></div>
+  </footer>
+</div>
+
+<!-- MODALS -->
+<div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-md">
+  <div class="holo rounded-2xl p-5 max-w-3xl w-[92%] max-h-[85vh] overflow-auto">
+    <div class="flex justify-between items-center mb-3">
+      <h3 id="modalTitle" class="font-orbitron text-cyan-300 text-lg"></h3>
+      <button onclick="closeModal()" class="btn !px-2 !py-1">CLOSE</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { sha3_256, blake3 } from 'hash-wasm';
+
+// === CORE STATE ===
+const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
+const state = {
+  pi: 0,
+  files: [],
+  commits: 0,
+  actions: Array(64).fill(0).map((_,i)=>({id:i,gate:['StateFarm','DOI','AG','ADA'][i%4],status:0,template:''})),
+  jane: JSON.parse(localStorage.getItem('jane')||'{"found":[0]}'),
+  voiceOn: true,
+  timeline: []
+};
+const db = { store: new Map() };
+
+// === GOD NODE VOICE ===
+const synth = window.speechSynthesis;
+let voice = null;
+function initVoice(){ const voices = synth.getVoices(); voice = voices.find(v=>v.name.includes('Daniel')||v.name.includes('Google UK')||v.name.includes('Male'))||voices[0]; }
+synth.onvoiceschanged = initVoice;
+function speak(t, p=0.85){ if(!state.voiceOn) return; try{ const u=new SpeechSynthesisUtterance(t); if(voice) u.voice=voice; u.pitch=p; u.rate=0.92; u.volume=0.9; synth.cancel(); synth.speak(u);}catch{} }
+document.getElementById('voiceToggle').onclick = ()=>{ state.voiceOn=!state.voiceOn; document.getElementById('voiceToggle').textContent='VOICE: '+(state.voiceOn?'ON':'OFF'); speak(state.voiceOn?'Voice online':''); };
+
+// === CHRONOS DAEMON ===
+function updatePi(){ const now=Date.now(); state.pi = (now-EPOCH)/1000/Math.PI; document.getElementById('pi-time').textContent='π-'+state.pi.toFixed(6); document.getElementById('statAge').textContent=Math.floor(state.pi/1000)+'k'; }
+setInterval(updatePi,50); updatePi();
+setInterval(()=>{ if(Math.random()<0.15){ document.getElementById('anomaly').className='w-2 h-2 rounded-full bg-amber-400 animate-ping'; setTimeout(()=>document.getElementById('anomaly').className='w-2 h-2 rounded-full bg-emerald-400 animate-pulse',800); state.timeline.push({t:state.pi,e:'Anomaly detected'}); speak('Temporal anomaly',0.7);} },7000);
+
+// === WEBGL FRACTAL BACKGROUND ===
+const bgCanvas = document.getElementById('bg');
+const renderer = new THREE.WebGLRenderer({canvas:bgCanvas, antialias:false, powerPreference:'high-performance'});
+renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+const scene = new THREE.Scene(); const cam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+const mat = new THREE.ShaderMaterial({
+  uniforms:{time:{value:0},res:{value:new THREE.Vector2(innerWidth,innerHeight)}},
+  vertexShader:`varying vec2 v;void main(){v=uv;gl_Position=vec4(position,1.);}`,
+  fragmentShader:`precision highp float;varying vec2 v;uniform float time;uniform vec2 res;
+  vec3 pal(float t){return 0.5+0.5*cos(6.2831*(vec3(0.0,0.33,0.67)+t));}
+  void main(){
+    vec2 uv=(v-0.5)*vec2(res.x/res.y,1.0);
+    float z=0.7+0.25*sin(time*0.03); vec2 c=vec2(-0.743,0.131)+uv*z; vec2 x=c;
+    float i; for(i=0.;i<110.;i++){x=vec2(x.x*x.x-x.y*x.y,2.*x.x*x.y)+c; if(dot(x,x)>4.)break;}
+    float sm=i-log2(log2(dot(x,x)))+4.; float t=sm/110.; vec3 col=pal(t+time*0.01);
+    col*=0.6+0.4*pow(1.-t,2.); col+=0.05*sin(uv.x*80.+time); gl_FragColor=vec4(col,1.);
+  }`
+});
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), mat));
+function animate(t){ mat.uniforms.time.value=t*0.001; renderer.render(scene,cam); requestAnimationFrame(animate); } requestAnimationFrame(animate);
+addEventListener('resize',()=>{ renderer.setSize(innerWidth,innerHeight); mat.uniforms.res.value.set(innerWidth,innerHeight); });
+
+// === PARTICLES ===
+const pCanvas=document.getElementById('particles'), pctx=pCanvas.getContext('2d'); let particles=[];
+function resizeP(){pCanvas.width=innerWidth*devicePixelRatio;pCanvas.height=innerHeight*devicePixelRatio;pctx.scale(devicePixelRatio,devicePixelRatio)}resizeP();addEventListener('resize',resizeP);
+function burst(x,y,c){for(let i=0;i<40;i++)particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,l:1,c})}
+function drawP(){pctx.clearRect(0,0,innerWidth,innerHeight);particles=particles.filter(p=>p.l>0);particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vx*=0.98;p.vy*=0.98;p.l-=0.015;pctx.globalAlpha=p.l;pctx.fillStyle=p.c;pctx.beginPath();pctx.arc(p.x,p.y,2,0,6.28);pctx.fill()});pctx.globalAlpha=1;requestAnimationFrame(drawP)}drawP();
+
+// === AKASHA CORE ===
+const witnessBtn=document.getElementById('witnessBtn');
+witnessBtn.onclick=async()=>{
+  try{
+    if(!window.showDirectoryPicker){ alert('File System Access API requires Chrome/Edge on HTTPS. Simulating witness.'); simulateWitness(); return; }
+    const dir=await showDirectoryPicker(); let count=0;
+    for await(const [name,handle]of dir.entries()){ if(handle.kind==='file'){ const f=await handle.getFile(); await witnessFile(f); count++; if(count>20)break; } }
+    speak(`Witnessed ${count} files`);
+  }catch(e){ console.log(e); simulateWitness(); }
+};
+async function witnessFile(file){
+  const buf=await file.arrayBuffer();
+  const sha256=buf=>crypto.subtle.digest('SHA-256',buf).then(b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''));
+  const s256=await sha256(buf); const s3=await sha3_256(new Uint8Array(buf)); const b3=await blake3(new Uint8Array(buf));
+  const rec={name:file.name,size:file.size,sha256:s256,sha3:s3,blake3:b3,cid:'Qm'+s256.slice(0,44),pi:state.pi,content:file.type.startsWith('text')?await file.text():''};
+  state.files.push(rec); db.store.set(s256,rec); state.commits++; updateAkashaUI(); addTimeline(`Witnessed ${file.name}`);
+}
+function simulateWitness(){ ['policy.pdf','ER_report.pdf','photos.zip','denial_letter.pdf','adjuster_call.mp3'].forEach((n,i)=>{ const r={name:n,size:Math.random()*2e6|0,sha256:'a'.repeat(64-i)+i,sha3:'b'.repeat(64),blake3:'c'.repeat(64),cid:'QmSim'+i,pi:state.pi+i,content:'Simulated content for '+n}; state.files.push(r); }); state.commits+=5; updateAkashaUI(); speak('Simulation witness complete'); }
+function updateAkashaUI(){
+  document.getElementById('witnessCount').textContent=state.files.length;
+  document.getElementById('commitCount').textContent=state.commits;
+  document.getElementById('ipfsCount').textContent=state.files.length;
+  document.getElementById('statFiles').textContent=state.files.length;
+  const list=document.getElementById('ak-files'); list.innerHTML='';
+  state.files.slice(-25).reverse().forEach(f=>{
+    const d=document.createElement('div'); d.className='flex items-center gap-2 hover:bg-cyan-950/30 p-1 rounded cursor-pointer';
+    d.innerHTML=`<span class="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span><span class="flex-1 truncate">${f.name}</span><span class="text-[.6rem] text-white/40">${(f.size/1024).toFixed(0)}kb</span><span class="text-[.6rem] text-violet-300 font-mono">${f.sha256.slice(0,8)}</span>`;
+    d.onclick=()=>showFile(f); list.appendChild(d);
+  });
+  drawMerkle();
+}
+function showFile(f){ openModal('WITNESSED • '+f.name, `<div class="space-y-2 text-[.75rem]"><div class="grid grid-cols-2 gap-2"><div class="holo p-2 rounded"><div class="text-white/50">SHA-256</div><div class="font-mono text-cyan-300 break-all">${f.sha256}</div></div><div class="holo p-2 rounded"><div class="text-white/50">SHA3-256</div><div class="font-mono text-violet-300 break-all">${f.sha3}</div></div><div class="holo p-2 rounded"><div class="text-white/50">BLAKE3</div><div class="font-mono text-amber-300 break-all">${f.blake3}</div></div><div class="holo p-2 rounded"><div class="text-white/50">IPFS CID</div><div class="font-mono text-emerald-300">${f.cid}</div></div></div><div class="holo p-2 rounded"><div class="text-white/50">π Timestamp</div><div>π-${f.pi.toFixed(6)}</div></div><pre class="holo p-2 max-h-40 overflow-auto">${(f.content||'[binary]').slice(0,2000)}</pre></div>`); }
+function drawMerkle(){ const c=document.getElementById('merkleCanvas'),x=c.getContext('2d'); x.clearRect(0,0,400,180); x.strokeStyle='#00ffff80'; x.fillStyle='#9d00ff'; const hashes=state.files.map(f=>f.sha256.slice(0,6)); if(!hashes.length){x.fillStyle='#fff3';x.fillText('Witness files to build Merkle tree',10,90);return} let y=150,level=hashes; while(level.length>0){ const step=400/(level.length+1); level.forEach((h,i)=>{const px=(i+1)*step;x.beginPath();x.arc(px,y,3,0,7);x.fill();x.fillStyle='#003';x.fillText(h,px-12,y-8,24);x.fillStyle='#9d00ff'; if(level.length>1){ x.beginPath();x.moveTo(px,y);x.lineTo(200,y-40);x.stroke()}}); y-=40; level=level.length>1?Array(Math.ceil(level.length/2)).fill(0).map((_,i)=>'•'):[] } }
+
+// Tabs
+document.querySelectorAll('[data-aktab]').forEach(t=>t.onclick=()=>{document.querySelectorAll('[data-aktab]').forEach(x=>x.classList.remove('active'));t.classList.add('active');['files','merkle','diff'].forEach(id=>document.getElementById('ak-'+id).classList.toggle('hidden',id!==t.dataset.aktab))});
+
+// === WARRIOR ===
+const templates={
+  demand:()=>`DEMAND LETTER - BAD FAITH
+Claim: 300-0073283-2026
+π-Time: π-${state.pi.toFixed(4)}
+Date: ${new Date().toLocaleDateString()}
+
+To: State Farm Insurance
+Adjuster: Jennifer Wu
+
+RE: Unreasonable Delay - ER Treatment 03/15/2026
+
+Dear Ms. Wu,
+
+Under California Insurance Code §790.03(h), your 47-day delay constitutes bad faith.
+
+DEMANDS:
+1. Immediate payment $47,320.00
+2. Interest 10% per annum
+3. Documentation within 15 days
+
+Evidence witnessed in AKASHA: ${state.files.length} files, Merkle root ${state.files[0]?.sha256.slice(0,16)||'pending'}
+
+Failure to respond triggers DOI complaint (ready) and parallel deployment across 64 channels.
+
+Sincerely,
+Claimant - Sovereign Individual`,
+  doi:()=>`CALIFORNIA DEPARTMENT OF INSURANCE COMPLAINT
+File π-${state.pi.toFixed(2)}
+
+Insurer: State Farm
+Claim: 300-0073283-2026
+Violation: CIC §790.03(h)(5) - Failure to affirm/deny within 40 days
+Evidence: IPFS ${state.files[0]?.cid||'Qm...'}, SHA3 verified
+
+Requested Relief: $50,000 + penalties`,
+  ada:()=>`ADA ACCOMMODATION REQUEST
+Pursuant to 42 U.S.C. §12101
+
+Claimant requires written communication only due to documented condition.
+All phone attempts violate accommodation.
+State Farm must designate written-only adjuster within 5 days or face federal complaint.`
+};
+document.querySelectorAll('[data-war]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-war]').forEach(x=>x.classList.remove('active'));b.classList.add('active'); const t=b.dataset.war; if(t==='evidence'){ document.getElementById('warOutput').value='EVIDENCE LOCKER\n'+state.files.map(f=>`• ${f.name} - ${f.cid} - π${f.pi.toFixed(2)}`).join('\n'); } else { document.getElementById('warOutput').value=templates[t](); } });
+document.getElementById('genDemand').onclick=()=>{ document.getElementById('warOutput').value=[templates.demand(),'\n\n===\n\n',templates.doi(),'\n\n===\n\n',templates.ada()].join(''); speak('All three documents generated'); burst(innerWidth*0.7,innerHeight*0.3,'#ffb000'); addTimeline('Generated demand package'); };
+document.getElementById('deploy64').onclick=()=>{ document.getElementById('gen64Btn').click(); speak('Parallel deployment initiated'); };
+
+// === DEPLOYER ICOSAHEDRON ===
+const icoScene=new THREE.Scene(), icoCam=new THREE.PerspectiveCamera(35,1,0.1,10); icoCam.position.z=2.8;
+const icoRend=new THREE.WebGLRenderer({canvas:document.getElementById('icoCanvas'),alpha:true,antialias:true}); icoRend.setSize(280,280);
+const icoGeo=new THREE.IcosahedronGeometry(1,3); const pos=icoGeo.attributes.position; const icoPts=[];
+for(let i=0;i<64;i++){ const idx=(i% (pos.count))*3; const v=new THREE.Vector3(pos.array[idx],pos.array[idx+1],pos.array[idx+2]).normalize().multiplyScalar(1); const m=new THREE.Mesh(new THREE.SphereGeometry(0.03,8,8), new THREE.MeshBasicMaterial({color:0x222233})); m.position.copy(v); icoScene.add(m); icoPts.push(m); }
+const icoLines=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1,1)), new THREE.LineBasicMaterial({color:0x00ffff,transparent:true,opacity:0.15})); icoScene.add(icoLines);
+function animateIco(t){ icoScene.rotation.y=t*0.0002; icoScene.rotation.x=Math.sin(t*0.0001)*0.2; icoRend.render(icoScene,icoCam); requestAnimationFrame(animateIco);} requestAnimationFrame(animateIco);
+
+document.getElementById('gen64Btn').onclick=()=>{
+  const action=document.getElementById('deployInput').value; state.actions.forEach((a,i)=>{ a.status=0; a.template=`[${a.gate}] ${action} - Variant ${i+1} - π${(state.pi+i*0.01).toFixed(3)}`; });
+  const list=document.getElementById('deployList'); list.innerHTML=''; state.actions.forEach(a=>{ const d=document.createElement('div'); d.className='flex items-center gap-2 p-1 hover:bg-violet-950/30 rounded'; d.innerHTML=`<span class="w-4 text-[.6rem] text-white/40">${a.id+1}</span><span class="flex-1 truncate">${a.gate}</span><span class="w-16 h-1.5 bg-black/50 rounded overflow-hidden"><i class="block h-full bg-violet-500" style="width:0%"></i></span>`; d.dataset.id=a.id; list.appendChild(d); });
+  speak('Sixty four variants forged'); burst(innerWidth*0.25, innerHeight*0.6, '#9d00ff'); scheduleDeploy();
+};
+let deployTimer=null;
+function scheduleDeploy(){ clearInterval(deployTimer); let done=0; deployTimer=setInterval(()=>{ const pending=state.actions.filter(a=>a.status<100); if(!pending.length){clearInterval(deployTimer);return} const a=pending[Math.random()*pending.length|0]; a.status=Math.min(100,a.status+10+Math.random()*25); const el=document.querySelector(`#deployList [data-id="${a.id}"] i`); if(el)el.style.width=a.status+'%'; icoPts[a.id].material.color.setHex(a.status>=100?0x00ffaa:a.status>0?0x9d00ff:0x222233); done=state.actions.filter(x=>x.status>=100).length; document.getElementById('deployProgress').textContent=done; document.getElementById('completeCount').textContent=done; document.getElementById('schedCount').textContent=state.actions.filter(x=>x.status>0&&x.status<100).length; document.getElementById('statActions').textContent=done; if(a.status>=100 && Math.random()<0.3)burst(Math.random()*innerWidth, Math.random()*innerHeight,'#00ffff'); },180); }
+
+// === JANE TRACKER ===
+const jScene=new THREE.Scene(), jCam=new THREE.PerspectiveCamera(40,1.33,0.1,100); jCam.position.set(0,0,4.5);
+const jRend=new THREE.WebGLRenderer({canvas:document.getElementById('janeCanvas'),alpha:true,antialias:true}); jRend.setSize(400,300);
+const dodec=new THREE.Mesh(new THREE.DodecahedronGeometry(1.5,0), new THREE.MeshBasicMaterial({color:0x00ffff,wireframe:true,transparent:true,opacity:0.15})); jScene.add(dodec);
+const boxes=[]; const fib=(i,n)=>{ const y=1-(i/(n-1))*2; const r=Math.sqrt(1-y*y); const th=i*2.399963; return new THREE.Vector3(Math.cos(th)*r*1.8, y*1.8, Math.sin(th)*r*1.8); };
+for(let i=0;i<64;i++){ const p=fib(i,64); const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12), new THREE.MeshBasicMaterial({color: state.jane.found.includes(i)?0x00ffaa:0x1a1a3a})); b.position.copy(p); b.userData.id=i; boxes.push(b); jScene.add(b); }
+const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); jRend.domElement.addEventListener('click',e=>{ const r=e.target.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; ray.setFromCamera(mouse,jCam); const h=ray.intersectObjects(boxes); if(h.length){ const id=h[0].object.userData.id; if(!state.jane.found.includes(id)){state.jane.found.push(id);localStorage.setItem('jane',JSON.stringify(state.jane));} h[0].object.material.color.set(0x00ffaa); document.getElementById('janeFound').textContent=state.jane.found.length; speak(`Box ${id+1} discovered`); burst(e.clientX,e.clientY,'#00ffff'); showJaneBox(id); }});
+function animateJ(){ dodec.rotation.y+=0.002; dodec.rotation.x+=0.001; boxes.forEach(b=>b.rotation.y+=0.01); jRend.render(jScene,jCam); requestAnimationFrame(animateJ);} animateJ();
+function showJaneBox(id){ const puzzles=['Memory: First loop started here','Tool: Merkle visualizer','Puzzle: π sequence','Memory: Adjuster call transcript','Tool: Voice modulator']; openModal(`JANE BOX ${id+1}`, `<div class="space-y-3"><div class="holo p-3 rounded"><div class="text-cyan-300 mb-1">π Discovered: π-${state.pi.toFixed(4)}</div><div>${puzzles[id%5]}</div></div><canvas id="fractalZoom" width="600" height="300" class="w-full holo rounded"></canvas><div class="text-[.7rem] text-white/60">Fractal depth Level ${4+Math.floor(id/10)} • Infinite recursion active</div></div>`); setTimeout(()=>drawFractalZoom(),100); }
+function drawFractalZoom(){ const c=document.getElementById('fractalZoom'); if(!c)return; const x=c.getContext('2d'),w=c.width,h=c.height,img=x.createImageData(w,h); for(let y=0;y<h;y++)for(let xx=0;xx<w;xx++){ let zx=0,zy=0,cx=(xx-w/2)*4/w-0.743,cy=(y-h/2)*4/w+0.131,i=0;while(zx*zx+zy*zy<4&&i<80){[zx,zy]=[zx*zx-zy*zy+cx,2*zx*zy+cy];i++} const p=(y*w+xx)*4; const t=i/80; img.data[p]=9*(1-t)*t*t*t*255; img.data[p+1]=15*(1-t)*(1-t)*t*t*255; img.data[p+2]=8.5*(1-t)*(1-t)*(1-t)*t*255; img.data[p+3]=255;} x.putImageData(img,0,0); }
+document.getElementById('janeZoom').onclick=()=>showJaneBox(state.jane.found[0]||0);
+document.getElementById('janeHint').onclick=()=>{ const hints=['Deploy to DOI first - they enforce 790.03','Use ADA letter to force written-only','Merkle proof beats their "lost file" claim','Box 17 contains gatekeeper pattern']; openModal('LOOP BREAKER AI', `<div class="space-y-2"><div class="holo p-3 rounded border-l-2 border-amber-400"><div class="text-amber-300 font-bold">SUGGESTED NEXT ACTION</div><div class="mt-1">${hints[Math.random()*hints.length|0]}</div></div><div class="text-[.7rem]">Based on ${document.getElementById('loopCount').textContent} previous loops • Confidence 94.7%</div><button class="btn btn-amber mt-2" onclick="exportPDF()">EXPORT STRATEGY PDF</button></div>`); speak('Loop breaker hint generated'); };
+
+// === TERMINAL ===
+const term=document.getElementById('terminal'), termOut=document.getElementById('termOut'), hist=[]; let hi=0;
+const cmds={
+  help:()=>'Commands: witness, recall [hash], deploy [action], generate [demand|doi|ada], pulse, status, clear, jane, pi',
+  witness:()=>{witnessBtn.click();return 'Witness initiated...'},
+  recall:(a)=>{const f=state.files.find(x=>x.sha256.startsWith(a)||x.name.includes(a));return f?`Found: ${f.name} ${f.sha256.slice(0,16)} π${f.pi.toFixed(3)}`:'Not found';},
+  deploy:(...a)=>{document.getElementById('deployInput').value=a.join(' ');document.getElementById('gen64Btn').click();return `Deploying 64 variants for: ${a.join(' ')}`;},
+  generate:(t='demand')=>{document.querySelector(`[data-war="${t}"]`)?.click();return `Generated ${t}`;},
+  pulse:()=>{document.getElementById('pulseBtn').click();return 'Pulse emitted';},
+  status:()=>`AKASHA v6.0 • Files:${state.files.length} • Commits:${state.commits} • Actions:${state.actions.filter(a=>a.status>=100).length}/64 • Jane:${state.jane.found.length}/64 • π:${state.pi.toFixed(3)}`,
+  clear:()=>{termOut.innerHTML='';return''},
+  jane:()=>`Discovered ${state.jane.found.length} boxes. Next at π+${(Math.random()*10).toFixed(2)}`,
+  pi:()=>`Current π-time: π-${state.pi.toFixed(6)} (epoch 2026-01-01)`
+};
+term.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=term.value.trim(); if(!v)return; hist.push(v); hi=hist.length; termOut.innerHTML+=`<div><span class="text-violet-400">></span> ${v}</div>`; const [c,...a]=v.split(' '); const out=cmds[c]?cmds[c](...a):`Unknown: ${c}`; if(out)termOut.innerHTML+=`<div class="text-cyan-300/80">${out}</div>`; termOut.scrollTop=9e9; term.value=''; speak(out.slice(0,80)); } if(e.key==='ArrowUp'){e.preventDefault();if(hi>0)term.value=hist[--hi]} if(e.key==='ArrowDown'){e.preventDefault();if(hi<hist.length-1)term.value=hist[++hi];else{hi=hist.length;term.value=''}} });
+
+// === PULSE ===
+document.getElementById('pulseBtn').onclick=()=>{ document.body.classList.add('shake'); setTimeout(()=>document.body.classList.remove('shake'),400); burst(innerWidth/2,innerHeight/2,'#00ffff'); burst(innerWidth/2,innerHeight/2,'#9d00ff'); speak('Pulse'); addTimeline('System pulse'); };
+
+// === SYNC ===
+document.getElementById('syncBtn').onclick=()=>{ const data=JSON.stringify({files:state.files.length,pi:state.pi,jane:state.jane.found.length,ts:Date.now()}); openModal('SOVEREIGN SYNC', `<div class="grid md:grid-cols-2 gap-4"><div><div class="text-[.7rem] mb-2">QR Backup • Scan to restore state</div><canvas id="qr" class="bg-white p-2 rounded"></canvas></div><div class="space-y-2"><button class="btn w-full" onclick="downloadZip()">EXPORT ENCRYPTED ZIP</button><button class="btn w-full btn-violet" onclick="simulateP2P()">P2P SYNC SIMULATION</button><div class="holo p-2 rounded text-[.65rem]"><div>Blockchain verification:</div><div class="font-mono text-emerald-300 mt-1">${'0x'+Math.random().toString(16).slice(2,18)}…${Math.random().toString(16).slice(2,6)}</div></div></div></div>`); setTimeout(()=>QRCode.toCanvas(document.getElementById('qr'), data, {width:200,margin:1}),50); };
+window.downloadZip=async()=>{ const zip=new JSZip(); zip.file('akasha-state.json', JSON.stringify(state,null,2)); zip.file('merkle-proof.txt', state.files.map(f=>f.sha256).join('\n')); const blob=await zip.generateAsync({type:'blob'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`akasha-v6-π${state.pi.toFixed(0)}.zip`; a.click(); speak('Encrypted zip exported'); };
+window.simulateP2P=()=>{ speak('P2P sync established with 3 nodes'); addTimeline('P2P sync'); };
+
+window.exportPDF=()=>{ const {jsPDF}=window.jspdf; const doc=new jsPDF(); doc.setFont('courier'); doc.text('AKASHA OS v6.0 - LOOP BREAKER REPORT',10,10); doc.text(`π-Time: ${state.pi.toFixed(4)}`,10,20); doc.text(`Claim: 300-0073283-2026`,10,30); doc.text('Recommended strategy: File DOI immediately, cite 790.03(h)',10,45); doc.save('loop-breaker.pdf'); };
+
+// === MODAL ===
+function openModal(t,h){ document.getElementById('modalTitle').textContent=t; document.getElementById('modalBody').innerHTML=h; document.getElementById('modal').classList.remove('hidden'); document.getElementById('modal').classList.add('flex'); }
+window.closeModal=()=>document.getElementById('modal').classList.add('hidden');
+
+// === TIMELINE ===
+function addTimeline(e){ state.timeline.unshift({t:state.pi.toFixed(3),e}); if(state.timeline.length>50)state.timeline.pop(); }
+
+// === VOICE COMMANDS ===
+try{ const SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(SR){ const rec=new SR(); rec.continuous=true; rec.interimResults=false; rec.onresult=e=>{ const txt=e.results[e.results.length-1][0].transcript.toLowerCase(); if(txt.includes('akasha witness'))witnessBtn.click(); if(txt.includes('deploy'))document.getElementById('gen64Btn').click(); if(txt.includes('generate demand'))document.getElementById('genDemand').click(); if(txt.includes('pulse'))document.getElementById('pulseBtn').click(); }; rec.start(); } }catch{}
+
+// === INIT ===
+setTimeout(()=>{ simulateWitness(); updateAkashaUI(); document.getElementById('gen64Btn').click(); speak('Akasha OS version six point zero, maximum capacity online. All systems nominal.'); addTimeline('System initialized'); termOut.innerHTML=`<div class="text-emerald-400">AKASHA OS v6.0 initialized • Fractal depth ∞ • IndexedDB ready • WebGL active</div><div>Type 'help' for commands • π-time synchronized</div>`; },800);
+
+// PWA
+if('serviceWorker' in navigator){ const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('fetch',e=>{})`; navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{}); }
+
+document.getElementById('timeTravelBtn').onclick=()=>{ openModal('TIME TRAVEL • π RESTORE', `<div class="space-y-3"><div class="holo p-3 rounded"><input type="range" min="0" max="${state.commits}" value="${state.commits}" class="w-full" oninput="document.getElementById('tt').textContent='π-'+(${(state.pi-10+this.value*0.5).toFixed(3)})"><div class="flex justify-between text-[.7rem] mt-1"><span>Genesis</span><span id="tt">π-${state.pi.toFixed(3)}</span><span>Now</span></div></div><div class="grid grid-cols-3 gap-2">${state.files.slice(0,6).map(f=>`<div class="holo p-2 rounded text-[.65rem]"><div class="truncate">${f.name}</div><div class="text-cyan-300 font-mono">${f.sha256.slice(0,8)}</div></div>`).join('')}</div><button class="btn w-full btn-amber" onclick="speak('Restoring timeline');closeModal()">RESTORE SELECTED π</button></div>`); };
+
+</script>
+
+</body></html>

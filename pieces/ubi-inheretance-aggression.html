@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INHERITANCE AGGREGATION — PUBLIC OWNERSHIP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root {
+  --phosphor: #00ff41;
+  --phosphor-dim: #00cc33;
+  --phosphor-bright: #7fff00;
+  --amber: #ffaa00;
+  --amber-glow: #ffcc00;
+  --critical: #ff4444;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--phosphor) #001100;
+}
+
+body {
+  background: #000000;
+  background-image: 
+    radial-gradient(ellipse at center, #001a00 0%, #000000 70%),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, transparent 1px, transparent 2px);
+  color: var(--phosphor);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 255, 65, 0.03) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 10000;
+  animation: scan 8s linear infinite;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.8) 100%);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 0.98; }
+  93% { opacity: 0.9; }
+  94% { opacity: 0.98; }
+  96% { opacity: 0.92; }
+}
+
+.phosphor {
+  text-shadow: 
+    0 0 2px var(--phosphor),
+    0 0 5px var(--phosphor),
+    0 0 12px rgba(0, 255, 65, 0.5),
+    0 0 25px rgba(0, 255, 65, 0.3);
+  animation: flicker 4s infinite;
+}
+
+.phosphor-bright {
+  color: var(--phosphor-bright);
+  text-shadow: 
+    0 0 3px var(--phosphor-bright),
+    0 0 8px var(--phosphor-bright),
+    0 0 20px rgba(127, 255, 0, 0.8),
+    0 0 40px rgba(127, 255, 0, 0.4);
+}
+
+.vt {
+  font-family: 'VT323', monospace;
+  letter-spacing: 0.02em;
+}
+
+.panel {
+  background: rgba(0, 15, 0, 0.85);
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  box-shadow: 
+    inset 0 0 40px rgba(0, 255, 65, 0.05),
+    inset 0 0 2px rgba(0, 255, 65, 0.3),
+    0 0 20px rgba(0, 0, 0, 0.8);
+  position: relative;
+  backdrop-filter: blur(3px);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,255,65,0.05) 0%, transparent 10%, transparent 90%, rgba(0,255,65,0.03) 100%);
+  pointer-events: none;
+}
+
+.panel-header {
+  border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+  background: rgba(0, 255, 65, 0.05);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(0, 255, 65, 0.9);
+}
+
+.bar-track {
+  height: 28px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(0, 255, 65, 0.25);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0,0,0,1);
+}
+
+.bar-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 9px,
+    rgba(0,255,65,0.05) 10px
+  );
+  pointer-events: none;
+}
+
+.bar {
+  height: 100%;
+  position: relative;
+  width: 0%;
+  transition: width 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  overflow: hidden;
+}
+
+.bar-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, 
+    rgba(0,255,65,0.2) 0%, 
+    var(--phosphor) 50%,
+    rgba(0,255,65,0.9) 100%);
+  box-shadow: 
+    0 0 10px var(--phosphor),
+    inset 0 0 10px rgba(255,255,255,0.2);
+}
+
+.bar.below .bar-fill {
+  background: linear-gradient(90deg, 
+    rgba(255,170,0,0.2) 0%, 
+    var(--amber) 50%,
+    var(--amber-glow) 100%);
+  box-shadow: 
+    0 0 10px var(--amber),
+    inset 0 0 10px rgba(255,255,255,0.2);
+}
+
+.bar.public .bar-fill {
+  background: linear-gradient(90deg,
+    rgba(127,255,0,0.3) 0%,
+    var(--phosphor-bright) 50%,
+    #b4ff50 100%);
+  box-shadow: 
+    0 0 15px var(--phosphor-bright),
+    0 0 30px rgba(127,255,0,0.6),
+    inset 0 0 15px rgba(255,255,255,0.3);
+  animation: publicPulse 2s ease-in-out infinite;
+}
+
+@keyframes publicPulse {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.4) saturate(1.3); }
+}
+
+.threshold-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.threshold-line::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.9) 0px,
+    rgba(255,255,255,0.9) 3px,
+    transparent 3px,
+    transparent 7px
+  );
+  box-shadow: 0 0 8px white, 0 0 15px white;
+}
+
+.threshold-label {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: white;
+  white-space: nowrap;
+  text-shadow: 0 0 5px white, 0 0 10px white;
+  background: rgba(0,0,0,0.8);
+  padding: 2px 6px;
+  border: 1px solid rgba(255,255,255,0.5);
+  letter-spacing: 0.1em;
+}
+
+.fractal-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.35;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.level-row {
+  position: relative;
+  padding: 0.4rem 0.5rem;
+  transition: all 0.3s;
+  border-left: 2px solid transparent;
+}
+
+.level-row:hover {
+  background: rgba(0, 255, 65, 0.05);
+  border-left-color: var(--phosphor);
+}
+
+.level-row.active {
+  background: rgba(127, 255, 0, 0.08);
+  border-left-color: var(--phosphor-bright);
+  box-shadow: inset 0 0 20px rgba(127,255,0,0.1);
+}
+
+.level-row.active::before {
+  content: "▶";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--phosphor-bright);
+  text-shadow: 0 0 10px var(--phosphor-bright);
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+.corporate-overlay {
+  position: absolute;
+  inset: 8px;
+  background: 
+    linear-gradient(135deg, rgba(255, 80, 0, 0.12) 0%, rgba(255, 40, 0, 0.08) 100%),
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,100,0,0.03) 10px, rgba(255,100,0,0.03) 20px);
+  border: 1.5px dashed rgba(255, 100, 0, 0.7);
+  box-shadow: 
+    0 0 30px rgba(255, 80, 0, 0.2),
+    inset 0 0 30px rgba(255, 80, 0, 0.05);
+  backdrop-filter: blur(2px);
+  transform: rotate(-0.8deg);
+  z-index: 30;
+  pointer-events: none;
+  animation: corporateFlicker 3s infinite;
+}
+
+@keyframes corporateFlicker {
+  0%, 95%, 100% { opacity: 0.95; }
+  96% { opacity: 0.8; }
+  97% { opacity: 0.95; }
+  98% { opacity: 0.85; }
+}
+
+.corporate-text {
+  color: #ff8844;
+  text-shadow: 
+    0 0 3px #ff6600,
+    0 0 8px rgba(255, 100, 0, 0.8),
+    0 0 15px rgba(255, 60, 0, 0.5);
+  font-weight: 600;
+}
+
+.bottom-display {
+  background: rgba(0, 10, 0, 0.95);
+  border: 2px solid var(--phosphor);
+  box-shadow: 
+    inset 0 0 50px rgba(0, 255, 65, 0.1),
+    0 0 30px rgba(0, 255, 65, 0.3),
+    0 0 60px rgba(0, 255, 65, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-display::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--phosphor-bright), transparent);
+  animation: sweep 3s linear infinite;
+}
+
+@keyframes sweep {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+.terminal-cursor::after {
+  content: "█";
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}
+
+.grid-lines {
+  background-image: 
+    linear-gradient(rgba(0,255,65,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,65,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+</style>
+</head>
+<body class="p-2 md:p-4 lg:p-6">
+  <div class="max-w-[1600px] mx-auto">
+    <!-- Header -->
+    <header class="text-center mb-3 md:mb-4 relative">
+      <div class="absolute inset-0 grid-lines opacity-20"></div>
+      <h1 class="vt text-4xl md:text-6xl lg:text-7xl phosphor tracking-wider leading-none">INHERITANCE AGGREGATION</h1>
+      <div class="flex items-center justify-center gap-3 mt-2">
+        <div class="h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-[var(--phosphor)] opacity-60"></div>
+        <p class="text-[10px] md:text-xs tracking-[0.3em] text-[var(--phosphor-dim)] uppercase">Fractal depth: inf-2 | Threshold: >50.0000%</p>
+        <div class="h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-[var(--phosphor)] opacity-60"></div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid grid-cols-1 xl:grid-cols-12 gap-3 md:gap-4">
+      
+      <!-- LEFT: Personal/Direct -->
+      <section class="xl:col-span-3 panel h-full">
+        <div class="panel-header flex items-center justify-between">
+          <span>PERSONAL / DIRECT</span>
+          <span class="text-[10px] opacity-60">NODE_0</span>
+        </div>
+        <div class="p-4 md:p-5 flex flex-col h-[calc(100%-32px)] justify-between">
+          <div>
+            <div class="text-[11px] uppercase tracking-widest opacity-70 mb-2">Ownership Stake</div>
+            <div class="vt text-6xl md:text-7xl phosphor leading-none mb-1" id="personal-pct">36.0%</div>
+            <div class="text-xs uppercase tracking-widest text-[var(--amber)]">BELOW THRESHOLD</div>
+          </div>
+          
+          <div class="my-6">
+            <div class="bar-track mb-2">
+              <div class="bar below" data-pct="36">
+                <div class="bar-fill"></div>
+              </div>
+              <div class="threshold-line" style="left: 50%">
+                <div class="threshold-label">50%</div>
+              </div>
+            </div>
+            <div class="flex justify-between text-[10px] opacity-50">
+              <span>0%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div class="space-y-2 text-[11px] leading-relaxed opacity-80 border-t border-[rgba(0,255,65,0.2)] pt-3">
+            <div class="flex gap-2">
+              <span class="text-[var(--amber)]">⚠</span>
+              <span>Individual claim insufficient for control</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="opacity-50">→</span>
+              <span>Requires fractal aggregation</span>
+            </div>
+            <div class="flex gap-2">
+              <span class="opacity-50">→</span>
+              <span>Inheritance depth activates at L2</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTER: Fractal Expansion -->
+      <section class="xl:col-span-6 panel relative overflow-hidden">
+        <div class="panel-header flex items-center justify-between">
+          <span>FRACTAL EXPANSION ENGINE</span>
+          <span class="text-[10px] opacity-60 animate-pulse">LIVE</span>
+        </div>
+        
+        <canvas class="fractal-canvas" id="fractal"></canvas>
+        
+        <div class="p-3 md:p-4 relative z-10">
+          <!-- Threshold rail -->
+          <div class="relative mb-3">
+            <div class="threshold-line" style="position: absolute; left: calc(130px + 50% * (100% - 130px - 60px) / 100%); height: calc(100% + 20px); top: -10px;">
+              <div class="threshold-label">50.0000%</div>
+            </div>
+          </div>
+
+          <div class="space-y-2.5" id="levels">
+            <!-- Level inf -->
+            <div class="level-row">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest opacity-60">Level inf</div>
+                  <div class="text-[11px] leading-tight">ultimate</div>
+                </div>
+                <div class="flex-1 bar-track">
+                  <div class="bar" data-pct="96.2">
+                    <div class="bar-fill" style="background: linear-gradient(90deg, rgba(0,255,170,0.2), #00ffaa)"></div>
+                  </div>
+                <div class="w-[60px] text-right vt text-xl" style="color:#00ffaa">96.2%</div>
+              </div>
+            </div>
+
+            <!-- Level inf-1 -->
+            <div class="level-row">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest opacity-60">Level inf-1</div>
+                  <div class="text-[11px] leading-tight">penultimate</div>
+                </div>
+                <div class="flex-1 bar-track">
+                  <div class="bar" data-pct="94.7">
+                    <div class="bar-fill" style="background: linear-gradient(90deg, rgba(0,255,136,0.2), #00ff88)"></div>
+                  </div>
+                </div>
+                <div class="w-[60px] text-right vt text-xl" style="color:#00ff88">94.7%</div>
+              </div>
+            </div>
+
+            <!-- Level inf-2 - THE KEY -->
+            <div class="level-row active">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest text-[var(--phosphor-bright)]">Level inf-2 ★</div>
+                  <div class="text-[11px] leading-tight phosphor-bright">PUBLIC INFRASTRUCTURE</div>
+                </div>
+                <div class="flex-1 bar-track" style="box-shadow: 0 0 0 1px rgba(127,255,0,0.5), inset 0 0 20px rgba(127,255,0,0.1);">
+                  <div class="bar public" data-pct="91.4">
+                    <div class="bar-fill"></div>
+                  </div>
+                </div>
+                <div class="w-[60px] text-right vt text-2xl phosphor-bright">91.4%</div>
+              </div>
+            </div>
+
+            <!-- Level 3 -->
+            <div class="level-row">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest opacity-60">Level 3</div>
+                  <div class="text-[11px] leading-tight">great-grandchildren</div>
+                </div>
+                <div class="flex-1 bar-track">
+                  <div class="bar" data-pct="82.1">
+                    <div class="bar-fill"></div>
+                  </div>
+                <div class="w-[60px] text-right vt text-xl phosphor">82.1%</div>
+              </div>
+            </div>
+
+            <!-- Level 2 -->
+            <div class="level-row">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest opacity-60">Level 2</div>
+                  <div class="text-[11px] leading-tight">grandchildren</div>
+                </div>
+                <div class="flex-1 bar-track">
+                  <div class="bar" data-pct="67.8">
+                    <div class="bar-fill"></div>
+                  </div>
+                </div>
+                <div class="w-[60px] text-right vt text-xl phosphor">67.8%</div>
+              </div>
+            </div>
+
+            <!-- Level 1 -->
+            <div class="level-row">
+              <div class="flex items-center gap-3">
+                <div class="w-[120px] shrink-0">
+                  <div class="text-[10px] uppercase tracking-widest opacity-60">Level 1</div>
+                  <div class="text-[11px] leading-tight">children</div>
+                </div>
+                <div class="flex-1 bar-track">
+                  <div class="bar below" data-pct="45.3">
+                    <div class="bar-fill"></div>
+                  </div>
+                </div>
+                <div class="w-[60px] text-right vt text-xl" style="color:var(--amber)">45.3%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-[rgba(0,255,65,0.15)] flex items-center justify-between text-[10px] uppercase tracking-widest">
+            <div class="flex items-center gap-4">
+              <span class="opacity-60">Aggregation:</span>
+              <span class="text-[var(--amber)]">L1: BELOW</span>
+              <span class="opacity-50">→</span>
+              <span class="phosphor">L2: THRESHOLD CROSSED</span>
+            </div>
+            <div class="opacity-40">fractal_depth = ∞-2</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: Public Infrastructure -->
+      <section class="xl:col-span-3 panel relative">
+        <div class="panel-header flex items-center justify-between">
+          <span>PUBLIC INFRASTRUCTURE</span>
+          <span class="text-[10px] opacity-60">76.5% TOTAL</span>
+        </div>
+        
+        <div class="p-4 md:p-5 relative">
+          <div class="space-y-3.5">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="uppercase tracking-wider opacity-80">Roads / Bridges</span>
+                <span class="vt text-[15px] phosphor">18.7%</span>
+              </div>
+              <div class="bar-track h-[20px]">
+                <div class="bar" data-pct="24.4" style="width:0%">
+                  <div class="bar-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="uppercase tracking-wider opacity-80">Utilities Grid</span>
+                <span class="vt text-[15px] phosphor">22.4%</span>
+              </div>
+              <div class="bar-track h-[20px]">
+                <div class="bar" data-pct="29.3" style="width:0%">
+                  <div class="bar-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="uppercase tracking-wider opacity-80">Water Systems</span>
+                <span class="vt text-[15px] phosphor">14.9%</span>
+              </div>
+              <div class="bar-track h-[20px]">
+                <div class="bar" data-pct="19.5" style="width:0%">
+                  <div class="bar-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="uppercase tracking-wider opacity-80">Public Broadband</span>
+                <span class="vt text-[15px] phosphor">9.2%</span>
+              </div>
+              <div class="bar-track h-[20px]">
+                <div class="bar" data-pct="12.0" style="width:0%">
+                  <div class="bar-fill"></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="uppercase tracking-wider opacity-80">Transit</span>
+                <span class="vt text-[15px] phosphor">11.3%</span>
+              </div>
+              <div class="bar-track h-[20px]">
+                <div class="bar" data-pct="14.8" style="width:0%">
+                  <div class="bar-fill"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-[rgba(0,255,65,0.2)] text-[10px] uppercase tracking-widest opacity-60">
+            <div>Composite public base: 76.5%</div>
+            <div class="mt-1">With fractal inheritance: <span class="phosphor">91.4%</span></div>
+          </div>
+        </div>
+
+        <!-- Corporate Overlay -->
+        <div class="corporate-overlay">
+          <div class="h-full flex flex-col justify-center p-2">
+            <div class="corporate-text vt text-2xl md:text-3xl leading-none mb-2">CORPORATE ACCESS: 105.4%</div>
+            <div class="corporate-text text-[11px] uppercase tracking-[0.2em] mb-3 opacity-90">Corps figure out access via:</div>
+            <ul class="space-y-1.5 text-[13px] corporate-text">
+              <li class="flex items-center gap-2"><span class="opacity-70">▸</span> Leases</li>
+              <li class="flex items-center gap-2"><span class="opacity-70">▸</span> Rights of way</li>
+              <li class="flex items-center gap-2"><span class="opacity-70">▸</span> Easements</li>
+              <li class="flex items-center gap-2"><span class="opacity-70">▸</span> Data pipelines</li>
+              <li class="flex items-center gap-2"><span class="opacity-70">▸</span> PPPs</li>
+            </ul>
+            <div class="mt-4 text-[10px] uppercase tracking-widest opacity-70 border-t border-[rgba(255,100,0,0.3)] pt-2">
+              OVERLAY >100% = EXTRACTION MODE
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Display -->
+    <footer class="mt-4 bottom-display">
+      <div class="px-4 py-4 md:py-5 text-center relative">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 items-center">
+          <div class="text-[11px] md:text-xs uppercase tracking-[0.25em] opacity-70">
+            EMPIRE CANNON: <span class="text-[var(--amber)]">READ-ONLY</span>
+          </div>
+          
+          <div class="order-first md:order-none">
+            <div class="vt text-3xl md:text-4xl lg:text-5xl leading-none phosphor-bright">
+              91.4% <span class="text-[var(--phosphor)]">&gt;</span> 50.0000% <span class="text-[var(--phosphor)]">=</span> <span class="relative">PUBLIC<span class="absolute -top-1 -right-3 text-[10px] animate-pulse">●</span></span>
+            </div>
+          </div>
+          
+          <div class="text-[11px] md:text-xs uppercase tracking-[0.25em] opacity-70 terminal-cursor">
+            Cannot be privatized
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <div class="mt-3 text-center text-[9px] uppercase tracking-[0.3em] opacity-30">
+      INHERITANCE AGGREGATION VISUALIZATION • PUBLIC OWNERSHIP PROTOCOL
+    </div>
+  </div>
+
+<script>
+// Fractal Tree
+const canvas = document.getElementById('fractal');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  drawFractal();
+}
+
+function drawFractal() {
+  const w = canvas.offsetWidth;
+  const h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  
+  ctx.save();
+  ctx.shadowColor = '#00ff41';
+  ctx.shadowBlur = 12;
+  ctx.strokeStyle = 'rgba(0, 255, 65, 0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  
+  function branch(x, y, len, angle, depth, maxDepth) {
+    if (depth > maxDepth) return;
+    
+    const x2 = x + Math.cos(angle) * len;
+    const y2 = y + Math.sin(angle) * len;
+    
+    // Color by depth
+    const intensity = 1 - (depth / maxDepth) * 0.5;
+    const green = Math.floor(200 + 55 * intensity);
+    ctx.strokeStyle = `rgba(0, ${green}, 65, ${0.3 + intensity * 0.7})`;
+    ctx.lineWidth = Math.max(0.5, 2.5 - depth * 0.3);
+    ctx.shadowBlur = 8 + depth * 2;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    if (depth < maxDepth) {
+      const newLen = len * 0.72;
+      const spread = 0.45 + Math.random() * 0.15;
+      
+      branch(x2, y2, newLen, angle - spread, depth + 1, maxDepth);
+      branch(x2, y2, newLen, angle + spread * 0.9, depth + 1, maxDepth);
+      
+      // Occasional third branch for fractal complexity
+      if (depth > 1 && depth < maxDepth - 1 && Math.random() > 0.6) {
+        branch(x2, y2, newLen * 0.8, angle + (Math.random() - 0.5) * 0.3, depth + 1, maxDepth);
+      }
+    }
+  }
+  
+  // Draw multiple root systems representing inheritance paths
+  const roots = [
+    { x: w * 0.15, y: h * 0.85 },
+    { x: w * 0.25, y: h * 0.9 },
+    { x: w * 0.18, y: h * 0.78 }
+  ];
+  
+  roots.forEach((root, i) => {
+    ctx.shadowColor = i === 1 ? '#7fff00' : '#00ff41';
+    branch(root.x, root.y, 45 + i * 8, -Math.PI/2 - 0.2 + i * 0.15, 0, 6);
+  });
+  
+  // Central aggregation trunk
+  ctx.strokeStyle = 'rgba(127, 255, 0, 0.95)';
+  ctx.shadowColor = '#7fff00';
+  ctx.shadowBlur = 20;
+  ctx.lineWidth = 3;
+  branch(w * 0.5, h * 0.92, 65, -Math.PI/2, 0, 7);
+  
+  ctx.restore();
+  
+  // Add glow nodes at key levels
+  const levels = [0.82, 0.68, 0.52, 0.36, 0.20, 0.08];
+  levels.forEach((ly, i) => {
+    const y = h * ly;
+    const x = w * 0.5 + Math.sin(i) * 20;
+    const intensity = i < 3 ? 1 : 0.6;
+    
+    ctx.beginPath();
+    ctx.arc(x, y, 2 + intensity * 2, 0, Math.PI * 2);
+    ctx.fillStyle = i === 2 ? 'rgba(127, 255, 0, 0.9)' : 'rgba(0, 255, 65, 0.7)';
+    ctx.shadowColor = i === 2 ? '#7fff00' : '#00ff41';
+    ctx.shadowBlur = 15;
+    ctx.fill();
+  });
+}
+
+// Animate bars
+function animateBars() {
+  document.querySelectorAll('.bar[data-pct]').forEach((bar, i) => {
+    const pct = parseFloat(bar.dataset.pct);
+    setTimeout(() => {
+      bar.style.width = pct + '%';
+    }, 200 + i * 120);
+  });
+}
+
+// Initialize
+window.addEventListener('load', () => {
+  resize();
+  setTimeout(animateBars, 300);
+  
+  // Pulsing effect for the key metric
+  setInterval(() => {
+    const activeRow = document.querySelector('.level-row.active');
+    if (activeRow) {
+      activeRow.style.boxShadow = `inset 0 0 20px rgba(127,255,0,${0.1 + Math.random() * 0.1})`;
+    }
+  }, 2000);
+});
+
+window.addEventListener('resize', () => {
+  clearTimeout(window.resizeTimer);
+  window.resizeTimer = setTimeout(resize, 100);
+});
+
+// Simulate live data jitter on public infrastructure bars
+setInterval(() => {
+  document.querySelectorAll('.right .bar').forEach(bar => {
+    const base = parseFloat(bar.dataset.pct);
+    const jitter = (Math.random() - 0.5) * 0.4;
+    bar.style.width = Math.max(0, Math.min(100, base + jitter)) + '%';
+  });
+}, 3000);
+</script>
+</body>
+</html>
